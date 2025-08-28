@@ -58,7 +58,7 @@ const Footer = () => {
                   About Us
                 </Link>
                 <Link 
-                  to="/courses" 
+                  to="/students" 
                   className="block text-muted-foreground hover:text-primary transition-colors"
                   onClick={() => {
           window.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -75,6 +75,25 @@ const Footer = () => {
                 >
                   Contact Us
                 </Link>
+                 <Link 
+                  to="/colleges" 
+                  className="block text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => {
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+              }}
+                >
+                  Partners - Colleges
+                </Link>
+                 <Link 
+                  to="/companies" 
+                  className="block text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => {
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+              }}
+                >
+                  Partners - Companies
+                </Link>
+
                 <Link 
                   to="/faqs" 
                   className="block text-muted-foreground hover:text-primary transition-colors"
