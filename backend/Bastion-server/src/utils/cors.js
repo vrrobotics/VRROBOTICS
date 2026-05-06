@@ -4,8 +4,20 @@
 // gateway is also allowed when its proxied response is sent back to the
 // browser. Lives in its own module to avoid circular imports between
 // index.js and the routes that the gateway mounts.
-export const bastionAllowedOrigins = [
+//
+// Origins come from BASTION_ALLOWED_ORIGINS (comma-separated) plus a small
+// set of local dev defaults so `npm run dev` keeps working without env vars.
+const fromEnv = (process.env.BASTION_ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+const devDefaults = [
   'http://localhost:8080',
   'http://localhost:8081',
   'http://localhost:5173',
 ];
+
+export const bastionAllowedOrigins = Array.from(
+  new Set([...devDefaults, ...fromEnv])
+);

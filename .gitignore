@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Build output
+frontend/dist/
+**/dist/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Service-local junk
+backend/admin-service/tmp/
+backend/admin-service/uploads/
+backend/admin-service/diag-*.js
+backend/admin-service/tmp-debug-*.js
+
+# Local-only deploy scaffolding (not pushed to GitHub)
+DEPLOY_AWS.md
+scripts/
+.github/

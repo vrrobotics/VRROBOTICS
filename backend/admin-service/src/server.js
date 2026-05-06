@@ -287,4 +287,3 @@ sequelize.authenticate()
         console.warn('Starting server anyway — list endpoints will return empty results until the DB is reachable.');
         start();
     });
-

@@ -15,14 +15,27 @@ dotenv.config();
 
 const app = express();
 
+// Behind Nginx/ALB on EC2 — needed for correct client IP in rate limiter and logs.
+app.set('trust proxy', 1);
+
+app.use(helmet());
+
 // Middlewares
 app.use(cors({
-  origin: bastionAllowedOrigins,
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);
+    return cb(null, bastionAllowedOrigins.includes(origin));
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
-app.use(express.json());
-app.use(morgan('dev'));
+app.use(express.json({ limit: '10mb' }));
+app.use(morgan('combined'));
 app.use(rateLimiter);
+
+// Health check for ALB / Nginx / uptime probes — must respond before auth/proxy.
+app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 // Routes
 app.use('/api', routes);

@@ -6,7 +6,8 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import sequelize from './db/index.js';
 import cookieParser from "cookie-parser";
-import organizationRoutes from './routes/organization.routes.js';
+import courseRoutes from './routes/course.routes.js';
+import enrollRoutes from './routes/enroll.routes.js';
 
 
 
@@ -32,15 +33,16 @@ app.get('/health', (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("Welcome to the Organization Service API");
+  res.send("Welcome to the Course Service API");
 });
 
-app.use('/', organizationRoutes);
+app.use('/', courseRoutes);
+app.use('/enroll', enrollRoutes);
 
 export async function initDb() {
   await sequelize.authenticate();
   await sequelize.sync();
-  console.log('🗄️  Database connected and synced---'); 
+  console.log('🗄️  Database connected and synced---');
 }
 
 export default app;

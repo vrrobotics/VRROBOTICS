@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+const BASTION_BASE =
+  (import.meta.env.VITE_BASTION_API_URL as string) || 'http://localhost:8000';
+
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:8000/api/v1',
+  baseURL: `${BASTION_BASE}/api/v1`,
   headers: {
     'Content-Type': 'application/json',
   },
