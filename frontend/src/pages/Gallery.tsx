@@ -1,37 +1,63 @@
+import { useEffect, useState } from "react";
+import axios from "axios";
 import { Play, ImageIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 /**
- * VR Robotics Academy — Gallery page (new page; existing content untouched).
- * All photos/videos are placeholders.
+ * VR Robotics Academy — public Gallery page (Home → Gallery).
+ * Live data from admin-service: GET /api/public/gallery. Admins add/manage
+ * these under Admin → Gallery → Add/Manage Gallery, and anything saved as
+ * Active replicates here automatically. Falls back to nothing-but-header when
+ * empty (no hardcoded items, so the page reflects real admin content).
  */
 
-const Placeholder = ({ label, tint = "from-orange-400 to-orange-600", className = "", showPlay = false }: { label: string; tint?: string; className?: string; showPlay?: boolean }) => (
-  <div className={`relative flex items-center justify-center bg-gradient-to-br ${tint} text-white ${className}`}>
+const ADMIN_BASE =
+  (import.meta.env.VITE_ADMIN_API_URL as string) || "http://localhost:5000";
+
+interface GalleryItem {
+  id: number;
+  title: string;
+  description: string | null;
+  media_type: "image" | "video";
+  media_url: string | null;
+  event_date: string | null;
+}
+
+const Placeholder = ({ showPlay = false, className = "" }: { showPlay?: boolean; className?: string }) => (
+  <div className={`relative flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900 text-white ${className}`}>
     {showPlay ? (
       <span className="w-16 h-16 rounded-full bg-black/40 flex items-center justify-center">
         <Play className="w-7 h-7 fill-white ml-1" />
       </span>
     ) : (
-      <div className="flex flex-col items-center gap-1 opacity-90">
-        <ImageIcon className="w-8 h-8" />
-        <span className="text-xs font-medium">{label}</span>
-      </div>
+      <ImageIcon className="w-8 h-8 opacity-80" />
     )}
-    <span className="absolute top-2 right-2 text-[10px] bg-black/30 px-1.5 py-0.5 rounded">Placeholder</span>
   </div>
 );
 
-const items = [
-  { date: "SAT, MAY 02, 2026", title: "Celebrating Excellence: National Gold", tint: "from-emerald-500 to-teal-700" },
-  { date: "SAT, JAN 17, 2026", title: "RRL26 — Robotics in Aerospace", tint: "from-indigo-500 to-blue-700" },
-  { date: "SAT, AUG 02, 2025", title: "VR Robotics Triumph: Three Wins at WRO 2025!", tint: "from-rose-500 to-red-700" },
-  { date: "FRI, JUL 11, 2025", title: "Hands-On Robotics Workshop", tint: "from-amber-500 to-orange-600" },
-  { date: "MON, JUN 09, 2025", title: "Founder's Keynote & Vision", tint: "from-violet-500 to-purple-700" },
-  { date: "SAT, APR 19, 2025", title: "Student Project Showcase", tint: "from-cyan-600 to-blue-700" },
-];
-
 const Gallery = () => {
+  const [items, setItems] = useState<GalleryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await axios.get(`${ADMIN_BASE}/api/public/gallery`, { timeout: 30000 });
+        if (!cancelled) setItems(Array.isArray(data) ? data : []);
+      } catch {
+        if (!cancelled) setItems([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Use the first video as the feature, the rest as cards.
+  const feature = items.find((i) => i.media_type === "video" && i.media_url);
+  const cards = items.filter((i) => i !== feature);
+
   return (
     <div className="overflow-hidden">
       <section className="section-padding">
@@ -42,21 +68,41 @@ const Gallery = () => {
             <p className="text-muted-foreground">Moments from our events, competitions, and classrooms.</p>
           </div>
 
-          {/* Feature video placeholder */}
-          <Placeholder label="" showPlay className="rounded-3xl aspect-video mb-12" tint="from-slate-700 to-slate-900" />
+          {/* Feature video */}
+          {feature?.media_url ? (
+            <div className="rounded-3xl overflow-hidden aspect-video mb-12 shadow-card">
+              <iframe title={feature.title} src={feature.media_url} className="w-full h-full" allowFullScreen />
+            </div>
+          ) : (
+            <Placeholder showPlay className="rounded-3xl aspect-video mb-12" />
+          )}
 
-          {/* Grid */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {items.map((it) => (
-              <Card key={it.title} className="card-ngo border-0 overflow-hidden">
-                <Placeholder label="Event photo" tint={it.tint} className="h-52" />
-                <CardContent className="p-5 space-y-1">
-                  <p className="text-warm-green text-xs font-semibold">{it.date}</p>
-                  <h3 className="font-semibold text-lg">{it.title}</h3>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {loading ? (
+            <p className="text-center text-muted-foreground py-10">Loading gallery…</p>
+          ) : cards.length === 0 ? (
+            <p className="text-center text-muted-foreground py-10">Gallery coming soon.</p>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {cards.map((it) => (
+                <Card key={it.id} className="card-ngo border-0 overflow-hidden">
+                  {it.media_url ? (
+                    it.media_type === "video" ? (
+                      <iframe title={it.title} src={it.media_url} className="w-full h-52" allowFullScreen />
+                    ) : (
+                      <img src={it.media_url} alt={it.title} className="w-full h-52 object-cover" loading="lazy" />
+                    )
+                  ) : (
+                    <Placeholder className="h-52" />
+                  )}
+                  <CardContent className="p-5 space-y-1">
+                    {it.event_date && <p className="text-warm-green text-xs font-semibold">{it.event_date}</p>}
+                    <h3 className="font-semibold text-lg">{it.title}</h3>
+                    {it.description && <p className="text-muted-foreground text-sm">{it.description}</p>}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>

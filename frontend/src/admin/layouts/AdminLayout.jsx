@@ -65,6 +65,15 @@ const MENU = [
         ],
     },
     {
+        key: 'gallery',
+        label: 'Gallery',
+        icon: ICONS.course,
+        children: [
+            { label: 'Add Gallery', to: '/admin/gallery?action=add' },
+            { label: 'Manage Gallery', to: '/admin/gallery' },
+        ],
+    },
+    {
         key: 'assessment',
         label: 'Assessments',
         icon: ICONS.assessment,
@@ -172,6 +181,9 @@ function isGroupActive(group, pathname, search = '') {
     }
     if (group.key === 'assessment') {
         return pathname.startsWith('/admin/assessments');
+    }
+    if (group.key === 'gallery') {
+        return pathname.startsWith('/admin/gallery');
     }
     // Note: `batches` is a children-only group, so the recursion above
     // already lights it up whenever any child's pathname+query matches

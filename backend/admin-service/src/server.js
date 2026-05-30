@@ -19,6 +19,7 @@ const liveClassRoutes = require('./routes/liveclass.routes');
 const zoomLiveClassRoutes = require('./zoom-live-class/live-class.routes');
 const forumRoutes = require('./forum/forum.routes');
 const couponRoutes = require('./routes/coupon.routes');
+const galleryRoutes = require('./routes/gallery.routes');
 const programRoutes = require('./routes/program.routes');
 const certificateRoutes = require('./routes/certificate.routes');
 const collegeDashboardRoutes = require('./routes/collegeDashboard.routes');
@@ -116,6 +117,15 @@ app.get('/api/public/categories', async (req, res, next) => {
         // mode. Admin/internal callers that omit it still get the full tree.
         const clgId = 'clgId' in req.query ? String(req.query.clgId ?? '') : undefined;
         res.json(await categoryService.list(clgId));
+    } catch (e) { next(e); }
+});
+
+// Public gallery list — drives the Home → Gallery page. Only visible items.
+// Admins manage these under Gallery → Add/Manage Gallery; new items appear here.
+const galleryService = require('./services/GalleryService');
+app.get('/api/public/gallery', async (_req, res, next) => {
+    try {
+        res.json(await galleryService.listPublic());
     } catch (e) { next(e); }
 });
 
@@ -396,6 +406,7 @@ app.use('/api/admin', adminOnly, adminRoutes);
 app.use('/api/admin', adminOnly, quizRoutes);
 app.use('/api/admin', adminOnly, liveClassRoutes);
 app.use('/api/admin', adminOnly, couponRoutes);
+app.use('/api/admin', adminOnly, galleryRoutes);
 app.use('/api/admin', adminOnly, programRoutes);
 app.use('/api/admin', adminOnly, certificateRoutes);
 app.use('/api/admin', adminOnly, collegeDashboardRoutes);

@@ -55,6 +55,7 @@ import AdminCourseIndex from "./admin/pages/course/Index";
 import AdminCourseCreate from "./admin/pages/course/Create";
 import AdminCourseEdit from "./admin/pages/course/Edit";
 import AdminCouponIndex from "./admin/pages/coupon/Index";
+import AdminGalleryIndex from "./admin/pages/gallery/Index";
 import AdminAssessmentIndex from "./admin/pages/assessment/Index";
 import AdminProgramIndex from "./admin/pages/program/Index";
 import AdminProgramCreate from "./admin/pages/program/Create";
@@ -159,6 +160,7 @@ const App = () => (
               <Route path="course/create" element={<AdminCourseCreate />} />
               <Route path="course/edit/:id" element={<AdminCourseEdit />} />
               <Route path="coupons" element={<AdminCouponIndex />} />
+              <Route path="gallery" element={<AdminGalleryIndex />} />
               <Route path="assessments" element={<AdminAssessmentIndex />} />
               <Route path="programs" element={<AdminProgramIndex />} />
               <Route path="programs/create" element={<AdminProgramCreate />} />

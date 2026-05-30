@@ -380,3 +380,19 @@ BEGIN
       r.table_name, r.table_name);
   END LOOP;
 END $$;
+
+-- -----------------------------------------------------------------------------
+-- gallery_items  (Home → Gallery; managed via Admin → Gallery)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS lms_admin.gallery_items (
+  id          SERIAL PRIMARY KEY,
+  title       VARCHAR(255) NOT NULL,
+  description TEXT,
+  media_type  VARCHAR(20) NOT NULL DEFAULT 'image',
+  media_url   TEXT,
+  event_date  VARCHAR(100),
+  sort_order  INTEGER NOT NULL DEFAULT 0,
+  status      SMALLINT NOT NULL DEFAULT 1,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
