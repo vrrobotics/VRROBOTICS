@@ -126,6 +126,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const checkAuth = async () => {
     try {
       setLoading(true);
+
+      // If an admin token is present (set by adminLogin), hydrate the admin
+      // session FIRST. This must take priority over the auth-service profile
+      // probe so that landing on /admin after login resolves to the admin user
+      // (role 'admin') rather than a leftover student/teacher session — which
+      // would make the /admin guard bounce the admin to /dashboard.
+      if (getAdminToken()) {
+        try {
+          const res = await adminMe();
+          const profile = normalizeAdminProfile(res);
+          setUser(profile);
+          const idForStorage = extractUserId(profile);
+          if (idForStorage) localStorage.setItem("userId", String(idForStorage));
+          // Store the unwrapped user (not the {user: ...} envelope) — that's
+          // the shape AdminLayout's getStoredUser() reads to decide whether to
+          // show the college-admin sidebar.
+          localStorage.setItem("admin_user", JSON.stringify(res?.user ?? res));
+          return;
+        } catch {
+          // admin token invalid/expired — fall through to the auth-service probe
+        }
+      }
+
       const res = await getProfile();
       setUser(res.data);
       const idForStorage = extractUserId(res.data);
@@ -139,9 +162,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(profile);
           const idForStorage = extractUserId(profile);
           if (idForStorage) localStorage.setItem("userId", String(idForStorage));
-          // Store the unwrapped user (not the {user: ...} envelope) — that's
-          // the shape AdminLayout's getStoredUser() reads to decide whether to
-          // show the college-admin sidebar.
           localStorage.setItem("admin_user", JSON.stringify(res?.user ?? res));
           return;
         } catch {
@@ -199,6 +219,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const bridge = await adminLogin(credentials.email, credentials.password);
         const profile = normalizeAdminProfile(bridge.user);
+        // Clear any stale auth-service (student/teacher) tokens so that after a
+        // full reload into /admin, checkAuth() skips the auth-service profile
+        // probe and hydrates the admin via adminMe() using admin_token. Without
+        // this, a leftover accessToken could resolve to a non-admin user and the
+        // /admin guard would bounce the admin out to /dashboard.
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
         setUser(profile);
         const idForStorage = extractUserId(profile);
         if (idForStorage) localStorage.setItem("userId", String(idForStorage));
