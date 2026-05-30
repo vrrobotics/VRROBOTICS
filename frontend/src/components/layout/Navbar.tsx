@@ -17,8 +17,7 @@ import {
   ChevronDown,
   Home,
   Mail,
-  LogIn,
-  UserPlus,
+  UserCircle,
   GraduationCap,
   LayoutDashboard,
   LogOut,
@@ -269,13 +268,15 @@ const Navbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
+              /* New auth button — opens the authentication page (/auth) which
+                 runs the full login/signup flow against the auth backend. */
               <Link
                 to="/auth"
                 onClick={(e) => scrollToTopWithOffset(e, "/auth")}
-                className="inline-flex items-center gap-2 rounded-full bg-gradient-hero px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:opacity-90"
+                className="group inline-flex items-center gap-2 rounded-lg border-2 border-primary px-5 py-2 text-sm font-bold uppercase tracking-wide text-primary transition-colors duration-200 hover:bg-primary hover:text-white"
               >
-                <LogIn className="w-4 h-4" />
-                <span>Sign In</span>
+                <UserCircle className="w-5 h-5" />
+                <span>Login / Register</span>
               </Link>
             )}
           </div>
@@ -375,19 +376,15 @@ const Navbar = () => {
                     </Button>
                   </>
                 ) : (
-                  <Button
-                    className="w-full justify-start bg-gradient-hero border-0"
-                    asChild
+                  /* New auth button (mobile) — same /auth login/signup flow. */
+                  <Link
+                    to="/auth"
+                    onClick={(e) => scrollToTopWithOffset(e, "/auth")}
+                    className="flex items-center justify-center gap-2 w-full rounded-lg border-2 border-primary px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-primary hover:bg-primary hover:text-white transition-colors"
                   >
-                    <Link
-                      to="/auth"
-                      onClick={(e) => scrollToTopWithOffset(e, "/auth")}
-                      className="flex items-center space-x-3"
-                    >
-                      <UserPlus className="w-5 h-5" />
-                      <span>Sign In</span>
-                    </Link>
-                  </Button>
+                    <UserCircle className="w-5 h-5" />
+                    <span>Login / Register</span>
+                  </Link>
                 )}
               </div>
             </div>
