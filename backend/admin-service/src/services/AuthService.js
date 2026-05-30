@@ -14,10 +14,11 @@ async function assertCollegeActive(collegeId) {
     if (!collegeId) return;
     try {
         const rows = await authDb.query(
-            'SELECT isActive FROM colleges WHERE clgId = :clgId LIMIT 1',
+            'SELECT "isActive" FROM colleges WHERE "clgId" = :clgId LIMIT 1',
             { replacements: { clgId: collegeId }, type: QueryTypes.SELECT }
         );
-        if (rows.length && Number(rows[0].isActive) === 0) {
+        // isActive is BOOLEAN in Postgres — treat false (or legacy 0) as revoked.
+        if (rows.length && (rows[0].isActive === false || Number(rows[0].isActive) === 0)) {
             throw new HttpError(403, 'Your college access has been revoked. Please contact your administrator.');
         }
     } catch (e) {

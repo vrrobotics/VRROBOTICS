@@ -12,14 +12,20 @@
 require('dotenv').config();
 const { Sequelize, QueryTypes } = require('sequelize');
 
-const adminDb = new Sequelize(
-    process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS,
-    { host: process.env.DB_HOST, port: process.env.DB_PORT, dialect: 'mysql', logging: false }
-);
-const authDb = new Sequelize(
-    process.env.AUTH_DB_NAME, process.env.DB_USER, process.env.DB_PASS,
-    { host: process.env.DB_HOST, port: process.env.DB_PORT, dialect: 'mysql', logging: false }
-);
+const mkDb = (schema) =>
+    process.env.DATABASE_URL
+        ? new Sequelize(process.env.DATABASE_URL, {
+              dialect: 'postgres', logging: false, schema,
+              dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
+          })
+        : new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
+              host: process.env.DB_HOST, port: process.env.DB_PORT, dialect: 'postgres',
+              logging: false, schema,
+              dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
+          });
+
+const adminDb = mkDb('lms_admin');
+const authDb = mkDb(process.env.AUTH_DB_SCHEMA || 'lucy_devdb');
 
 const fmt = (v) => (v === null || v === undefined ? '<null>' : JSON.stringify(v));
 
@@ -38,12 +44,12 @@ const fmt = (v) => (v === null || v === undefined ? '<null>' : JSON.stringify(v)
 
         console.log('\n=== 2. Distinct student collegeId values in lucy_devdb ===');
         const studentColleges = await authDb.query(
-            `SELECT u.collegeId, COUNT(*) AS n
+            `SELECT u."collegeId", COUNT(*) AS n
                FROM users u
-               JOIN roles r ON r.roleId = u.roleId
+               JOIN roles r ON r."roleId" = u."roleId"
               WHERE r.role = 'student'
-              GROUP BY u.collegeId
-              ORDER BY u.collegeId IS NULL, u.collegeId`,
+              GROUP BY u."collegeId"
+              ORDER BY u."collegeId" IS NULL, u."collegeId"`,
             { type: QueryTypes.SELECT }
         );
         if (studentColleges.length === 0) {
@@ -62,10 +68,10 @@ const fmt = (v) => (v === null || v === undefined ? '<null>' : JSON.stringify(v)
             }
             const filter = String(admin.college_id).trim();
             const matches = await authDb.query(
-                `SELECT u.userId, u.collegeId, u.preScore, u.postScore
+                `SELECT u."userId", u."collegeId", u."preScore", u."postScore"
                    FROM users u
-                   JOIN roles r ON r.roleId = u.roleId
-                  WHERE LOWER(TRIM(u.collegeId)) = LOWER(:filter)
+                   JOIN roles r ON r."roleId" = u."roleId"
+                  WHERE LOWER(TRIM(u."collegeId")) = LOWER(:filter)
                     AND r.role = 'student'`,
                 { replacements: { filter }, type: QueryTypes.SELECT }
             );

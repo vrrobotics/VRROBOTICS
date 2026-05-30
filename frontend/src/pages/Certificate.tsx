@@ -88,8 +88,8 @@ const Certificate = () => {
                   </div>
 
                   <CardContent className="flex flex-col items-center justify-center p-6 space-y-4">
-                    <div className="w-14 h-14 rounded-full bg-[#177385]/10 flex items-center justify-center">
-                      <Award className="h-8 w-8 text-[#177385]" />
+                    <div className="w-14 h-14 rounded-full bg-[#FF6A00]/10 flex items-center justify-center">
+                      <Award className="h-8 w-8 text-[#FF6A00]" />
                     </div>
 
                     <p className="text-sm text-gray-600">
@@ -104,7 +104,7 @@ const Certificate = () => {
                     >
                       <Button
                         size="sm"
-                        className="bg-gradient-hero text-white px-4 py-2 rounded-lg hover:bg-[#177385] transition-colors"
+                        className="bg-gradient-hero text-white px-4 py-2 rounded-lg hover:bg-[#FF6A00] transition-colors"
                       >
                         Download Certificate
                       </Button>

@@ -20,15 +20,22 @@ if (!email || !clgId) {
     process.exit(1);
 }
 
-const authDb = new Sequelize(
-    process.env.AUTH_DB_NAME, process.env.DB_USER, process.env.DB_PASS,
-    { host: process.env.DB_HOST, port: process.env.DB_PORT, dialect: 'mysql', logging: false }
-);
+const authDb = process.env.DATABASE_URL
+    ? new Sequelize(process.env.DATABASE_URL, {
+          dialect: 'postgres', logging: false,
+          schema: process.env.AUTH_DB_SCHEMA || 'lucy_devdb',
+          dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
+      })
+    : new Sequelize(process.env.AUTH_DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
+          host: process.env.DB_HOST, port: process.env.DB_PORT, dialect: 'postgres', logging: false,
+          schema: process.env.AUTH_DB_SCHEMA || 'lucy_devdb',
+          dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
+      });
 
 (async () => {
     try {
         const before = await authDb.query(
-            `SELECT userId, email, collegeId, preScore, postScore FROM users WHERE email = :email`,
+            `SELECT "userId", email, "collegeId", "preScore", "postScore" FROM users WHERE email = :email`,
             { replacements: { email }, type: QueryTypes.SELECT }
         );
         if (!before.length) {
@@ -37,16 +44,16 @@ const authDb = new Sequelize(
         }
         console.log('Before:', before[0]);
 
-        const [, affected] = await authDb.query(
-            `UPDATE users SET collegeId = :clgId WHERE email = :email`,
-            { replacements: { email, clgId }, type: QueryTypes.UPDATE }
+        const updated = await authDb.query(
+            `UPDATE users SET "collegeId" = :clgId WHERE email = :email RETURNING "userId"`,
+            { replacements: { email, clgId }, type: QueryTypes.SELECT }
         );
 
         const after = await authDb.query(
-            `SELECT userId, email, collegeId, preScore, postScore FROM users WHERE email = :email`,
+            `SELECT "userId", email, "collegeId", "preScore", "postScore" FROM users WHERE email = :email`,
             { replacements: { email }, type: QueryTypes.SELECT }
         );
-        console.log(`Rows updated: ${affected}`);
+        console.log(`Rows updated: ${updated.length}`);
         console.log('After: ', after[0]);
     } finally {
         await authDb.close();

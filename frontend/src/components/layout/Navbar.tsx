@@ -11,26 +11,25 @@ import {
   Menu,
   X,
   BookOpen,
-  Users,
+  Book,
+  Image as ImageIcon,
+  MapPin,
+  ChevronDown,
   Home,
   Mail,
   LogIn,
   UserPlus,
   GraduationCap,
-  Building2,
-  Briefcase,
-  Handshake,
-  HelpCircle,
   LayoutDashboard,
   LogOut,
 } from "lucide-react";
-import Logo from "@/assets/yagnatech.png"; // Adjust the path as necessary
 import { useAuth } from "@/hooks/useAuth";
 import { logout as adminLogout } from "@/admin/api/auth";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  // Which top-level dropdown is open (by name), or null.
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const location = useLocation();
@@ -55,12 +54,23 @@ const Navbar = () => {
     navigate("/login", { replace: true });
   };
 
-  // Scroll helper
+  // Scroll helper. Supports plain routes ("/about") and home-section anchors
+  // ("/#curriculum") — navigate to "/" then smooth-scroll to the element id.
   const scrollToTopWithOffset = (e, path) => {
     e.preventDefault();
-    navigate(path);
+    const [pathname, hash] = String(path).split("#");
+    navigate(pathname || "/");
     setTimeout(() => {
       const navbarHeight = 80; // Adjust to match lg:h-20 height
+      if (hash) {
+        const el = document.getElementById(hash);
+        if (el) {
+          const y = el.getBoundingClientRect().top + window.pageYOffset - navbarHeight;
+          window.scrollTo({ top: y, behavior: "smooth" });
+          setIsMenuOpen(false);
+          return;
+        }
+      }
       window.scrollTo({
         top: 0,
         behavior: "smooth",
@@ -75,19 +85,44 @@ const Navbar = () => {
     setIsMenuOpen(false);
   };
 
-  const navigation = [
+  const navigation: {
+    name: string;
+    href: string;
+    icon: typeof Home;
+    dropdown?: boolean;
+    highlight?: boolean;
+  }[] = [
+    { name: "Summer Camp 2026", href: "/summer-camp", icon: GraduationCap, highlight: true },
     { name: "Home", href: "/", icon: Home },
-    { name: "About Us", href: "/about", icon: Users },
-    { name: "Opportunities", href: "/students", icon: BookOpen },
-    { name: "Contact", href: "/contact", icon: Mail },
-    { name: "Partners", href: "/partners", icon: Handshake, dropdown: true  },
-    // { name: "FAQ's", href: "/faqs", icon: HelpCircle },
+    { name: "Courses", href: "/vr-courses", icon: BookOpen, dropdown: true },
+    { name: "Books", href: "/books", icon: Book, dropdown: true },
+    { name: "Gallery", href: "/gallery", icon: ImageIcon },
+    { name: "Locations", href: "/locations", icon: MapPin },
+    { name: "Contact Us", href: "/contact", icon: Mail },
   ];
 
-  const partnerItems = [
-    { name: "Colleges", href: "/colleges", icon: Building2 },
-    { name: "Companies", href: "/companies", icon: Briefcase },
+  // Options shown under the "Courses" dropdown — jump to the matching
+  // section on the VR Robotics courses page.
+  // Each Courses option opens the existing auth UI (login / signup) before
+  // letting the visitor reach course content.
+  const courseItems = [
+    { name: "For Age 8 - 12", href: "/auth" },
+    { name: "For Age 12 - 18", href: "/auth" },
+    { name: "Teachers", href: "/auth?role=teacher" },
   ];
+
+  // Options shown under the "Books" dropdown — jump to the matching book.
+  const bookItems = [
+    { name: "Autonomous Robot with Arduino", href: "/books#autonomous" },
+    { name: "Advanced Electronics for Young Robot Builders", href: "/books#advanced-electronics" },
+    { name: "Electronics for Young Robot Builders", href: "/books#electronics" },
+  ];
+
+  // Map each dropdown nav item to its sub-items.
+  const dropdownItems: Record<string, { name: string; href: string }[]> = {
+    Courses: courseItems,
+    Books: bookItems,
+  };
 
   // On admin pages the layout uses a fixed-width sidebar (w-[260px]).
   // The shared Navbar's `container-ngo` (centered + padded) leaves the
@@ -110,13 +145,15 @@ const Navbar = () => {
           <Link
             to="/"
             onClick={(e) => scrollToTopWithOffset(e, "/")}
-            className={`flex items-center space-x-3 text-xl font-bold text-gradient transition-transform ${logoSlotCls}`}
+            className={`flex flex-col leading-none transition-transform ${logoSlotCls}`}
           >
-            <img
-              src={Logo}
-              alt="Logo"
-              className="w-15 h-15 rounded-lg object-cover"
-            />
+            <span className="font-heading text-xl font-extrabold tracking-tight">
+              <span className="text-gradient">VR</span>{" "}
+              <span className="text-foreground">Robotics Academy</span>
+            </span>
+            <span className="text-[9px] tracking-[0.25em] text-muted-foreground font-semibold uppercase">
+              Live in Future
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -125,13 +162,13 @@ const Navbar = () => {
               item.dropdown ? (
                 <DropdownMenu
                   key={item.name}
-                  open={isDropdownOpen}
-                  onOpenChange={setIsDropdownOpen}
+                  open={openDropdown === item.name}
+                  onOpenChange={(o) => setOpenDropdown(o ? item.name : null)}
                 >
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      className={`flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                         isActive(item.href)
                           ? "text-primary bg-primary/10"
                           : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
@@ -139,25 +176,25 @@ const Navbar = () => {
                     >
                       <item.icon className="w-4 h-4" />
                       <span>{item.name}</span>
+                      <ChevronDown className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="start"
                     sideOffset={8}
-                    className="min-w-[150px] "
+                    className="min-w-[220px]"
                   >
-                    {partnerItems.map((sub) => (
+                    {(dropdownItems[item.name] ?? []).map((sub) => (
                       <DropdownMenuItem asChild key={sub.name}>
                         <Link
-                          to={sub.href}
+                          to={sub.href.split("#")[0]}
                           onClick={(e) => {
                             scrollToTopWithOffset(e, sub.href);
-                            setIsDropdownOpen(false); // CLOSE DROPDOWN
+                            setOpenDropdown(null); // CLOSE DROPDOWN
                           }}
-                          className="flex items-center gap-2"
+                          className="cursor-pointer"
                         >
-                          <sub.icon className="w-4 h-4" />
-                          <span>{sub.name}</span>
+                          {sub.name}
                         </Link>
                       </DropdownMenuItem>
                     ))}
@@ -166,15 +203,17 @@ const Navbar = () => {
               ) : (
                 <Link
                   key={item.name}
-                  to={item.href}
+                  to={item.href.split("#")[0]}
                   onClick={(e) => scrollToTopWithOffset(e, item.href)}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive(item.href)
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
+                    item.highlight
+                      ? "text-primary bg-primary/10 font-semibold hover:bg-primary/20"
+                      : isActive(item.href)
                       ? "text-primary bg-primary/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                   }`}
                 >
-                  <item.icon className="w-4 h-4" />
+                  <item.icon className="w-4 h-4 shrink-0" />
                   <span>{item.name}</span>
                 </Link>
               )
@@ -232,8 +271,8 @@ const Navbar = () => {
             ) : (
               <Button size="sm" asChild className="bg-gradient-hero border-0">
                 <Link
-                  to="/login"
-                  onClick={(e) => scrollToTopWithOffset(e, "/login")}
+                  to="/auth"
+                  onClick={(e) => scrollToTopWithOffset(e, "/auth")}
                   className="flex items-center space-x-2"
                 >
                   <LogIn className="w-4 h-4" />
@@ -265,34 +304,37 @@ const Navbar = () => {
               {navigation.map((item) =>
                 item.dropdown ? (
                   <div key={item.name} className="space-y-1">
-                    <div className="flex items-center px-3 py-3 font-medium text-muted-foreground">
+                    <Link
+                      to={item.href.split("#")[0]}
+                      onClick={(e) => scrollToTopWithOffset(e, item.href)}
+                      className="flex items-center px-3 py-3 font-medium text-muted-foreground hover:text-foreground"
+                    >
                       <item.icon className="w-5 h-5 mr-2" />
                       {item.name}
-                    </div>
-                    {partnerItems.map((sub) => (
+                    </Link>
+                    {(dropdownItems[item.name] ?? []).map((sub) => (
                       <Link
                         key={sub.name}
-                        to={sub.href}
+                        to={sub.href.split("#")[0]}
                         onClick={(e) => scrollToTopWithOffset(e, sub.href)}
-                        className="flex items-center space-x-3 pl-10 pr-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                        className="block pl-10 pr-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                       >
-                        <sub.icon className="w-4 h-4" />
-                        <span>{sub.name}</span>
+                        {sub.name}
                       </Link>
                     ))}
                   </div>
                 ) : (
                   <Link
                     key={item.name}
-                    to={item.href}
+                    to={item.href.split("#")[0]}
                     onClick={(e) => scrollToTopWithOffset(e, item.href)}
-                    className={`flex items-center space-x-3 px-3 py-3 rounded-md text-base font-medium transition-colors ${
-                      isActive(item.href)
-                        ? "text-primary bg-primary/10"
+                    className={`flex items-center space-x-3 px-3 py-3 rounded-md text-base font-medium whitespace-nowrap ${
+                      item.highlight
+                        ? "text-primary bg-primary/10 font-semibold"
                         : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                     }`}
                   >
-                    <item.icon className="w-5 h-5" />
+                    <item.icon className="w-5 h-5 shrink-0" />
                     <span>{item.name}</span>
                   </Link>
                 )
@@ -340,8 +382,8 @@ const Navbar = () => {
                     asChild
                   >
                     <Link
-                      to="/login"
-                      onClick={(e) => scrollToTopWithOffset(e, "/login")}
+                      to="/auth"
+                      onClick={(e) => scrollToTopWithOffset(e, "/auth")}
                       className="flex items-center space-x-3"
                     >
                       <UserPlus className="w-5 h-5" />

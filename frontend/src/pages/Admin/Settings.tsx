@@ -21,7 +21,7 @@ const ToggleSwitch: React.FC<{
     />
     <span
       className={`block w-12 h-6 rounded-full transition-colors duration-200 ${
-        checked ? "bg-[#219A85]" : "bg-gray-300"
+        checked ? "bg-[#FF6A00]" : "bg-gray-300"
       }`}
     ></span>
     <span
@@ -82,7 +82,7 @@ const Setting: React.FC = () => {
         <button
           className={`py-2 px-4 font-semibold bg-transparent ${
             activeTab === "general"
-              ? "border-b-2 border-[#219A85] text-[#219A85]"
+              ? "border-b-2 border-[#FF6A00] text-[#FF6A00]"
               : "text-gray-500"
           }`}
           onClick={() => handleTab("general")}
@@ -92,7 +92,7 @@ const Setting: React.FC = () => {
         <button
           className={`py-2 px-4 font-semibold bg-transparent ${
             activeTab === "notifications"
-              ? "border-b-2 border-[#219A85] text-[#219A85]"
+              ? "border-b-2 border-[#FF6A00] text-[#FF6A00]"
               : "text-gray-500"
           }`}
           onClick={() => handleTab("notifications")}
@@ -102,7 +102,7 @@ const Setting: React.FC = () => {
         <button
           className={`py-2 px-4 font-semibold bg-transparent ${
             activeTab === "security"
-              ? "border-b-2 border-[#219A85] text-[#219A85]"
+              ? "border-b-2 border-[#FF6A00] text-[#FF6A00]"
               : "text-gray-500"
           }`}
           onClick={() => handleTab("security")}
@@ -125,7 +125,7 @@ const Setting: React.FC = () => {
                   name="platformName"
                   value={form.platformName}
                   onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                   required
                 />
               </div>
@@ -136,7 +136,7 @@ const Setting: React.FC = () => {
                   name="platformDescription"
                   value={form.platformDescription}
                   onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 />
               </div>
               <div>
@@ -146,7 +146,7 @@ const Setting: React.FC = () => {
                   name="adminEmail"
                   value={form.adminEmail}
                   onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 />
               </div>
               <div>
@@ -156,7 +156,7 @@ const Setting: React.FC = () => {
                   name="contactNumber"
                   value={form.contactNumber}
                   onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 />
               </div>
               <div>
@@ -165,7 +165,7 @@ const Setting: React.FC = () => {
                   name="timeZone"
                   value={form.timeZone}
                   onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 >
                   <option value="">Select Time Zone</option>
                   <option value="IST">IST (India Standard Time)</option>
@@ -176,7 +176,7 @@ const Setting: React.FC = () => {
               </div>
               <button
                 type="submit"
-                className="bg-[#219A85] hover:bg-[#177385] text-white font-semibold px-6 py-2 rounded-lg w-full md:w-auto"
+                className="bg-[#FF6A00] hover:bg-[#FF6A00] text-white font-semibold px-6 py-2 rounded-lg w-full md:w-auto"
               >
                 Save Changes
               </button>
@@ -249,7 +249,7 @@ const Setting: React.FC = () => {
               </div>
               <button
                 type="submit"
-                className="bg-[#219A85] hover:bg-[#177385] text-white font-semibold px-6 py-2 rounded-lg w-full md:w-auto mt-4"
+                className="bg-[#FF6A00] hover:bg-[#FF6A00] text-white font-semibold px-6 py-2 rounded-lg w-full md:w-auto mt-4"
               >
                 Save Changes
               </button>
@@ -272,7 +272,7 @@ const Setting: React.FC = () => {
                   name="currentPassword"
                   value={form.currentPassword}
                   onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 />
               </div>
               <div>
@@ -282,7 +282,7 @@ const Setting: React.FC = () => {
                   name="newPassword"
                   value={form.newPassword}
                   onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 />
               </div>
               <div>
@@ -292,7 +292,7 @@ const Setting: React.FC = () => {
                   name="confirmPassword"
                   value={form.confirmPassword}
                   onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 />
               </div>
                <div className="flex items-center justify-between  gap-2">
@@ -325,7 +325,7 @@ const Setting: React.FC = () => {
                   name="sessionTimeoutDuration"
                   value={form.sessionTimeoutDuration}
                   onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 >
                   <option value="">Select Duration</option>
                   <option value="5">5 Minutes</option>
@@ -336,7 +336,7 @@ const Setting: React.FC = () => {
               </div>
               <button
                 type="submit"
-                className="bg-[#219A85] hover:bg-[#177385] text-white font-semibold px-6 py-2 rounded-lg w-full md:w-auto"
+                className="bg-[#FF6A00] hover:bg-[#FF6A00] text-white font-semibold px-6 py-2 rounded-lg w-full md:w-auto"
               >
                 Save Changes
               </button>

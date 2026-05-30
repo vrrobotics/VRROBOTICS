@@ -66,7 +66,7 @@ export default function Dashboard() {
     const { stats = {}, status_counts = {} } = data;
     const statusItems = [
         { key: 'active', label: 'Active', color: '#12c093' },
-        { key: 'upcoming', label: 'Upcoming', color: '#169f48' },
+        { key: 'upcoming', label: 'Upcoming', color: '#FF6A00' },
         { key: 'pending', label: 'Pending', color: '#ff2583' },
         { key: 'private', label: 'Private', color: '#000000' },
         { key: 'draft', label: 'Draft', color: '#878d97' },

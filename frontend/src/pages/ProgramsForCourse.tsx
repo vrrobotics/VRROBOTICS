@@ -239,7 +239,7 @@ const ProgramsForCourse = () => {
 
                 {loading && (
                     <div className="flex justify-center py-10">
-                        <div className="w-10 h-10 border-4 border-[#177385] border-t-transparent rounded-full animate-spin" />
+                        <div className="w-10 h-10 border-4 border-[#FF6A00] border-t-transparent rounded-full animate-spin" />
                     </div>
                 )}
 

@@ -57,12 +57,12 @@ export default {
 				'warm-green': 'hsl(var(--warm-green))',
 				'soft-orange': 'hsl(var(--soft-orange))',
 				'gentle-purple': 'hsl(var(--gentle-purple))',
-				// Admin panel theme (mern-admin port)
-				skin: { DEFAULT: '#169f48', dark: '#0f7f3a' },
-				dark: '#0a1017',
-				bodybg: '#f8f9ff',
-				lightgreen: '#f4fef7',
-				softgreen: '#d1f4de',
+				// Admin panel theme — VR Robotics orange on white (no black)
+				skin: { DEFAULT: '#FF6A00', dark: '#cc5500' },
+				dark: '#2a2a2a',
+				bodybg: '#fbf8f5',
+				lightgreen: '#fff4ea',
+				softgreen: '#ffe2c7',
 				ebordermuted: '#e0e5f3',
 				secondarybtn: { DEFAULT: '#5d6c7d', dark: '#4c5867' },
 				danger: { DEFAULT: '#ef3f6e', dark: '#ba1a45' },
@@ -107,6 +107,7 @@ export default {
 			},
 			fontFamily: {
 				sans: ['Inter', 'Roboto', 'system-ui', 'Arial', 'sans-serif'],
+				heading: ['Sora', 'Inter', 'system-ui', 'sans-serif'],
 			},
 			backgroundImage: {
 				'gradient-hero': 'var(--gradient-hero)',

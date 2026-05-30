@@ -8,51 +8,53 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 210 17% 98%;
-    --foreground: 215 25% 27%;
+    /* ── VR Robotics Academy theme — WHITE + ORANGE (no black) ─────────
+       Brand palette: orange #FF6A00 (primary), lime #D8FF91 (accent),
+       white surfaces, charcoal ink (NOT pure black). */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 27%;
+    --card-foreground: 0 0% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 27%;
+    --popover-foreground: 0 0% 15%;
 
-    --primary: 210 83% 53%;
+    --primary: 25 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 17% 95%;
-    --secondary-foreground: 215 25% 27%;
+    --secondary: 30 30% 96%;
+    --secondary-foreground: 0 0% 10%;
 
-    --muted: 210 17% 95%;
-    --muted-foreground: 215 13% 65%;
+    --muted: 30 20% 95%;
+    --muted-foreground: 0 0% 40%;
 
-    --accent: 142 68% 55%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 80 100% 78%;
+    --accent-foreground: 0 0% 8%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 210 17% 90%;
-    --input: 210 17% 90%;
-    --ring: 210 83% 53%;
+    --border: 30 15% 90%;
+    --input: 30 15% 90%;
+    --ring: 25 100% 50%;
 
-    /* Custom NGO theme colors */
-    --trust-blue: 210 83% 53%;
-    --warm-green: 142 68% 55%;
-    --soft-orange: 25 85% 65%;
-    --gentle-purple: 250 45% 65%;
+    /* Brand theme colors (robotics palette) */
+    --trust-blue: 25 100% 50%;
+    --warm-green: 80 100% 78%;
+    --soft-orange: 25 100% 60%;
+    --gentle-purple: 255 92% 76%;
     
-    /* Gradients */
-    /* --gradient-hero: linear-gradient(135deg, hsl(var(--trust-blue)), hsl(var(--warm-green))); */
-    --gradient-hero: linear-gradient(135deg, #177385, hsl(var(--warm-green)));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 17% 98%));
-    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(210 17% 96%));
-    
-    
-    /* Shadows */
-    --shadow-soft: 0 4px 20px -2px hsl(var(--trust-blue) / 0.1);
-    --shadow-card: 0 2px 10px -1px hsl(215 25% 27% / 0.1);
-    --shadow-hover: 0 8px 30px -4px hsl(var(--trust-blue) / 0.2);
+    /* Gradients — pure white + orange brand (NO black) */
+    --gradient-hero: linear-gradient(135deg, #FF6A00 0%, #FF9A4D 100%);
+    --gradient-card: linear-gradient(145deg, #FFFFFF, #FFF6EE);
+    --gradient-subtle: linear-gradient(180deg, #FFFFFF, #FFF6EE);
+
+
+    /* Shadows — soft orange tint (no near-black) */
+    --shadow-soft: 0 4px 20px -2px hsl(25 100% 50% / 0.18);
+    --shadow-card: 0 2px 10px -1px hsl(25 60% 40% / 0.12);
+    --shadow-hover: 0 8px 30px -4px hsl(25 100% 50% / 0.3);
     
     /* Animation */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -120,20 +122,12 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
-  /* body {
-  @apply bg-background text-foreground;
-  background-image: url('/src/assets/yagnatech_logo.png');
-  background-size: contain; 
-  background-repeat: no-repeat;
-  background-position: center;
-  background-attachment: fixed;
-  } */
-
+  /* VR Robotics Academy faint watermark behind all content. */
   body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: url('/src/assets/YagnaTechWM.png') no-repeat center center;
+  background: url('https://res.cloudinary.com/dicfqwlfq/image/upload/v1764505259/VR_Robotics_Logo_upscaled_1_rrrrn8.png') no-repeat center center;
   background-size: contain;
   opacity: 0.05;
   z-index: -1;
@@ -157,27 +151,30 @@ All colors MUST be HSL.
   }
   
   .card-ngo:hover {
-    box-shadow: var(--shadow-hover);
-    transform: translateY(-2px);
+    box-shadow: 0 18px 40px -12px rgba(255, 106, 0, 0.35);
+    transform: translateY(-6px);
+    border-color: rgba(255, 106, 0, 0.35);
   }
-  
+
   .text-gradient {
-    background: var(--gradient-hero);
+    background: linear-gradient(100deg, #FF6A00, #FF9A4D, #FF6A00);
+    background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    animation: gradient-shimmer 6s linear infinite;
   }
 
   .text-primary {
-    color: #177385!important;
+    color: #FF6A00!important;
   }
 
   .text-warm-green {
-    color: #177385!important;
+    color: #1FB57A!important;
   }
   
   .text-muted-foreground {
-    color: black !important;
+    color: #3a3a3a !important;
   }
   .rounded-md {
     border-radius: 20px!important;
@@ -246,7 +243,7 @@ All colors MUST be HSL.
            text-dark text-[14px] font-medium tracking-[0.01em] transition-all duration-300 bg-white;
     border: 1px solid #c3c9da;
   }
-  .ol-btn-outline-secondary:hover { @apply text-skin; border-color: #169f48; }
+  .ol-btn-outline-secondary:hover { @apply text-skin; border-color: #FF6A00; }
 
   .ol-btn-danger {
     @apply inline-flex items-center justify-center gap-2 rounded-ol-8 px-6 py-[10.5px]
@@ -273,7 +270,7 @@ All colors MUST be HSL.
   }
   .ol-form-control::placeholder { color: rgba(75, 86, 117, 0.7); }
   .ol-form-control:focus,
-  .ol-form-control:hover { border-color: #169f48; }
+  .ol-form-control:hover { border-color: #FF6A00; }
   textarea.ol-form-control { @apply py-[13px]; }
   select.ol-form-control {
     @apply pr-10 appearance-none;
@@ -290,7 +287,7 @@ All colors MUST be HSL.
   .e-table tbody tr:hover { @apply bg-lightgreen/40; }
 
   /* Edit badge */
-  .edit-badge { @apply inline-block rounded-[5px] bg-white text-[15px] text-skin px-[10px] py-[5px]; border: 1px solid #169f48; }
+  .edit-badge { @apply inline-block rounded-[5px] bg-white text-[15px] text-skin px-[10px] py-[5px]; border: 1px solid #FF6A00; }
 
   /* Sidebar nav link */
   .side-nav-link { @apply block px-3 py-2 rounded-ol-8 text-[14px] font-medium transition-colors hover:bg-lightgreen hover:text-skin; color: #4b5675; }
@@ -307,8 +304,8 @@ All colors MUST be HSL.
 
   /* Pagination */
   .e-page-link { @apply inline-flex items-center justify-center min-w-[36px] h-[36px] px-3 text-[14px] rounded-ol-8 text-dark transition-colors; border: 1px solid #c3c9da; }
-  .e-page-link:hover { @apply text-skin; border-color: #169f48; }
-  .e-page-link-active { @apply bg-skin text-white; border-color: #169f48; }
+  .e-page-link:hover { @apply text-skin; border-color: #FF6A00; }
+  .e-page-link-active { @apply bg-skin text-white; border-color: #FF6A00; }
   .e-page-link-active:hover { @apply bg-skin-dark text-white; }
 
   /* Stat card */
@@ -318,7 +315,7 @@ All colors MUST be HSL.
   /* Course-edit sidebar tabs */
   .ol-sidebar-tab { @apply flex flex-col gap-0 p-0; }
   .ol-sidebar-tab .nav-link { @apply px-3 py-2 rounded-none; border-left: 4px solid transparent; }
-  .ol-sidebar-tab .nav-link.active { @apply bg-transparent text-skin; border-left-color: #169f48; }
+  .ol-sidebar-tab .nav-link.active { @apply bg-transparent text-skin; border-left-color: #FF6A00; }
 }
 
 /* Apply admin body styles only when an admin layout is mounted */
@@ -343,9 +340,9 @@ All colors MUST be HSL.
   transition: color 0.2s, border-color 0.2s;
   cursor: pointer;
 }
-.ol-tab.active { color: #169f48; border-bottom-color: #169f48; }
+.ol-tab.active { color: #FF6A00; border-bottom-color: #FF6A00; }
 
-.breadcrumb-link { color: #169f48; }
+.breadcrumb-link { color: #FF6A00; }
 .breadcrumb-link:hover { text-decoration: underline; }
 
 .ellipsis-2 {
@@ -382,24 +379,24 @@ All colors MUST be HSL.
 .player-container { max-width: 1400px; margin: 0 auto; padding: 0 1.25rem; }
 
 /* Player-scoped brand color: retarget the global `skin` utilities to the
-   player's teal (#1F8982) without disturbing the rest of the app (admin,
-   dashboard, etc. keep #169F48). */
+   player's teal (#FF6A00) without disturbing the rest of the app (admin,
+   dashboard, etc. keep #FF6A00). */
 .player-shell .bg-skin,
-.player-shell .hover\:bg-skin:hover { background-color: #1F8982 !important; }
+.player-shell .hover\:bg-skin:hover { background-color: #FF6A00 !important; }
 .player-shell .bg-skin\/10 { background-color: rgba(31, 137, 130, 0.10) !important; }
 .player-shell .bg-skin\/20 { background-color: rgba(31, 137, 130, 0.20) !important; }
 .player-shell .bg-skin\/30 { background-color: rgba(31, 137, 130, 0.30) !important; }
 .player-shell .text-skin,
-.player-shell .hover\:text-skin:hover { color: #1F8982 !important; }
+.player-shell .hover\:text-skin:hover { color: #FF6A00 !important; }
 .player-shell .border-skin,
 .player-shell .hover\:border-skin:hover,
-.player-shell .focus\:border-skin:focus { border-color: #1F8982 !important; }
-.player-shell .accent-skin { accent-color: #1F8982 !important; }
-/* Spinner border-t-transparent uses border-[#177385]; recolor too. */
-.player-shell .border-\[\#177385\] { border-color: #1F8982 !important; }
+.player-shell .focus\:border-skin:focus { border-color: #FF6A00 !important; }
+.player-shell .accent-skin { accent-color: #FF6A00 !important; }
+/* Spinner border-t-transparent uses border-[#FF6A00]; recolor too. */
+.player-shell .border-\[\#FF6A00\] { border-color: #FF6A00 !important; }
 /* ol-btn-primary inside the player (used by the "Mark as complete" /
    quiz "Submit" buttons) — repaint to the teal too. */
-.player-shell .ol-btn-primary { background-color: #1F8982 !important; border-color: #1F8982 !important; }
+.player-shell .ol-btn-primary { background-color: #FF6A00 !important; border-color: #FF6A00 !important; }
 .player-shell .ol-btn-primary:hover { background-color: #186e68 !important; border-color: #186e68 !important; }
 
 .player-header { position: sticky; top: 0; z-index: 40; background: #212529; }
@@ -409,10 +406,10 @@ All colors MUST be HSL.
 .player-header-btns { display: flex; align-items: center; gap: 0.75rem; }
 
 .video-zoom-btn { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 8px; border: 1px solid #c7c7c7; color: #c7c7c7; transition: color 0.2s, border-color 0.2s; }
-.video-zoom-btn:hover { border-color: #169f48; color: #169f48; }
+.video-zoom-btn:hover { border-color: #FF6A00; color: #FF6A00; }
 
 .my-courses-btn { display: none; align-items: center; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #c7c7c7; color: #c7c7c7; font-size: 14px; font-weight: 500; transition: color 0.2s, border-color 0.2s; }
-.my-courses-btn:hover { border-color: #169f48; color: #169f48; }
+.my-courses-btn:hover { border-color: #FF6A00; color: #FF6A00; }
 @media (min-width: 1024px) { .my-courses-btn { display: inline-flex; } }
 
 .course-video-area { border-radius: 10px; overflow: hidden; background: #fff; padding: 4px; box-shadow: 0 4px 40px rgba(0, 0, 0, 0.1); }
@@ -422,8 +419,8 @@ All colors MUST be HSL.
 .course-video-navtab { border-radius: 10px; margin-top: 1.5rem; padding: 0.75rem; background: #fff; box-shadow: 0 4px 40px rgba(0, 0, 0, 0.1); min-height: 322px; }
 .cv-nav-pills { display: flex; flex-wrap: wrap; gap: 0.75rem 3rem; border-bottom: 1px solid rgba(107, 114, 128, 0.2); margin-bottom: 1.25rem; }
 .cv-nav-link { position: relative; display: inline-flex; align-items: center; gap: 0.25rem; padding-bottom: 0.75rem; font-size: 15px; color: #0a1017; transition: color 0.2s; cursor: pointer; }
-.cv-nav-link::after { content: ""; position: absolute; left: 0; bottom: -1px; height: 1px; width: 0; background: #169f48; border-radius: 2px; transition: width 0.3s; }
-.cv-nav-link.active { color: #169f48; }
+.cv-nav-link::after { content: ""; position: absolute; left: 0; bottom: -1px; height: 1px; width: 0; background: #FF6A00; border-radius: 2px; transition: width 0.3s; }
+.cv-nav-link.active { color: #FF6A00; }
 .cv-nav-link.active::after { width: 100%; }
 
 .course-content-playlist { border-radius: 12px; background: #fff; padding: 1.5rem 0.625rem; box-shadow: 0 4px 40px rgba(0, 0, 0, 0.1); }
@@ -435,7 +432,7 @@ All colors MUST be HSL.
   width: calc(100% - 28px); height: 1px; background: rgba(110, 121, 138, 0.2);
 }
 .cp-accordion-button { width: 100%; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 1rem 0.75rem; font-size: 16px; font-weight: 500; color: #0a1017; line-height: 28px; transition: color 0.2s; }
-.cp-accordion-button.open { color: #169f48; }
+.cp-accordion-button.open { color: #FF6A00; }
 .cp-accordion-body { padding-bottom: 0.75rem; }
 
 .cp-list { list-style: none; padding: 0; margin: 0; }
@@ -444,9 +441,9 @@ All colors MUST be HSL.
 .cp-item .check-title-area { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
 .cp-item .video-title { font-size: 14px; font-weight: 500; line-height: 24px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cp-item .duration { font-size: 14px; font-weight: 500; line-height: 24px; color: #6b7280; flex-shrink: 0; }
-.cp-item:hover .video-title { color: #169f48; }
+.cp-item:hover .video-title { color: #FF6A00; }
 .cp-item .play-lock-number { flex-shrink: 0; width: 28px; height: 28px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; color: #6b7280; background: rgba(110, 121, 138, 0.16); }
-.cp-item.active { background: #169f48; }
+.cp-item.active { background: #FF6A00; }
 .cp-item.active .video-title, .cp-item.active .duration { color: #fff; }
 .cp-item.active .play-lock-number { background: rgba(255, 255, 255, 0.3); color: #fff; }
 .cp-item.complete .video-title { text-decoration: line-through; }
@@ -512,7 +509,7 @@ All colors MUST be HSL.
     color: #fff; background: #6c757d; border-radius: 4px; cursor: pointer;
     border: none; transition: background-color .2s;
 }
-.cert-var-badge:hover { background: #1fb6a6; }
+.cert-var-badge:hover { background: #FF6A00; }
 
 .cert-builder-form-label { display: block; margin-bottom: 6px; font-size: 13px; color: #1f2733; }
 .cert-builder-form-control {
@@ -523,13 +520,13 @@ All colors MUST be HSL.
 
 .cert-builder-btn-light {
     width: 100%; padding: 8px 16px; font-size: 14px; font-weight: 500;
-    background: #f4fef7; color: #169f48; border: 1px solid #169f48;
+    background: #f4fef7; color: #FF6A00; border: 1px solid #FF6A00;
     border-radius: 6px; cursor: pointer; transition: all .2s;
 }
-.cert-builder-btn-light:hover { background: #169f48; color: #fff; }
+.cert-builder-btn-light:hover { background: #FF6A00; color: #fff; }
 .cert-builder-btn-primary {
     width: 100%; padding: 8px 16px; font-size: 14px; font-weight: 500;
-    background: #169f48; color: #fff; border: 1px solid #169f48;
+    background: #FF6A00; color: #fff; border: 1px solid #FF6A00;
     border-radius: 6px; cursor: pointer; transition: all .2s;
 }
 .cert-builder-btn-primary:hover { background: #0f7f3a; }
@@ -548,11 +545,11 @@ All colors MUST be HSL.
     position: absolute;
     border: 2px dashed rgb(255, 255, 255);
     cursor: move;
-    background-color: #15b57e33;
+    background-color: #FF6A0033;
     padding: 5px !important;
     user-select: none;
 }
-.cert-builder-canvas .draggable.is-active { border-color: #1fb6a6; }
+.cert-builder-canvas .draggable.is-active { border-color: #FF6A00; }
 .cert-builder-canvas .draggable.hidden-position { background-color: #ffd3d3 !important; }
 
 .cert-builder-canvas .remove-item {
@@ -561,4 +558,106 @@ All colors MUST be HSL.
     height: 20px; width: 20px; padding: 0;
     font-size: 16px; line-height: 18px; text-align: center;
     border: 1px solid #ef3f6e; color: #ef3f6e; cursor: pointer;
+}
+
+/* ───── Hero robot animations (VR Robotics landing) ───── */
+@keyframes robot-float {
+  0%   { transform: translateY(0) rotate(-1deg); }
+  50%  { transform: translateY(-22px) rotate(1deg); }
+  100% { transform: translateY(0) rotate(-1deg); }
+}
+@keyframes robot-bob {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(-10px); }
+}
+@keyframes glow-pulse {
+  0%,100% { opacity: .55; transform: scale(1); }
+  50%     { opacity: .9;  transform: scale(1.08); }
+}
+@keyframes orb-drift {
+  0%   { transform: translate(0,0); }
+  33%  { transform: translate(14px,-18px); }
+  66%  { transform: translate(-12px,10px); }
+  100% { transform: translate(0,0); }
+}
+@keyframes ring-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes shadow-breathe {
+  0%,100% { opacity: .35; transform: translateX(-50%) scaleX(1); }
+  50%     { opacity: .18; transform: translateX(-50%) scaleX(.8); }
+}
+
+.animate-robot-float { animation: robot-float 6s ease-in-out infinite; transform-origin: center bottom; }
+.animate-glow-pulse  { animation: glow-pulse 4s ease-in-out infinite; }
+.animate-orb-drift   { animation: orb-drift 9s ease-in-out infinite; }
+.animate-ring-spin   { animation: ring-spin 26s linear infinite; }
+.animate-shadow-breathe { animation: shadow-breathe 6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-robot-float,
+  .animate-glow-pulse,
+  .animate-orb-drift,
+  .animate-ring-spin,
+  .animate-shadow-breathe { animation: none; }
+}
+
+/* ───── Global UI enhancements ───── */
+html { scroll-behavior: smooth; }
+
+@keyframes gradient-shimmer {
+  to { background-position: 200% center; }
+}
+
+/* Branded custom scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #FF9A4D #fdeee2;
+}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #fdeee2; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(#FF9A4D, #FF6A00);
+  border-radius: 999px;
+  border: 2px solid #fdeee2;
+}
+::-webkit-scrollbar-thumb:hover { background: #FF6A00; }
+
+/* Section eyebrow accent: subtle underline under small label paragraphs */
+.section-padding .text-primary.font-semibold,
+.section-padding .text-sky-500.font-semibold { letter-spacing: .04em; }
+
+/* Buttons: lift + glow on hover (applies to shadcn buttons & links styled as buttons) */
+button, .btn, [role="button"] { transition: transform .2s ease, box-shadow .2s ease, filter .2s ease; }
+.bg-gradient-hero:hover { filter: brightness(1.04); box-shadow: 0 10px 24px -8px rgba(255,106,0,.5); }
+
+/* Image-placeholder shimmer so stand-ins feel alive */
+@keyframes ph-sheen {
+  0% { transform: translateX(-100%); }
+  60%,100% { transform: translateX(100%); }
+}
+.bg-gradient-to-br::after { content: none; }
+
+/* ───── Scroll reveal (progressive enhancement) ─────
+   Hidden state only applies once JS marks the document ready, so the page
+   stays fully visible if JS is disabled or the observer fails. */
+.reveal-ready .card-ngo,
+.reveal-ready [data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity .7s cubic-bezier(.22,.61,.36,1), transform .7s cubic-bezier(.22,.61,.36,1);
+  will-change: opacity, transform;
+}
+.reveal-ready .card-ngo.revealed,
+.reveal-ready [data-reveal].revealed {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .text-gradient { animation: none; }
+  .reveal-ready .card-ngo,
+  .reveal-ready [data-reveal] { opacity: 1; transform: none; transition: none; }
 }

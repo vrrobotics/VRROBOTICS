@@ -60,10 +60,10 @@ const fetchUsersByIds = async (ids) => {
     if (!unique.length) return {};
     try {
         const rows = await authDb.query(
-            `SELECT u.userId AS id, u.name, u.email,
-                    COALESCE(u.instructorPhoto, u.studentPhoto) AS photo
+            `SELECT u."userId" AS id, u.name, u.email,
+                    COALESCE(u."instructorPhoto", u."studentPhoto") AS photo
                FROM users u
-              WHERE u.userId IN (:ids)`,
+              WHERE u."userId" IN (:ids)`,
             { replacements: { ids: unique }, type: QueryTypes.SELECT }
         );
         const byId = {};

@@ -15,9 +15,9 @@ async function enqueueBatchAddedEmails({ batch, userIds }) {
     if (!batch || !userIds || userIds.length === 0) return;
     try {
         const rows = await authDb.query(
-            `SELECT u.userId AS id, u.name, u.email
+            `SELECT u."userId" AS id, u.name, u.email
                FROM users u
-              WHERE u.userId IN (:userIds)`,
+              WHERE u."userId" IN (:userIds)`,
             { replacements: { userIds }, type: QueryTypes.SELECT }
         );
         const jobs = rows
@@ -82,7 +82,7 @@ const buildCollegePrefix = (clgName, clgId) => {
 const fetchCollegeName = async (clgId) => {
     if (!clgId) return null;
     const [row] = await authDb.query(
-        'SELECT clgName FROM colleges WHERE clgId = :clgId LIMIT 1',
+        'SELECT "clgName" FROM colleges WHERE "clgId" = :clgId LIMIT 1',
         { replacements: { clgId }, type: QueryTypes.SELECT }
     );
     return row?.clgName || null;
@@ -109,12 +109,12 @@ const applyCollegePrefix = (rawName, prefix) => {
 const filterValidStudents = async ({ clgId, userIds }) => {
     if (userIds.length === 0) return [];
     const rows = await authDb.query(
-        `SELECT u.userId
+        `SELECT u."userId"
            FROM users u
-           JOIN roles r ON r.roleId = u.roleId
+           JOIN roles r ON r."roleId" = u."roleId"
           WHERE r.role = 'student'
-            AND u.collegeId = :clgId
-            AND u.userId IN (:userIds)`,
+            AND u."collegeId" = :clgId
+            AND u."userId" IN (:userIds)`,
         { replacements: { clgId, userIds }, type: QueryTypes.SELECT }
     );
     return rows.map((r) => String(r.userId));
@@ -188,9 +188,9 @@ const get = async ({ clgId, id }) => {
     if (members.length) {
         const userIds = members.map((m) => String(m.user_id));
         const rows = await authDb.query(
-            `SELECT u.userId AS id, u.name, u.email, u.phone, u.graduationYear
+            `SELECT u."userId" AS id, u.name, u.email, u.phone, u."graduationYear"
                FROM users u
-              WHERE u.userId IN (:userIds)`,
+              WHERE u."userId" IN (:userIds)`,
             { replacements: { userIds }, type: QueryTypes.SELECT }
         );
         const byId = Object.fromEntries(rows.map((r) => [String(r.id), r]));
@@ -344,10 +344,10 @@ const removeMember = async ({ clgId, id, userId }) => {
 // in the Add Batch form and the "add students" modal of Manage Batches.
 const eligibleStudents = async ({ clgId }) => {
     const rows = await authDb.query(
-        `SELECT u.userId AS id, u.name, u.email, u.phone, u.graduationYear
+        `SELECT u."userId" AS id, u.name, u.email, u.phone, u."graduationYear"
            FROM users u
-           JOIN roles r ON r.roleId = u.roleId
-          WHERE r.role = 'student' AND u.collegeId = :clgId
+           JOIN roles r ON r."roleId" = u."roleId"
+          WHERE r.role = 'student' AND u."collegeId" = :clgId
           ORDER BY u.name ASC`,
         { replacements: { clgId }, type: QueryTypes.SELECT }
     );

@@ -15,3 +15,7 @@ export const updateLesson = (data) => api.post('/lesson/edit', data, lessonConfi
 export const getLesson = (id) => api.get(`/lesson/${id}`).then((r) => r.data);
 export const deleteLesson = (id) => api.get(`/lesson/delete/${id}`).then((r) => r.data);
 export const sortLessons = (ids) => api.post('/lesson/sort', { itemJSON: ids }).then((r) => r.data);
+
+// Direct-to-Bunny video upload: mint a presigned TUS ticket, then poll status.
+export const createVideoUpload = (title) => api.post('/video/create-upload', { title }).then((r) => r.data);
+export const getVideoStatus = (guid) => api.get(`/video/${guid}/status`).then((r) => r.data);

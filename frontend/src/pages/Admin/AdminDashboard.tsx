@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import Logo from "@/assets/yagnatech.png";
+import { BRAND } from "@/branding";
+const Logo = BRAND.logo; // VR Robotics Academy logo (hosted)
 import Dashboard from "./DashBoard";
 import Colleges from "./Colleges";
 import Companies from "./Companies";
@@ -54,7 +55,7 @@ const AdminDashboard = () => {
               key={tab.value}
               className={`w-full justify-start text-black bg-transparent border border-black/2 ${
                 activeTab === tab.value
-                  ? "bg-[#177385] text-white hover:bg-gradient-hero"
+                  ? "bg-[#FF6A00] text-white hover:bg-gradient-hero"
                   : "hover:bg-gradient-hero"
               }`}
               onClick={() => setActiveTab(tab.value)}
@@ -118,7 +119,7 @@ const AdminDashboard = () => {
                 onClick={() => setSidebarOpen(false)}
                 className="hover:bg-red-100"
               >
-                <X className="h-10 w-10 text-[#177385]-500" />
+                <X className="h-10 w-10 text-[#FF6A00]-500" />
               </Button>
             </div>
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -127,7 +128,7 @@ const AdminDashboard = () => {
                   key={tab.value}
                   className={`w-full justify-start text-black bg-transparent border border-black/2 ${
                     activeTab === tab.value
-                      ? "bg-[#177385] text-white hover:bg-gradient-hero"
+                      ? "bg-[#FF6A00] text-white hover:bg-gradient-hero"
                       : "hover:bg-gradient-hero"
                   }`}
                   onClick={() => {
@@ -193,7 +194,7 @@ const AdminDashboard = () => {
             <Setting />
           </TabsContent>
           <TabsContent value="logout">
-            <SectionHeader title="Logout - YagnaTech Admin" admin={adminData} />
+            <SectionHeader title="Logout - VR Robotics Academy Admin" admin={adminData} />
             <Logout />
           </TabsContent>
         </Tabs>

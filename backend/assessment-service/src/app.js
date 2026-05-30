@@ -58,6 +58,7 @@
 
 
 import './loadEnv.js';
+import './observability.js'; // Sentry.init() — keep first
 import path from 'path';
 import { fileURLToPath } from 'url';
 import express from 'express';
@@ -75,6 +76,7 @@ import questionSetRoutes from './routes/questionSet.routes.js';
 import questionRoutes from './routes/question.routes.js';
 import preAssessmentRegistrationRoutes from './routes/preAssessmentRegistration.routes.js';
 import './db/models/PreAssessmentRegistration.js';
+import { attachErrorHandler } from './observability.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -535,22 +537,31 @@ export async function initDb() {
   // for its on-the-fly column adds.
   try {
     const { QueryTypes } = await import('sequelize');
-    const cols = await sequelize.query('DESCRIBE pre_assessment_registrations', {
-      type: QueryTypes.SELECT,
-    });
-    const hasProgramId = cols.some((c) => c.Field === 'selectedProgramId');
-    if (!hasProgramId) {
+    const schema = process.env.DB_SCHEMA || 'lucy_devdb';
+    // selectedProgramId — nullable INT linking the chosen program to
+    // admin-service programs.id. Idempotent: ADD COLUMN IF NOT EXISTS.
+    await sequelize.query(
+      `ALTER TABLE ${schema}.pre_assessment_registrations
+         ADD COLUMN IF NOT EXISTS "selectedProgramId" INTEGER`
+    );
+    // selectedProgram is VARCHAR in Postgres (admin-created program titles
+    // can exceed the legacy 3-value enum). If a previous run created it as
+    // an enum/other type, coerce to VARCHAR(255).
+    const [col] = await sequelize.query(
+      `SELECT data_type FROM information_schema.columns
+        WHERE table_schema = :schema
+          AND table_name   = 'pre_assessment_registrations'
+          AND column_name  = 'selectedProgram'
+        LIMIT 1`,
+      { replacements: { schema }, type: QueryTypes.SELECT }
+    );
+    if (col && col.data_type !== 'character varying') {
       await sequelize.query(
-        'ALTER TABLE pre_assessment_registrations ADD COLUMN selectedProgramId INT NULL'
+        `ALTER TABLE ${schema}.pre_assessment_registrations
+           ALTER COLUMN "selectedProgram" TYPE VARCHAR(255)
+           USING "selectedProgram"::text`
       );
-      console.log('🛠️  Added pre_assessment_registrations.selectedProgramId column');
-    }
-    const programCol = cols.find((c) => c.Field === 'selectedProgram');
-    if (programCol && /^enum/i.test(programCol.Type)) {
-      await sequelize.query(
-        'ALTER TABLE pre_assessment_registrations MODIFY COLUMN selectedProgram VARCHAR(255) NOT NULL'
-      );
-      console.log('🛠️  Widened pre_assessment_registrations.selectedProgram ENUM → VARCHAR(255)');
+      console.log('🛠️  Coerced pre_assessment_registrations.selectedProgram → VARCHAR(255)');
     }
   } catch (e) {
     console.warn('[pre_assessment_registrations] column migration skipped:', e.message);
@@ -560,5 +571,7 @@ export async function initDb() {
   await seedPostAssessment();
   console.log('🗄️  Database connected and synced---');
 }
+
+attachErrorHandler(app);
 
 export default app;

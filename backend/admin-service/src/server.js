@@ -1,7 +1,10 @@
+require('./observability'); // Sentry.init() — keep first
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const env = require('./config/env');
+const { attachErrorHandler } = require('./observability');
 const { sequelize } = require('./models');
 const { adminOnly, auth, adminOrInstructor } = require('./middlewares/auth');
 const { errorHandler } = require('./middlewares/error');
@@ -31,7 +34,28 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-app.use('/uploads', express.static(path.join(__dirname, '..', env.uploadDir)));
+
+// Asset serving moved off-box:
+//   - Images / PDFs / docs → Cloudflare R2 (served via R2_PUBLIC_URL)
+//   - Videos               → Bunny Stream CDN (BUNNY_STREAM_CDN_HOSTNAME)
+// The legacy /uploads mount remains as a soft proxy ONLY while there are
+// pre-migration rows in DB that still reference on-disk paths. Once cutover
+// is complete you can delete the env.uploadDir directory + this mount.
+if (env.uploadDir && fs.existsSync(path.join(__dirname, '..', env.uploadDir))) {
+    app.use('/uploads', express.static(path.join(__dirname, '..', env.uploadDir)));
+}
+
+// Relative "uploads/..." asset paths (user/instructor/student photos, category
+// thumbnails/logos, and legacy pre-migration rows) now live in Cloudflare R2.
+// Anything the static mount above didn't serve from local disk is redirected to
+// its R2 public URL. Course media, lesson attachments, and certificate images
+// persist absolute R2 URLs and never reach this handler.
+const { publicUrlFor: r2PublicUrlFor } = require('./services/R2Storage');
+app.get('/uploads/*', (req, res) => {
+    const target = r2PublicUrlFor(req.params[0]);
+    if (!target) return res.status(404).end();
+    return res.redirect(302, target);
+});
 
 app.get(['/api/health', '/health'], (_req, res) => res.json({ ok: true, service: 'admin-service' }));
 
@@ -461,6 +485,9 @@ app.get('/api/public/student/overview-stats', async (req, res) => {
 // Student-accessible: any authenticated user (admin or student) can submit / read their own pre-assessment.
 app.use('/api', auth, preAssessmentRoutes);
 
+// Sentry error handler must run before our own error middleware so it
+// captures the error first, then errorHandler shapes the client response.
+attachErrorHandler(app);
 app.use(errorHandler);
 
 process.on('unhandledRejection', (reason) => {
@@ -535,36 +562,35 @@ sequelize.authenticate()
             console.warn('watchStore hydrate failed:', e.message);
         }
 
-        // Idempotently add instructor-specific columns to the auth-service
-        // users table when missing. The auth-service owns this schema, but
-        // adding the column from its own boot would require a redeploy of a
-        // second service — wedging it here keeps the instructor admin flow
-        // working in dev with just an admin-service restart. Safe to run on
-        // every startup (DESCRIBE first, ALTER only when absent).
+        // Idempotently ensure auth-schema users columns exist. Originally
+        // these were MySQL DESCRIBE / ALTER ADD COLUMN patches added when
+        // admin-service shipped before the column was in auth-service's
+        // schema. The Supabase migration SQL (supabase/migrations/02) now
+        // defines these columns canonically — but we keep the check so a
+        // partial deployment (admin-service updated, schema not applied
+        // yet) still self-heals on boot. Postgres-flavored: query
+        // information_schema, then ALTER ... IF NOT EXISTS (atomic in PG).
         try {
             const authDb = require('./config/authDatabase');
-            const cols = await authDb.query('DESCRIBE users', { type: require('sequelize').QueryTypes.SELECT });
-            const hasInstructorPhoto = cols.some((c) => c.Field === 'instructorPhoto');
-            if (!hasInstructorPhoto) {
-                await authDb.query("ALTER TABLE users ADD COLUMN instructorPhoto VARCHAR(255) NULL");
-                console.log("🛠️  Added users.instructorPhoto column (auth DB)");
-            }
-            // studentPhoto: separate column so future student & instructor
-            // profile flows can't accidentally overwrite each other on a
-            // shared photo column. Same idempotent ALTER as above.
-            const hasStudentPhoto = cols.some((c) => c.Field === 'studentPhoto');
-            if (!hasStudentPhoto) {
-                await authDb.query("ALTER TABLE users ADD COLUMN studentPhoto VARCHAR(255) NULL");
-                console.log("🛠️  Added users.studentPhoto column (auth DB)");
-            }
-            // Seconds the student spent on the post-assessment, mirroring
-            // preScoreDuration. Surfaces on Manage Students next to the post
-            // score. Idempotent — added once when missing.
-            const hasPostScoreDuration = cols.some((c) => c.Field === 'postScoreDuration');
-            if (!hasPostScoreDuration) {
-                await authDb.query("ALTER TABLE users ADD COLUMN postScoreDuration INT NULL");
-                console.log("🛠️  Added users.postScoreDuration column (auth DB)");
-            }
+            const { QueryTypes } = require('sequelize');
+            const authSchema = 'lucy_devdb';
+            const ensureCol = async (column, ddl) => {
+                const rows = await authDb.query(
+                    `SELECT column_name FROM information_schema.columns
+                       WHERE table_schema = :schema
+                         AND table_name   = 'users'
+                         AND column_name  = :column
+                       LIMIT 1`,
+                    { replacements: { schema: authSchema, column }, type: QueryTypes.SELECT }
+                );
+                if (!rows.length) {
+                    await authDb.query(`ALTER TABLE ${authSchema}.users ADD COLUMN IF NOT EXISTS ${ddl}`);
+                    console.log(`🛠️  Added ${authSchema}.users.${column}`);
+                }
+            };
+            await ensureCol('instructorPhoto', '"instructorPhoto" VARCHAR(255)');
+            await ensureCol('studentPhoto', '"studentPhoto" VARCHAR(255)');
+            await ensureCol('postScoreDuration', '"postScoreDuration" INTEGER');
         } catch (e) {
             console.warn('[auth-db] photo column check failed:', e.message);
         }
@@ -576,42 +602,32 @@ sequelize.authenticate()
             console.warn('[languages] table sync failed:', e.message);
         }
 
-        // courses.has_certificate: per-course toggle for "this course grants
-        // a certificate on completion". Older schemas don't have the column;
-        // add it on startup so the admin form can write to it and the
-        // public course-details payload can read it. Default TRUE preserves
-        // existing UX (the previous hardcoded "Certificate Course" label).
+        // lms_admin.courses.has_certificate + .batch_ids: idempotent on-boot
+        // column ensure. Postgres-flavored — uses information_schema +
+        // ALTER ... IF NOT EXISTS. The Supabase migration SQL defines these
+        // canonically; this is just a self-heal for partial deployments.
         try {
             const { QueryTypes } = require('sequelize');
-            const [col] = await sequelize.query(
-                "SHOW COLUMNS FROM courses WHERE Field = 'has_certificate'",
-                { type: QueryTypes.SELECT }
-            );
-            if (!col) {
-                await sequelize.query(
-                    'ALTER TABLE courses ADD COLUMN has_certificate TINYINT(1) NOT NULL DEFAULT 1'
+            const lmsSchema = 'lms_admin';
+            const ensureCourseCol = async (column, ddl) => {
+                const rows = await sequelize.query(
+                    `SELECT column_name FROM information_schema.columns
+                       WHERE table_schema = :schema
+                         AND table_name   = 'courses'
+                         AND column_name  = :column
+                       LIMIT 1`,
+                    { replacements: { schema: lmsSchema, column }, type: QueryTypes.SELECT }
                 );
-                console.log('🛠️  Added courses.has_certificate column');
-            }
+                if (!rows.length) {
+                    await sequelize.query(`ALTER TABLE ${lmsSchema}.courses ADD COLUMN IF NOT EXISTS ${ddl}`);
+                    console.log(`🛠️  Added ${lmsSchema}.courses.${column}`);
+                }
+            };
+            await ensureCourseCol('has_certificate', 'has_certificate BOOLEAN NOT NULL DEFAULT TRUE');
+            await ensureCourseCol('batch_ids', 'batch_ids JSONB');
+            await ensureCourseCol('bunny_collection_id', 'bunny_collection_id VARCHAR(64)');
         } catch (e) {
-            console.warn('[courses] has_certificate column check failed:', e.message);
-        }
-
-        // courses.batch_ids: JSON array of batch ids the course is scoped to.
-        // Sibling of clg_ids — added so Add/Edit Course can save batch scope
-        // alongside the existing college scope.
-        try {
-            const { QueryTypes } = require('sequelize');
-            const [col] = await sequelize.query(
-                "SHOW COLUMNS FROM courses WHERE Field = 'batch_ids'",
-                { type: QueryTypes.SELECT }
-            );
-            if (!col) {
-                await sequelize.query('ALTER TABLE courses ADD COLUMN batch_ids JSON NULL');
-                console.log('🛠️  Added courses.batch_ids column');
-            }
-        } catch (e) {
-            console.warn('[courses] batch_ids column check failed:', e.message);
+            console.warn('[courses] column check failed:', e.message);
         }
 
         // Course discussion forum — create the `forums` + `forum_reports`
@@ -656,110 +672,55 @@ sequelize.authenticate()
             console.warn('[email-jobs] table sync failed:', e.message);
         }
 
-        // Late-added Program columns: clg_ids (multi-select colleges) and
-        // course_id (single course FK). .sync() above creates the table but
-        // doesn't add new columns to an existing one, so we DESCRIBE first
-        // and ALTER only when absent — same pattern courses.has_certificate
-        // uses above. Safe to run on every restart.
+        // lms_admin.programs late-added columns. Same self-heal pattern.
         try {
             const { QueryTypes } = require('sequelize');
-            const [clgCol] = await sequelize.query(
-                "SHOW COLUMNS FROM programs WHERE Field = 'clg_ids'",
-                { type: QueryTypes.SELECT }
-            );
-            if (!clgCol) {
-                await sequelize.query("ALTER TABLE programs ADD COLUMN clg_ids JSON NULL");
-                console.log('🛠️  Added programs.clg_ids column');
-            }
-            const [courseCol] = await sequelize.query(
-                "SHOW COLUMNS FROM programs WHERE Field = 'course_id'",
-                { type: QueryTypes.SELECT }
-            );
-            if (!courseCol) {
-                await sequelize.query("ALTER TABLE programs ADD COLUMN course_id INT NULL");
-                console.log('🛠️  Added programs.course_id column');
-            }
-            const [courseIdsCol] = await sequelize.query(
-                "SHOW COLUMNS FROM programs WHERE Field = 'course_ids'",
-                { type: QueryTypes.SELECT }
-            );
-            if (!courseIdsCol) {
-                await sequelize.query("ALTER TABLE programs ADD COLUMN course_ids JSON NULL");
-                console.log('🛠️  Added programs.course_ids column');
-            }
-            // batch_ids: JSON array of batch ids the program is scoped to.
-            // Added so Add/Edit Program can save batch scope alongside the
-            // existing college + course scope.
-            const [batchIdsCol] = await sequelize.query(
-                "SHOW COLUMNS FROM programs WHERE Field = 'batch_ids'",
-                { type: QueryTypes.SELECT }
-            );
-            if (!batchIdsCol) {
-                await sequelize.query("ALTER TABLE programs ADD COLUMN batch_ids JSON NULL");
-                console.log('🛠️  Added programs.batch_ids column');
-            }
+            const lmsSchema = 'lms_admin';
+            const ensureProgramCol = async (column, ddl) => {
+                const rows = await sequelize.query(
+                    `SELECT column_name FROM information_schema.columns
+                       WHERE table_schema = :schema
+                         AND table_name   = 'programs'
+                         AND column_name  = :column
+                       LIMIT 1`,
+                    { replacements: { schema: lmsSchema, column }, type: QueryTypes.SELECT }
+                );
+                if (!rows.length) {
+                    await sequelize.query(`ALTER TABLE ${lmsSchema}.programs ADD COLUMN IF NOT EXISTS ${ddl}`);
+                    console.log(`🛠️  Added ${lmsSchema}.programs.${column}`);
+                }
+            };
+            await ensureProgramCol('clg_ids', 'clg_ids JSONB');
+            await ensureProgramCol('course_id', 'course_id INTEGER');
+            await ensureProgramCol('course_ids', 'course_ids JSONB');
+            await ensureProgramCol('batch_ids', 'batch_ids JSONB');
         } catch (e) {
             console.warn('[programs] column check failed:', e.message);
         }
 
-        // program_requests.program: was an ENUM of 3 hardcoded strings;
-        // widen to VARCHAR so admin-created program titles (from Manage
-        // Programs) fit. Same idempotent ALTER pattern the other migrations
-        // use. Skipped silently when the column is already VARCHAR.
+        // lucy_devdb.colleges.isActive: per-college access toggle driven
+        // from Manage Colleges → Options → Revoke / Give Access. Default
+        // TRUE so pre-existing rows stay accessible.
         try {
             const { QueryTypes } = require('sequelize');
             const authDb = require('./config/authDatabase');
-            const [col] = await authDb.query(
-                "SHOW COLUMNS FROM program_requests WHERE Field = 'program'",
-                { type: QueryTypes.SELECT }
+            const authSchema = 'lucy_devdb';
+            const rows = await authDb.query(
+                `SELECT column_name FROM information_schema.columns
+                   WHERE table_schema = :schema
+                     AND table_name   = 'colleges'
+                     AND column_name  = 'isActive'
+                   LIMIT 1`,
+                { replacements: { schema: authSchema }, type: QueryTypes.SELECT }
             );
-            if (col && /^enum/i.test(col.Type)) {
+            if (!rows.length) {
                 await authDb.query(
-                    'ALTER TABLE program_requests MODIFY COLUMN program VARCHAR(255) NOT NULL'
+                    `ALTER TABLE ${authSchema}.colleges ADD COLUMN IF NOT EXISTS "isActive" BOOLEAN NOT NULL DEFAULT TRUE`
                 );
-                console.log('🛠️  Widened program_requests.program ENUM → VARCHAR(255) (auth DB)');
-            }
-        } catch (e) {
-            console.warn('[program_requests] program column widen skipped:', e.message);
-        }
-
-        // colleges.isActive: per-college access toggle driven from Manage
-        // Colleges → Options → Revoke / Give Access. Lives in the auth DB
-        // alongside the rest of the College row. Default 1 so pre-existing
-        // colleges remain accessible until explicitly revoked.
-        try {
-            const { QueryTypes } = require('sequelize');
-            const authDb = require('./config/authDatabase');
-            const [col] = await authDb.query(
-                "SHOW COLUMNS FROM colleges WHERE Field = 'isActive'",
-                { type: QueryTypes.SELECT }
-            );
-            if (!col) {
-                await authDb.query(
-                    'ALTER TABLE colleges ADD COLUMN isActive TINYINT(1) NOT NULL DEFAULT 1'
-                );
-                console.log('🛠️  Added colleges.isActive column (auth DB)');
+                console.log(`🛠️  Added ${authSchema}.colleges.isActive`);
             }
         } catch (e) {
             console.warn('[colleges] isActive column check failed:', e.message);
-        }
-
-        // live_classes.user_id holds 11-digit auth-service userIds which
-        // exceed signed-INT max (2147483647). Older schema created the column
-        // as INT, which silently clamps the id and breaks the host lookup
-        // (the instructor name shows blank). Idempotently widen it to BIGINT.
-        try {
-            const { QueryTypes } = require('sequelize');
-            const [col] = await sequelize.query(
-                "SHOW COLUMNS FROM live_classes WHERE Field = 'user_id'",
-                { type: QueryTypes.SELECT }
-            );
-            if (col && /^int/i.test(col.Type)) {
-                await sequelize.query('ALTER TABLE live_classes MODIFY COLUMN user_id BIGINT NULL');
-                console.log('🛠️  Widened live_classes.user_id INT → BIGINT');
-            }
-        } catch (e) {
-            console.warn('[live-classes] user_id column check failed:', e.message);
         }
     })
     .then(start)

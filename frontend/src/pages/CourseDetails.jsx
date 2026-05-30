@@ -81,7 +81,7 @@ export default function CourseDetails({ slug: slugProp } = {}) {
                     role="status"
                     aria-live="polite"
                 >
-                    <div className="w-12 h-12 border-4 border-[#177385] border-t-transparent rounded-full animate-spin" />
+                    <div className="w-12 h-12 border-4 border-[#FF6A00] border-t-transparent rounded-full animate-spin" />
                     <p className="mt-4 text-gray-700 font-medium">Loading your course…</p>
                 </div>
             )}

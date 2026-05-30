@@ -145,7 +145,7 @@ export default function PostAssessment() {
   if (loading) {
     return (
       <div className="p-10 flex justify-center items-center">
-        <div className="w-10 h-10 border-4 border-[#177385] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-10 h-10 border-4 border-[#FF6A00] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -171,9 +171,9 @@ export default function PostAssessment() {
         {/* HEADER INFO */}
         <div className="flex justify-between items-center mb-4">
           <div className="text-sm text-gray-600 font-medium">
-            Total Marks: <span className="text-[#177385] font-bold">100</span>
-            &nbsp;|&nbsp; Questions: <span className="text-[#177385] font-bold">{questions.length}</span>
-            &nbsp;|&nbsp; Marks per Question: <span className="text-[#177385] font-bold">5</span>
+            Total Marks: <span className="text-[#FF6A00] font-bold">100</span>
+            &nbsp;|&nbsp; Questions: <span className="text-[#FF6A00] font-bold">{questions.length}</span>
+            &nbsp;|&nbsp; Marks per Question: <span className="text-[#FF6A00] font-bold">5</span>
           </div>
           {/* ⏳ TIMER */}
           <div className={`text-md font-bold ${timeLeft > 300 ? "text-black" : "text-red-600"}`}>
@@ -237,7 +237,7 @@ export default function PostAssessment() {
         {/* SUBMIT BUTTON */}
         <button
           onClick={handleSubmit}
-          className="mt-6 px-6 py-3 bg-[#177385] text-white text-md rounded-lg shadow hover:bg-[#135f6e]"
+          className="mt-6 px-6 py-3 bg-[#FF6A00] text-white text-md rounded-lg shadow hover:bg-[#cc5500]"
         >
           Submit Assessment
         </button>

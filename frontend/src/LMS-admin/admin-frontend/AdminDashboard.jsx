@@ -64,7 +64,7 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-const STATUS_COLORS = ['#12c093', '#169f48', '#ff2583', '#000', '#878d97', '#dadada'];
+const STATUS_COLORS = ['#12c093', '#FF6A00', '#ff2583', '#000', '#878d97', '#dadada'];
 const STATUS_LABELS = ['Active', 'Upcoming', 'Pending', 'Private', 'Draft', 'Inactive'];
 
 const STAT_ICONS = [

@@ -231,7 +231,7 @@ export function PreAssessmentOnboardingModal({
           "backdrop-blur-xl bg-white"
         )}
       >
-        <div className="bg-gradient-to-r from-[#177385] to-[#1ea5b8] px-6 py-5 text-white rounded-t-2xl">
+        <div className="bg-gradient-to-r from-[#FF6A00] to-[#FF8A33] px-6 py-5 text-white rounded-t-2xl">
           <DialogHeader className="space-y-1 text-left">
             <DialogTitle className="text-xl md:text-2xl font-semibold tracking-tight">
               Pre-Assessment Onboarding
@@ -246,7 +246,7 @@ export function PreAssessmentOnboardingModal({
         <form onSubmit={onSubmit} className="px-6 py-6 space-y-6" noValidate>
           {/* Personal info */}
           <section className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-[#177385]">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-[#FF6A00]">
               Personal Details
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -297,7 +297,7 @@ export function PreAssessmentOnboardingModal({
                     update("gender", e.target.value as PreAssessmentGender)
                   }
                   aria-invalid={!!errors.gender}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#177385] focus-visible:ring-offset-2"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6A00] focus-visible:ring-offset-2"
                 >
                   <option value="" disabled>
                     Select gender
@@ -318,7 +318,7 @@ export function PreAssessmentOnboardingModal({
               contact admin, or pick. */}
           <section className="space-y-3">
             <div className="flex items-baseline justify-between">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-[#177385]">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-[#FF6A00]">
                 Program Interested
               </h3>
               <span className="text-xs text-gray-500">Select one</span>
@@ -362,10 +362,10 @@ export function PreAssessmentOnboardingModal({
                       aria-checked={isSelected}
                       className={cn(
                         "group relative text-left rounded-xl border p-4 transition-all duration-200",
-                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#177385] focus-visible:ring-offset-2",
+                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6A00] focus-visible:ring-offset-2",
                         isSelected
-                          ? "border-[#177385] bg-[#177385]/5 shadow-md"
-                          : "border-gray-200 hover:border-[#177385]/50 hover:shadow-sm"
+                          ? "border-[#FF6A00] bg-[#FF6A00]/5 shadow-md"
+                          : "border-gray-200 hover:border-[#FF6A00]/50 hover:shadow-sm"
                       )}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -373,7 +373,7 @@ export function PreAssessmentOnboardingModal({
                           <p
                             className={cn(
                               "text-sm font-semibold leading-tight",
-                              isSelected ? "text-[#177385]" : "text-gray-800"
+                              isSelected ? "text-[#FF6A00]" : "text-gray-800"
                             )}
                           >
                             {program.title}
@@ -389,7 +389,7 @@ export function PreAssessmentOnboardingModal({
                           className={cn(
                             "h-4 w-4 rounded-full border flex items-center justify-center shrink-0 transition",
                             isSelected
-                              ? "border-[#177385] bg-[#177385]"
+                              ? "border-[#FF6A00] bg-[#FF6A00]"
                               : "border-gray-300 bg-white"
                           )}
                         >
@@ -408,7 +408,7 @@ export function PreAssessmentOnboardingModal({
                               <CheckCircle2
                                 className={cn(
                                   "h-3.5 w-3.5 mt-0.5 shrink-0",
-                                  isSelected ? "text-[#177385]" : "text-gray-400"
+                                  isSelected ? "text-[#FF6A00]" : "text-gray-400"
                                 )}
                               />
                               <span>{b}</span>
@@ -429,7 +429,7 @@ export function PreAssessmentOnboardingModal({
 
           {/* College proof upload */}
           <section className="space-y-2">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-[#177385]">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-[#FF6A00]">
               College ID / Proof
             </h3>
             <p className="text-xs text-gray-500">
@@ -457,8 +457,8 @@ export function PreAssessmentOnboardingModal({
                 "rounded-xl border-2 border-dashed px-4 py-6 cursor-pointer transition-all",
                 "flex flex-col items-center justify-center text-center gap-2",
                 dragActive
-                  ? "border-[#177385] bg-[#177385]/5"
-                  : "border-gray-300 hover:border-[#177385]/50 bg-gray-50/50",
+                  ? "border-[#FF6A00] bg-[#FF6A00]/5"
+                  : "border-gray-300 hover:border-[#FF6A00]/50 bg-gray-50/50",
                 errors.collegeProof && "border-red-400"
               )}
             >
@@ -472,7 +472,7 @@ export function PreAssessmentOnboardingModal({
               {form.collegeProof ? (
                 <div className="flex items-center gap-3 w-full justify-between">
                   <div className="flex items-center gap-3 min-w-0">
-                    <FileText className="h-5 w-5 text-[#177385] shrink-0" />
+                    <FileText className="h-5 w-5 text-[#FF6A00] shrink-0" />
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-gray-800 truncate">
                         {form.collegeProof.name}
@@ -496,9 +496,9 @@ export function PreAssessmentOnboardingModal({
                 </div>
               ) : (
                 <>
-                  <UploadCloud className="h-8 w-8 text-[#177385]" />
+                  <UploadCloud className="h-8 w-8 text-[#FF6A00]" />
                   <p className="text-sm text-gray-700">
-                    <span className="font-medium text-[#177385]">Click to upload</span> or
+                    <span className="font-medium text-[#FF6A00]">Click to upload</span> or
                     drag and drop
                   </p>
                   <p className="text-xs text-gray-500">PDF, JPG, PNG up to 5MB</p>
@@ -512,12 +512,12 @@ export function PreAssessmentOnboardingModal({
 
           {/* Declaration */}
           <section className="space-y-3 rounded-xl bg-gray-50 border border-gray-200 p-4">
-            <h3 className="text-sm font-semibold text-[#177385]">Declaration & Submit</h3>
+            <h3 className="text-sm font-semibold text-[#FF6A00]">Declaration & Submit</h3>
             <label className="flex items-start gap-3 cursor-pointer">
               <Checkbox
                 checked={form.declarationAccurate}
                 onCheckedChange={(v) => update("declarationAccurate", v === true)}
-                className="mt-0.5 border-[#177385] data-[state=checked]:bg-[#177385] data-[state=checked]:text-white"
+                className="mt-0.5 border-[#FF6A00] data-[state=checked]:bg-[#FF6A00] data-[state=checked]:text-white"
               />
               <span className="text-sm text-gray-700 leading-relaxed">
                 I confirm that all details provided above are accurate.
@@ -527,7 +527,7 @@ export function PreAssessmentOnboardingModal({
               <Checkbox
                 checked={form.declarationCommunication}
                 onCheckedChange={(v) => update("declarationCommunication", v === true)}
-                className="mt-0.5 border-[#177385] data-[state=checked]:bg-[#177385] data-[state=checked]:text-white"
+                className="mt-0.5 border-[#FF6A00] data-[state=checked]:bg-[#FF6A00] data-[state=checked]:text-white"
               />
               <span className="text-sm text-gray-700 leading-relaxed">
                 I agree to receive communication related to the test and further updates.
@@ -564,7 +564,7 @@ export function PreAssessmentOnboardingModal({
                 !form.selectedProgramId
               }
               className={cn(
-                "rounded-lg bg-[#177385] text-white hover:bg-[#135f6e] transition-all shadow-md min-w-[160px]",
+                "rounded-lg bg-[#FF6A00] text-white hover:bg-[#cc5500] transition-all shadow-md min-w-[160px]",
                 "disabled:bg-gray-300 disabled:text-gray-600 disabled:cursor-not-allowed disabled:shadow-none"
               )}
             >

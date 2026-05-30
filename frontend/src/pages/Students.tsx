@@ -217,7 +217,7 @@ const Students = () => {
         <div className="container-ngo">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl md:text-4xl font-bold">
-              Yagna’s Career{" "}
+              VR Robotics’ Career{" "}
               <span className="text-gradient">Launch Programs</span> vs{" "}
               <span className="text-gradient">Traditional Programs</span>
             </h2>
@@ -231,7 +231,7 @@ const Students = () => {
             {[
               {
                 icon: Globe,
-                title: "Yagna Tech’s Career Launch Opportunities",
+                title: "VR Robotics Academy’s Career Launch Opportunities",
                 description:
                   "Fast-track AI and software careers with real corporate exposure.",
                 points: [
@@ -313,7 +313,7 @@ const Students = () => {
                       <div key={idx} className="flex items-start space-x-2">
                         <CheckCircle className="w-5 h-5 min-w-[20px] min-h-[20px] text-warm-green" />
                         <span className="text-muted-foreground">
-                          <strong style={{ color: "#177385" }}>
+                          <strong style={{ color: "#FF6A00" }}>
                             {point.heading}:
                           </strong>{" "}
                           {point.text}

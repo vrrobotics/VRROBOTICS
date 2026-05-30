@@ -251,15 +251,16 @@ const dbList = async (query, user = null) => {
     // not category-driven. `college` here is a clgId string sent by the
     // Manage Courses filter; an absent value means "show all colleges".
     if (college && college !== 'all') {
-        const escapedClgId = Course.sequelize.escape(JSON.stringify(String(college)));
+        // Postgres JSONB contains (@>) — RHS is a JSON array.
+        const escapedClgId = Course.sequelize.escape(JSON.stringify([String(college)]));
         where[Op.and] = [
             ...(Array.isArray(where[Op.and]) ? where[Op.and] : []),
-            Course.sequelize.literal(`JSON_CONTAINS(\`Course\`.\`clg_ids\`, ${escapedClgId})`),
+            Course.sequelize.literal(`"Course"."clg_ids" @> ${escapedClgId}::jsonb`),
         ];
         parent.college = college;
     }
-    if (search) where.title = { [Op.like]: `%${search}%` };
-    if (price && price !== 'all') where.is_paid = price === 'paid' ? 1 : price === 'free' ? 0 : 2;
+    if (search) where.title = { [Op.iLike]: `%${search}%` };
+    if (price && price !== 'all') where.is_paid = price === 'paid' ? true : price === 'free' ? false : null;
     if (instructor && instructor !== 'all') where.user_id = instructor;
     if (status && status !== 'all') where.status = status;
 
@@ -439,24 +440,31 @@ const create = async ({ body, files = {}, userId }) => {
 
     data.instructor_ids = JSON.stringify(b.instructors || [finalUserId]);
 
+    // Create the row first so we know course.id, then upload every media
+    // asset under courses/<id>/... — this groups all of one course's files
+    // (thumbnail/banner/preview here; lesson attachments + Bunny collection
+    // in CurriculumService) into one R2 folder, matching the per-course
+    // layout used by Udemy/Teachable/Thinkific.
+    const course = await courseRepo.create(data);
+    await course.update({ slug: slugify(`${b.title}-${course.id}`) });
+
+    const mediaPatch = {};
     if (files.thumbnail?.[0]) {
         const f = files.thumbnail[0];
-        data.thumbnail = `uploads/course-thumbnail/${niceFileName(b.title, f.originalname.split('.').pop())}`;
-        await upload(f, data.thumbnail, 400, 400);
+        const dest = `uploads/courses/${course.id}/thumbnail/${niceFileName(b.title, f.originalname.split('.').pop())}`;
+        mediaPatch.thumbnail = await upload(f, dest, 400, 400);
     }
     if (files.banner?.[0]) {
         const f = files.banner[0];
-        data.banner = `uploads/course-banner/${niceFileName(b.title, f.originalname.split('.').pop())}`;
-        await upload(f, data.banner, 1400, 1400);
+        const dest = `uploads/courses/${course.id}/banner/${niceFileName(b.title, f.originalname.split('.').pop())}`;
+        mediaPatch.banner = await upload(f, dest, 1400, 1400);
     }
     if (files.preview?.[0]) {
         const f = files.preview[0];
-        data.preview = `uploads/course-preview/${niceFileName(b.title, f.originalname.split('.').pop())}`;
-        await upload(f, data.preview);
+        const dest = `uploads/courses/${course.id}/preview/${niceFileName(b.title, f.originalname.split('.').pop())}`;
+        mediaPatch.preview = await upload(f, dest);
     }
-
-    const course = await courseRepo.create(data);
-    await course.update({ slug: slugify(`${b.title}-${course.id}`) });
+    if (Object.keys(mediaPatch).length) await course.update(mediaPatch);
 
     // Fire-and-forget notification to every student in the course's
     // (college, batch) intersection. NOT awaited — the admin already saw
@@ -564,22 +572,22 @@ const update = async ({ id, body, files = {} }) => {
     } else if (b.tab === 'media') {
         if (files.thumbnail?.[0]) {
             const f = files.thumbnail[0];
-            data.thumbnail = `uploads/course-thumbnail/${niceFileName(b.title || course.title, f.originalname.split('.').pop())}`;
-            await upload(f, data.thumbnail, 400, 400);
+            const dest = `uploads/courses/${id}/thumbnail/${niceFileName(b.title || course.title, f.originalname.split('.').pop())}`;
+            data.thumbnail = await upload(f, dest, 400, 400);
             removeFile(course.thumbnail);
         }
         if (files.banner?.[0]) {
             const f = files.banner[0];
-            data.banner = `uploads/course-banner/${niceFileName(b.title || course.title, f.originalname.split('.').pop())}`;
-            await upload(f, data.banner, 1400, 1400);
+            const dest = `uploads/courses/${id}/banner/${niceFileName(b.title || course.title, f.originalname.split('.').pop())}`;
+            data.banner = await upload(f, dest, 1400, 1400);
             removeFile(course.banner);
         }
         if (b.preview_video_provider === 'link') {
             data.preview = b.preview_link;
         } else if (b.preview_video_provider === 'file' && files.preview?.[0]) {
             const f = files.preview[0];
-            data.preview = `uploads/course-preview/${niceFileName(b.title || course.title, f.originalname.split('.').pop())}`;
-            await upload(f, data.preview);
+            const dest = `uploads/courses/${id}/preview/${niceFileName(b.title || course.title, f.originalname.split('.').pop())}`;
+            data.preview = await upload(f, dest);
             removeFile(course.preview);
         }
     } else if (b.tab === 'seo') {
@@ -605,9 +613,8 @@ const update = async ({ id, body, files = {} }) => {
 
         if (files.og_image?.[0]) {
             const f = files.og_image[0];
-            const dest = `uploads/seo-og-images/${id}-${f.originalname}`;
-            await upload(f, dest, 600);
-            seoData.og_image = dest;
+            const dest = `uploads/courses/${id}/seo/${niceFileName('og', f.originalname.split('.').pop())}`;
+            seoData.og_image = await upload(f, dest, 600);
             if (seo) removeFile(seo.og_image);
         }
         if (seo) await seo.update(seoData);
@@ -644,7 +651,7 @@ const remove = async (id) => {
     const lessons = await Lesson.findAll({ where: { course_id: id } });
     for (const lesson of lessons) {
         removeFile(lesson.lesson_src);
-        removeFile(`uploads/lesson_file/attachment/${lesson.attachment}`);
+        removeFile(lesson.attachment);
         if (lesson.lesson_type === 'quiz') {
             await questionRepo.destroyByQuiz(lesson.id);
             await submissionRepo.destroyByQuiz(lesson.id);

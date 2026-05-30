@@ -39,9 +39,16 @@ axiosInstance.interceptors.response.use(
       const onLoginPage =
         typeof window !== 'undefined' && window.location.pathname === '/login';
 
-      // Skip the hard redirect for: (a) the silent auth probe and (b) when
-      // we're already on /login. Both cases were causing reload loops.
-      if (!isSilent && !onLoginPage && typeof window !== 'undefined') {
+      // Only hard-redirect to /login when the user is GENUINELY logged out
+      // (no access token stored). When a token IS present, a 401 from a
+      // single background widget (e.g. a feature endpoint whose service is
+      // down or returns 401) must NOT nuke the whole session — that caused
+      // the post-login "dashboard then bounce back to /login" loop. In that
+      // case we let the individual component handle its own failed request.
+      const hasToken =
+        typeof window !== 'undefined' && Boolean(localStorage.getItem('accessToken'));
+
+      if (!isSilent && !onLoginPage && !hasToken && typeof window !== 'undefined') {
         window.location.href = '/login';
       }
     }

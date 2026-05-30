@@ -65,9 +65,9 @@ export const getCourseById = async (req, res) => {
   }
 };
 
-// Get all courses offered at a given college. Uses Sequelize's JSON_CONTAINS
-// helper for MySQL so we let the DB do the filtering instead of pulling every
-// row over the wire.
+// Get all courses offered at a given college. Postgres JSONB `@>` "contains"
+// operator on the clgIds array column — same semantics as the prior MySQL
+// JSON_CONTAINS, just dialect-native.
 export const getCoursesByCollege = async (req, res) => {
   const { clgId } = req.params;
   if (!clgId) {
@@ -75,10 +75,9 @@ export const getCoursesByCollege = async (req, res) => {
   }
   try {
     const { Sequelize } = await import('sequelize');
+    const escaped = Course.sequelize.escape(JSON.stringify([String(clgId)]));
     const courses = await Course.findAll({
-      where: Sequelize.literal(
-        `JSON_CONTAINS(clgIds, ${Course.sequelize.escape(JSON.stringify(clgId))})`
-      ),
+      where: Sequelize.literal(`"clgIds" @> ${escaped}::jsonb`),
     });
     res.status(200).json(courses);
   } catch (error) {

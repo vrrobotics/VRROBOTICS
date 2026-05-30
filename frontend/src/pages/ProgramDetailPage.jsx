@@ -46,10 +46,10 @@ const ProgramDetailPage = () => {
             }}
             className="bg-gray-200 text-black px-3 py-1 rounded hover:bg-gray-300"
           >
-            <ArrowLeft className="h-5 w-5 text-[#177385]" />
+            <ArrowLeft className="h-5 w-5 text-[#FF6A00]" />
           </button>
 
-          <h3 className="font-semibold text-lg text-[#177385]">Chapters</h3>
+          <h3 className="font-semibold text-lg text-[#FF6A00]">Chapters</h3>
         </div>
 
         {/* Chapter Buttons */}
@@ -57,7 +57,7 @@ const ProgramDetailPage = () => {
           <Button
             key={chapter.id}
             className={`w-full justify-start text-black bg-transparent border border-black/20 ${currentIndex === index
-                ? "bg-[#177385] text-white"
+                ? "bg-[#FF6A00] text-white"
                 : "hover:bg-gradient-hero"
               }`}
             onClick={() => setCurrentIndex(index)}
@@ -82,7 +82,7 @@ const ProgramDetailPage = () => {
                 disabled={currentIndex === 0}
                 className={`px-4 py-2 ${currentIndex === 0
                     ? "bg-gray-300 cursor-not-allowed"
-                    : "bg-[#177385] text-white hover:bg-[#135f6e]"
+                    : "bg-[#FF6A00] text-white hover:bg-[#cc5500]"
                   }`}
               >
                 <StepBackIcon />
@@ -93,14 +93,14 @@ const ProgramDetailPage = () => {
                 disabled={currentIndex === chapters.length - 1}
                 className={`px-4 py-2 ${currentIndex === chapters.length - 1
                     ? "bg-gray-300 cursor-not-allowed"
-                    : "bg-[#177385] text-white hover:bg-[#135f6e]"
+                    : "bg-[#FF6A00] text-white hover:bg-[#cc5500]"
                   }`}
               >
                 <StepForward />
               </Button>
             </div>
 
-            <h2 className="text-xl font-bold mb-4 text-[#177385]">
+            <h2 className="text-xl font-bold mb-4 text-[#FF6A00]">
               {selectedChapter.title}
             </h2>
 
@@ -122,13 +122,13 @@ const ProgramDetailPage = () => {
         {/* Doubts Section */}
         <Card className="rounded-xl shadow-md">
           <CardContent className="p-4">
-            <h3 className="text-lg font-semibold mb-3 text-[#177385]">Doubts / Q&A</h3>
+            <h3 className="text-lg font-semibold mb-3 text-[#FF6A00]">Doubts / Q&A</h3>
             <textarea
               placeholder="Ask your doubt here..."
-              className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-[#177385] focus:outline-none"
+              className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-[#FF6A00] focus:outline-none"
               rows={3}
             />
-            <Button className="mt-3 bg-[#177385] text-white hover:bg-[#135f6e]">
+            <Button className="mt-3 bg-[#FF6A00] text-white hover:bg-[#cc5500]">
               Submit Doubt
             </Button>
           </CardContent>

@@ -48,7 +48,7 @@ const enrolledStudentEmails = async (courseId) => {
         const users = await authDb.query(
             `SELECT u.email, u.name
                FROM users u
-              WHERE u.userId IN (:ids) AND u.email IS NOT NULL AND u.email <> ''`,
+              WHERE u."userId" IN (:ids) AND u.email IS NOT NULL AND u.email <> ''`,
             { replacements: { ids: userIds }, type: QueryTypes.SELECT }
         );
         return users.map((u) => ({ email: u.email, name: u.name }));

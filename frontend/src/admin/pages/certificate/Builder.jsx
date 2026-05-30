@@ -161,7 +161,7 @@ export default function CertificateBuilderPage() {
                     <button
                         type="button"
                         onClick={() => nav('/admin/certificate')}
-                        style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: '#169f48', cursor: 'pointer', fontSize: 13 }}
+                        style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: '#FF6A00', cursor: 'pointer', fontSize: 13 }}
                     >
                         Back
                     </button>
@@ -310,8 +310,8 @@ function renderElementContent(el) {
         return (
             <span style={{
                 display: 'inline-block', width: 80, height: 80,
-                border: '1px dashed #1fb6a6', borderRadius: 6,
-                color: '#1fb6a6', fontSize: 11, textAlign: 'center', lineHeight: '80px',
+                border: '1px dashed #FF6A00', borderRadius: 6,
+                color: '#FF6A00', fontSize: 11, textAlign: 'center', lineHeight: '80px',
             }}>
                 {'{qr_code}'}
             </span>

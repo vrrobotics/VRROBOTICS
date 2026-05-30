@@ -5,15 +5,29 @@
 //
 // Usage:  node diag-seed-colleges.js
 //
-// Idempotent — uses INSERT ... ON DUPLICATE KEY UPDATE so re-runs are safe.
+// Idempotent — Postgres ON CONFLICT DO UPDATE so re-runs are safe.
 
 require('dotenv').config();
 const { Sequelize, QueryTypes } = require('sequelize');
 
-const authDb = new Sequelize(
-    process.env.AUTH_DB_NAME, process.env.DB_USER, process.env.DB_PASS,
-    { host: process.env.DB_HOST, port: process.env.DB_PORT, dialect: 'mysql', logging: false }
-);
+const authDb = process.env.DATABASE_URL
+    ? new Sequelize(process.env.DATABASE_URL, {
+          dialect: 'postgres',
+          logging: false,
+          schema: process.env.AUTH_DB_SCHEMA || 'lucy_devdb',
+          dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
+      })
+    : new Sequelize(
+          process.env.AUTH_DB_NAME, process.env.DB_USER, process.env.DB_PASS,
+          {
+              host: process.env.DB_HOST,
+              port: process.env.DB_PORT,
+              dialect: 'postgres',
+              logging: false,
+              schema: process.env.AUTH_DB_SCHEMA || 'lucy_devdb',
+              dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
+          }
+      );
 
 // Pulled from the diagnostic — these are the codes admins were created with.
 // Add more here if new admins are seeded with new codes.
@@ -26,15 +40,17 @@ const COLLEGES = [
     try {
         for (const c of COLLEGES) {
             await authDb.query(
-                `INSERT INTO colleges (clgId, accesskey, clgName, createdAt, updatedAt)
+                `INSERT INTO colleges ("clgId", "accesskey", "clgName", "createdAt", "updatedAt")
                  VALUES (:clgId, :accesskey, :clgName, NOW(), NOW())
-                 ON DUPLICATE KEY UPDATE clgName = VALUES(clgName), updatedAt = NOW()`,
+                 ON CONFLICT ("clgId") DO UPDATE SET
+                    "clgName"   = EXCLUDED."clgName",
+                    "updatedAt" = NOW()`,
                 { replacements: c, type: QueryTypes.INSERT }
             );
             console.log(`  upserted ${c.clgId} -> ${c.clgName}`);
         }
         const all = await authDb.query(
-            `SELECT clgId, clgName FROM colleges ORDER BY clgName`,
+            `SELECT "clgId", "clgName" FROM colleges ORDER BY "clgName"`,
             { type: QueryTypes.SELECT }
         );
         console.log(`\n=== colleges table (${all.length}) ===`);

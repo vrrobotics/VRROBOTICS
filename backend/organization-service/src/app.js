@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import './observability.js'; // Sentry.init() — keep first
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -8,6 +9,7 @@ import sequelize from './db/index.js';
 import cookieParser from "cookie-parser";
 import courseRoutes from './routes/course.routes.js';
 import enrollRoutes from './routes/enroll.routes.js';
+import { attachErrorHandler } from './observability.js';
 
 
 
@@ -44,5 +46,7 @@ export async function initDb() {
   await sequelize.sync();
   console.log('🗄️  Database connected and synced---');
 }
+
+attachErrorHandler(app);
 
 export default app;

@@ -159,8 +159,8 @@ const [loadingProfile, setLoadingProfile] = useState(true);
         <div className="lg:col-span-2 space-y-6">
           <Card className="rounded-2xl shadow-lg border-0 min-h">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[#177385]">
-                <BookOpen className="h-5 w-5 text-[#177385]" />
+              <CardTitle className="flex items-center gap-2 text-[#FF6A00]">
+                <BookOpen className="h-5 w-5 text-[#FF6A00]" />
                 Active Programs
               </CardTitle>
             </CardHeader>
@@ -174,12 +174,12 @@ const [loadingProfile, setLoadingProfile] = useState(true);
                 ) : (
                   activePrograms.map((program, index) => (
                     <div key={program.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className="w-2 h-2 bg-[#177385] rounded-full"></div>
+                      <div className="w-2 h-2 bg-[#FF6A00] rounded-full"></div>
                       <div className="flex-1">
                         <p className="text-lg font-medium">{program.title}</p>
                         <p className="text-sm text-gray-500">{program.short_description}</p>
                       </div>
-                      <p className="text-sm font-medium rounded-full px-3 py-1 border border-black/20 bg-[#177385] text-white">
+                      <p className="text-sm font-medium rounded-full px-3 py-1 border border-black/20 bg-[#FF6A00] text-white">
                         Enrolled: {program.total_enrollment}
                       </p>
                       <ChevronRight className="h-4 w-4 text-black-400" />
@@ -429,8 +429,8 @@ export default Overview;
 //   <div className="lg:col-span-2 space-y-6">
 //     <Card className="rounded-2xl shadow-lg border-0 min-h">
 //       <CardHeader>
-//         <CardTitle className="flex items-center gap-2 text-[#177385]">
-//           <Clock className="h-5 w-5 text-[#177385]" />
+//         <CardTitle className="flex items-center gap-2 text-[#FF6A00]">
+//           <Clock className="h-5 w-5 text-[#FF6A00]" />
 //           Active Programs
 //         </CardTitle>
 //       </CardHeader>
@@ -447,12 +447,12 @@ export default Overview;
 //                 key={index}
 //                 className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
 //               >
-//                 <div className="w-2 h-2 bg-[#177385] rounded-full"></div>
+//                 <div className="w-2 h-2 bg-[#FF6A00] rounded-full"></div>
 //                 <div className="flex-1">
 //                   <p className="text-lg font-medium">{activity.title}</p>
                  
 //                 </div>
-//                  <p className="text-sm font-medium rounded-full px-3 py-1 border border-black/20 bg-[#177385] text-white">
+//                  <p className="text-sm font-medium rounded-full px-3 py-1 border border-black/20 bg-[#FF6A00] text-white">
 //                      Status: {activity.status}
 //                   </p>
 //                 <ChevronRight className="h-4 w-4 text-black-400" />

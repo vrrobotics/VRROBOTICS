@@ -50,3 +50,13 @@ exports.lesson_sort = asyncHandler(async (req, res) => {
     const ids = req.body.itemJSON || req.body.ids || [];
     res.json(await curriculumService.sortLessons(ids));
 });
+
+// Direct-to-Bunny video upload
+
+exports.video_create_upload = asyncHandler(async (req, res) => {
+    res.json(await curriculumService.createVideoUpload(req.body.title, req.body.course_id));
+});
+
+exports.video_status = asyncHandler(async (req, res) => {
+    res.json(await curriculumService.getVideoStatus(req.params.guid));
+});

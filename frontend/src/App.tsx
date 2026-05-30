@@ -10,6 +10,13 @@ import Layout from "./components/layout/Layout";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Courses from "./pages/Courses";
+import VrCourses from "./pages/VrCourses";
+import SummerCamp from "./pages/SummerCamp";
+import Books from "./pages/Books";
+import Gallery from "./pages/Gallery";
+import Locations from "./pages/Locations";
+import InstructorDashboard from "./pages/InstructorDashboard";
+import Auth from "./pages/Auth";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -93,6 +100,13 @@ const App = () => (
             <Route path="/" element={<Layout><Home /></Layout>} />
             <Route path="/about" element={<Layout><About /></Layout>} />
             <Route path="/courses" element={<Layout><Courses /></Layout>} />
+            <Route path="/vr-courses" element={<Layout><VrCourses /></Layout>} />
+            <Route path="/summer-camp" element={<Layout><SummerCamp /></Layout>} />
+            <Route path="/books" element={<Layout><Books /></Layout>} />
+            <Route path="/gallery" element={<Layout><Gallery /></Layout>} />
+            <Route path="/locations" element={<Layout><Locations /></Layout>} />
+            <Route path="/instructor" element={<InstructorDashboard />} />
+            <Route path="/auth" element={<Auth />} />
             <Route path="/contact" element={<Layout><Contact /></Layout>} />
             <Route path="/register" element={<Layout><Register /></Layout>} />
             <Route path="/faqs" element={<Layout><FAQs /></Layout>} />

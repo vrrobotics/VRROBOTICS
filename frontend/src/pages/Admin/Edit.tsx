@@ -45,7 +45,7 @@ const Edit: React.FC<EditProps> = ({ onClose }) => {
                 name="name"
                 value={form.name}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -56,7 +56,7 @@ const Edit: React.FC<EditProps> = ({ onClose }) => {
                 name="location"
                 value={form.location}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -69,7 +69,7 @@ const Edit: React.FC<EditProps> = ({ onClose }) => {
                 name="email"
                 value={form.email}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -80,7 +80,7 @@ const Edit: React.FC<EditProps> = ({ onClose }) => {
                 name="phone"
                 value={form.phone}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -92,7 +92,7 @@ const Edit: React.FC<EditProps> = ({ onClose }) => {
                 name="students"
                 value={form.students}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -103,7 +103,7 @@ const Edit: React.FC<EditProps> = ({ onClose }) => {
               value={form.description}
               onChange={handleChange}
               rows={3}
-              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
             />
           </div>
           <div>
@@ -112,7 +112,7 @@ const Edit: React.FC<EditProps> = ({ onClose }) => {
               name="status"
               value={form.status}
               onChange={handleChange}
-              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
               required
             >
               <option value="active">Active</option>
@@ -121,7 +121,7 @@ const Edit: React.FC<EditProps> = ({ onClose }) => {
           </div>
           <button
             type="submit"
-            className="bg-[#219A85] hover:bg-[#177385] text-white font-semibold px-6 py-2 rounded-lg transition-colors mt-4"
+            className="bg-[#FF6A00] hover:bg-[#FF6A00] text-white font-semibold px-6 py-2 rounded-lg transition-colors mt-4"
           >
             Save Changes
           </button>

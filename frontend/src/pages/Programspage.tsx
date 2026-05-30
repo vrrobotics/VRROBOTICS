@@ -165,7 +165,7 @@ const ProgramsPage = () => {
             below — otherwise the cards flash for one frame on slower networks. */}
         {(loading || progressLoading || hasCollege === null) && (
           <div className="flex justify-center py-10">
-            <div className="w-10 h-10 border-4 border-[#177385] border-t-transparent rounded-full animate-spin" />
+            <div className="w-10 h-10 border-4 border-[#FF6A00] border-t-transparent rounded-full animate-spin" />
           </div>
         )}
         {error && !loading && <p className="text-red-600">{error}</p>}
@@ -234,7 +234,7 @@ const ProgramsPage = () => {
                 )}
                 <CardHeader>
                   <div className="flex items-center justify-between gap-3">
-                    <CardTitle className="text-[#177385]">{course.title}</CardTitle>
+                    <CardTitle className="text-[#FF6A00]">{course.title}</CardTitle>
                     {/* Bare arrow — gated on pre-assessment. Disabled until
                         `locked` flips false; opens the course details, or
                         jumps straight back into the player when enrolled. */}
@@ -243,7 +243,7 @@ const ProgramsPage = () => {
                       className={
                         locked
                           ? "shrink-0 bg-transparent border-0 p-0 text-gray-400 cursor-not-allowed"
-                          : "shrink-0 bg-transparent border-0 p-0 text-[#177385] hover:text-[#135f6e] cursor-pointer"
+                          : "shrink-0 bg-transparent border-0 p-0 text-[#FF6A00] hover:text-[#cc5500] cursor-pointer"
                       }
                       onClick={
                         locked
@@ -296,7 +296,7 @@ const ProgramsPage = () => {
                     const RADIUS = (SIZE - STROKE) / 2;
                     const CIRC = 2 * Math.PI * RADIUS;
                     const dashOffset = CIRC * (1 - pct / 100);
-                    const ringColor = isComplete ? "#059669" : "#177385";
+                    const ringColor = isComplete ? "#059669" : "#FF6A00";
                     const ringGlow = isComplete ? "#34d399" : "#1f8a9f";
                     const gradId = `cp-grad-${course.id}`;
                     return (
@@ -347,7 +347,7 @@ const ProgramsPage = () => {
                             {isComplete ? (
                               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                             ) : (
-                              <span className="text-[10px] font-bold text-[#177385] leading-none">
+                              <span className="text-[10px] font-bold text-[#FF6A00] leading-none">
                                 {pct}
                                 <span className="text-[7px] font-semibold">%</span>
                               </span>

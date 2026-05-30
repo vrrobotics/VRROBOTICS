@@ -108,6 +108,7 @@
 
 
 import 'dotenv/config';
+import './observability.js'; // Sentry.init() — keep first
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -119,6 +120,7 @@ import authRoutes from './routes/auth.routes.js';
 import roleRoutes from './routes/roles.routes.js';
 import cookieParser from "cookie-parser";
 import { generateRoleID } from './utils/uidGeneration.js';
+import { attachErrorHandler } from './observability.js';
 
 const app = express();
 
@@ -144,6 +146,12 @@ app.get("/", (req, res) => {
 app.use('/', authRoutes);
 app.use('/roles', roleRoutes);
 
+// Alias mounts so the frontend (which calls the Bastion-style /api/v1/auth/*
+// path) can reach this service directly during local dev, without the gateway.
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/roles', roleRoutes);
+app.get('/api/v1/health', (req, res) => res.json({ status: 'ok', service: process.env.SERVICE_NAME }));
+
 const ROLES = ['student', 'instructor', 'admin', 'auditor'];
 
 export async function initDb() {
@@ -161,5 +169,9 @@ export async function initDb() {
 
   console.log('🗄️  Database connected and synced---');
 }
+
+// Sentry error handler — must come after routes, before any custom
+// error-handling middleware / export.
+attachErrorHandler(app);
 
 export default app;

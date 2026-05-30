@@ -2,6 +2,16 @@ import { useState } from 'react';
 
 const API = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:4000';
 
+// Stored media values are canonical asset URLs (Cloudflare R2 public URLs).
+// Pass absolute URLs through unchanged; only legacy relative "uploads/..."
+// paths get the admin origin prepended.
+const assetUrl = (p) => {
+    const s = String(p || '').trim();
+    if (!s) return s;
+    if (/^(https?:|blob:|data:)/i.test(s)) return s;
+    return `${API}/${s.replace(/^\/+/, '')}`;
+};
+
 export default function MediaTab({ course, onSave, formId }) {
     const [provider, setProvider] = useState('file');
     const [link, setLink] = useState(course.preview || '');
@@ -21,12 +31,12 @@ export default function MediaTab({ course, onSave, formId }) {
         <form id={formId} onSubmit={submit} encType="multipart/form-data">
             <div className="mb-4">
                 <label className="ol-form-label">Thumbnail</label>
-                {course.thumbnail && <div className="mb-2"><img src={`${API}/${course.thumbnail}`} alt="" className="max-w-[200px] rounded-ol-8 border border-ebordermuted" /></div>}
+                {course.thumbnail && <div className="mb-2"><img src={assetUrl(course.thumbnail)} alt="" className="max-w-[200px] rounded-ol-8 border border-ebordermuted" /></div>}
                 <input className="ol-form-control" type="file" accept="image/*" onChange={(e) => setFiles({ ...files, thumbnail: e.target.files[0] })} />
             </div>
             <div className="mb-4">
                 <label className="ol-form-label">Banner</label>
-                {course.banner && <div className="mb-2"><img src={`${API}/${course.banner}`} alt="" className="max-w-[320px] rounded-ol-8 border border-ebordermuted" /></div>}
+                {course.banner && <div className="mb-2"><img src={assetUrl(course.banner)} alt="" className="max-w-[320px] rounded-ol-8 border border-ebordermuted" /></div>}
                 <input className="ol-form-control" type="file" accept="image/*" onChange={(e) => setFiles({ ...files, banner: e.target.files[0] })} />
             </div>
             <div className="mb-3">

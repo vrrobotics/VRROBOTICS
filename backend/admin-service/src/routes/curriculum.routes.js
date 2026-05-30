@@ -29,4 +29,8 @@ router.get('/lesson/:id', adminOrInstructor, ctrl.lesson_show);
 router.get('/lesson/delete/:id', adminOrInstructor, ctrl.lesson_delete);
 router.post('/lesson/sort', adminOrInstructor, ctrl.lesson_sort);
 
+// Direct-to-Bunny video upload: mint a presigned TUS ticket, then poll status.
+router.post('/video/create-upload', adminOrInstructor, ctrl.video_create_upload);
+router.get('/video/:guid/status', adminOrInstructor, ctrl.video_status);
+
 module.exports = router;

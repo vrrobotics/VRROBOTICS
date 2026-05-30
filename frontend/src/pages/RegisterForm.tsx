@@ -23,7 +23,7 @@ const Register = () => {
         <Card className="card-ngo border-0">
           <CardHeader className="text-center">
             <CardTitle className="text-xl md:text-2xl font-bold text-gradient-800">
-              Register to Take the YagnaTech Pre-Assessment Test
+              Register to Take the VR Robotics Academy Pre-Assessment Test
             </CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
               Complete the form below to register for the assessment

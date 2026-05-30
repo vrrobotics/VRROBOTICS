@@ -8,22 +8,22 @@ const findRootWithChildren = () =>
         order: [['sort', 'ASC']],
     });
 
-// College-scoped variant. Returns only categories whose clg_ids JSON array
+// College-scoped variant. Returns only categories whose clg_ids JSONB array
 // contains the given clgId — applied to BOTH parents and their children so a
-// student never sees another college's category at any level. We use
-// JSON_CONTAINS (MySQL) via a sequelize.literal; the value is escaped to
-// prevent injection from the query string.
+// student never sees another college's category at any level. We use the
+// Postgres JSONB `@>` (contains) operator via a sequelize.literal; the value
+// is escaped to prevent injection from the query string.
 const findRootWithChildrenForCollege = (clgId) => {
-    const escaped = Category.sequelize.escape(JSON.stringify(clgId));
-    // Parent rows: unqualified column is fine (single base table in the
-    // outer WHERE).
+    // @> needs a JSON array on the RHS for "contains element X".
+    const escaped = Category.sequelize.escape(JSON.stringify([String(clgId)]));
+    // Parent rows: Sequelize quotes table aliases as "Category" by default
+    // on Postgres. JSONB operators are case-sensitive so the cast is required.
     const parentContains = Category.sequelize.literal(
-        `JSON_CONTAINS(\`Category\`.\`clg_ids\`, ${escaped})`
+        `"Category"."clg_ids" @> ${escaped}::jsonb`
     );
-    // Child rows: the include is aliased as `childs` by Sequelize, so the
-    // JSON_CONTAINS must reference that alias to avoid an ambiguous column.
+    // Child rows: the include alias is `childs`.
     const childContains = Category.sequelize.literal(
-        `JSON_CONTAINS(\`childs\`.\`clg_ids\`, ${escaped})`
+        `"childs"."clg_ids" @> ${escaped}::jsonb`
     );
     return Category.findAll({
         where: {

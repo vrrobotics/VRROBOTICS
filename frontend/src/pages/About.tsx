@@ -115,7 +115,7 @@ const About = () => {
               </h2>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  Yagna Tech Foundation is a Section 8 Not-For-Profit organization in India. It was founded by doctorates from prestigious universities with extensive corporate experience to address the critical gap between academic preparation and industry requirements. We believe in creating sustainable bridges between educational institutions and Corporations to benefit all stakeholders.
+                  VR Robotics Academy is a future-focused robotics and AI learning institute. It was founded by doctorates from prestigious universities with extensive corporate experience to address the critical gap between academic preparation and industry requirements. We believe in creating sustainable bridges between educational institutions and Corporations to benefit all stakeholders.
                 </p>
                 <p>
                   Today, we partner with organizations worldwide to identify educational gaps and 

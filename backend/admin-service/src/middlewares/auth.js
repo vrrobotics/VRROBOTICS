@@ -1,14 +1,130 @@
+const { createRemoteJWKSet, jwtVerify } = require('jose');
 const jwt = require('jsonwebtoken');
 const env = require('../config/env');
+const authDb = require('../config/authDatabase');
+const { QueryTypes } = require('sequelize');
 
-const auth = (req, res, next) => {
+// Two Supabase signing styles:
+//   - new asymmetric (RS256/ES256) via JWKS endpoint
+//   - legacy HS256 via the project's JWT secret
+// We try JWKS first, fall back to HS256 — supports both legacy and migrated
+// projects without changing config.
+const supabaseUrl = env.supabase.url || '';
+const jwks = supabaseUrl
+    ? createRemoteJWKSet(new URL(`${supabaseUrl}/auth/v1/.well-known/jwks.json`))
+    : null;
+const supabaseSecret = env.supabase.jwtSecret
+    ? new TextEncoder().encode(env.supabase.jwtSecret)
+    : null;
+
+async function verifySupabaseToken(token) {
+    if (jwks) {
+        try {
+            const { payload } = await jwtVerify(token, jwks);
+            return payload;
+        } catch (_) { /* try HS256 next */ }
+    }
+    if (supabaseSecret) {
+        try {
+            const { payload } = await jwtVerify(token, supabaseSecret, { algorithms: ['HS256'] });
+            return payload;
+        } catch (_) { /* both verification paths failed */ }
+    }
+    return null;
+}
+
+// Small role cache keyed by supabase uid. 5min TTL — propagates role
+// changes (admin → instructor demotion etc.) without a service restart.
+const profileCache = new Map();
+const PROFILE_TTL_MS = 5 * 60 * 1000;
+
+async function loadProfile(supabaseUid, emailFromToken) {
+    const hit = profileCache.get(supabaseUid);
+    if (hit && hit.expires > Date.now()) return hit.value;
+
+    // lucy_devdb.users stores `supabase:<uid>` in passwordHash for newly
+    // created profiles. Fall back to email match for older / migrated rows.
+    let rows = await authDb.query(
+        `SELECT u."userId", u.email, u."roleId", u."collegeId", r.role
+           FROM users u
+           JOIN roles r ON r."roleId" = u."roleId"
+          WHERE u."passwordHash" = :tag
+          LIMIT 1`,
+        {
+            replacements: { tag: `supabase:${supabaseUid}` },
+            type: QueryTypes.SELECT,
+        }
+    );
+    if (!rows.length && emailFromToken) {
+        rows = await authDb.query(
+            `SELECT u."userId", u.email, u."roleId", u."collegeId", r.role
+               FROM users u
+               JOIN roles r ON r."roleId" = u."roleId"
+              WHERE u.email = :email
+              LIMIT 1`,
+            { replacements: { email: emailFromToken }, type: QueryTypes.SELECT }
+        );
+    }
+    if (!rows.length) return null;
+
+    const value = {
+        id:        rows[0].userId,
+        userId:    rows[0].userId,
+        email:     rows[0].email,
+        roleId:    rows[0].roleId,
+        collegeId: rows[0].collegeId,
+        role:      rows[0].role,
+    };
+    profileCache.set(supabaseUid, { value, expires: Date.now() + PROFILE_TTL_MS });
+    return value;
+}
+
+const auth = async (req, res, next) => {
     try {
         const token = req.headers.authorization?.split(' ')[1] || req.cookies?.token;
         if (!token) return res.status(401).json({ error: 'Unauthorized - No token provided' });
 
-        const decoded = jwt.verify(token, env.jwt.secret);
-        req.user = decoded;
-        next();
+        // TWO token types reach this service:
+        //   1. Supabase access tokens (HS256, SUPABASE_JWT_SECRET) — students,
+        //      instructors, college admins provisioned through Supabase Auth.
+        //   2. admin-service-issued JWTs (env.jwt.secret) — the root/college
+        //      admin break-glass login (AuthService.login → lms_admin.users).
+        //      This bootstrap path must keep working even before any Supabase
+        //      user exists, so we verify it as a fallback.
+        // Try Supabase first; on failure, try the local admin JWT.
+
+        // --- 1. Supabase token (JWKS first, then HS256 fallback) -----------
+        if (jwks || supabaseSecret) {
+            const payload = await verifySupabaseToken(token);
+            if (payload) {
+                const profile = await loadProfile(payload.sub, payload.email);
+                if (!profile) {
+                    return res.status(403).json({ error: 'Profile not provisioned for this account' });
+                }
+                const metadataRole = payload.user_metadata?.role || payload.app_metadata?.role;
+                if (metadataRole === 'root') profile.role = 'root';
+                req.user = { ...profile, supabaseUid: payload.sub };
+                return next();
+            }
+            // verification failed → fall through to local admin JWT
+        }
+
+        // --- 2. admin-service local JWT (root / college admin) -------------
+        try {
+            const decoded = jwt.verify(token, env.jwt.secret);
+            // Shape mirrors AuthService.signToken: { id, email, role, name,
+            // college_id, is_root_admin }. Downstream gates read req.user.role
+            // + req.user.collegeId, so normalize college_id → collegeId.
+            req.user = {
+                ...decoded,
+                id: decoded.id,
+                role: decoded.is_root_admin ? 'root' : decoded.role,
+                collegeId: decoded.college_id ?? decoded.collegeId ?? null,
+            };
+            return next();
+        } catch (_e) {
+            return res.status(401).json({ error: 'Unauthorized - Invalid token' });
+        }
     } catch (_err) {
         res.status(401).json({ error: 'Unauthorized - Invalid token' });
     }

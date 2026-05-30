@@ -11,7 +11,7 @@ import { Op, QueryTypes } from 'sequelize';
 // dance required.
 async function lookupCollegeId(userId) {
   const rows = await sequelize.query(
-    'SELECT collegeId FROM users WHERE userId = :userId LIMIT 1',
+    'SELECT "collegeId" FROM users WHERE "userId" = :userId LIMIT 1',
     { replacements: { userId }, type: QueryTypes.SELECT }
   );
   return rows?.[0]?.collegeId || null;

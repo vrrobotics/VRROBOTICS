@@ -68,10 +68,10 @@ const fetchAuthUser = async (userId) => {
     if (!userId) return null;
     try {
         const rows = await authDb.query(
-            `SELECT u.userId AS id, u.name, u.email,
-                    u.expertise, u.bio, u.linkedinUrl, u.instructorPhoto
+            `SELECT u."userId" AS id, u.name, u.email,
+                    u.expertise, u.bio, u."linkedinUrl", u."instructorPhoto"
                FROM users u
-              WHERE u.userId = :id
+              WHERE u."userId" = :id
               LIMIT 1`,
             { replacements: { id: String(userId).trim() }, type: QueryTypes.SELECT }
         );
@@ -233,9 +233,10 @@ const list = async (query = {}) => {
             no_college: true,
         };
     }
-    const escapedClgId = Course.sequelize.escape(JSON.stringify(clgId));
+    // Postgres JSONB @> "contains" — RHS must be a JSON array literal.
+    const escapedClgId = Course.sequelize.escape(JSON.stringify([String(clgId)]));
     where[require('sequelize').Op.and] = [
-        Course.sequelize.literal(`JSON_CONTAINS(clg_ids, ${escapedClgId})`),
+        Course.sequelize.literal(`clg_ids @> ${escapedClgId}::jsonb`),
     ];
 
     const { count, rows } = await Course.findAndCountAll({
@@ -430,16 +431,18 @@ const playerData = async (slug, lessonIdRaw, userIdRaw) => {
         let quizState = { attempts_used: 0, last_score: null, last_total: null };
         if (userId) {
             try {
+                // Postgres JSONB key access — quizScores is a JSONB object
+                // keyed by quiz id (stringified). `->` returns the JSON
+                // value; pg returns it already-parsed as a JS object.
                 const rows = await authDb.query(
-                    `SELECT JSON_EXTRACT(quizScores, CONCAT('$."', :qid, '"')) AS slot
-                       FROM users WHERE userId = :uid`,
+                    `SELECT "quizScores" -> :qid AS slot
+                       FROM users WHERE "userId" = :uid`,
                     {
                         replacements: { qid: String(currentLessonRow.id), uid: String(userId) },
                         type: QueryTypes.SELECT,
                     }
                 );
-                const raw = rows[0]?.slot;
-                const slot = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                const slot = rows[0]?.slot;
                 if (slot && typeof slot === 'object') {
                     quizState = {
                         attempts_used: Number(slot.attempts) || 0,
@@ -523,27 +526,33 @@ const submitQuiz = async ({ quiz_id, user_id, score, total, answers }) => {
     // the INT-clamping bug in quiz_submissions.user_id.
     let attempts_used = 1;
     try {
+        // Postgres JSONB read: ->'<qid>'->>'attempts' returns the nested
+        // attempt count as TEXT (`->>` casts to text); parse to number.
         const cur = await authDb.query(
-            `SELECT JSON_EXTRACT(quizScores, CONCAT('$."', :qid, '".attempts')) AS prev
-               FROM users WHERE userId = :uid`,
+            `SELECT "quizScores" -> :qid ->> 'attempts' AS prev
+               FROM users WHERE "userId" = :uid`,
             { replacements: { qid: String(qid), uid: uidStr }, type: QueryTypes.SELECT }
         );
         const prev = cur[0]?.prev;
         attempts_used = (Number.isFinite(Number(prev)) ? Number(prev) : 0) + 1;
 
+        // jsonb_set replaces (or creates, with create_missing=true) the path
+        // `{<qid>}` in the JSONB column. COALESCE seeds NULL → '{}' so first
+        // writes work without a default.
         await authDb.query(
             `UPDATE users
-                SET quizScores = JSON_SET(
-                    COALESCE(quizScores, JSON_OBJECT()),
-                    CONCAT('$."', :qid, '"'),
-                    JSON_OBJECT(
-                        'score', :score,
-                        'total', :total,
-                        'attempts', :attempts,
-                        'lastAttemptAt', CAST(NOW() AS CHAR)
-                    )
+                SET "quizScores" = jsonb_set(
+                    COALESCE("quizScores", '{}'::jsonb),
+                    ARRAY[:qid],
+                    jsonb_build_object(
+                        'score', :score::int,
+                        'total', :total::int,
+                        'attempts', :attempts::int,
+                        'lastAttemptAt', to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SSOF')
+                    ),
+                    true
                 )
-              WHERE userId = :uid`,
+              WHERE "userId" = :uid`,
             {
                 replacements: {
                     qid: String(qid),

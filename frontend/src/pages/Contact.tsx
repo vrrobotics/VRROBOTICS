@@ -22,8 +22,7 @@ const Contact = () => {
     {
       icon: Mail,
       title: "Email Us",
-      primary: "info@yagnatech.org",
-      // secondary: "support@eduhope.org",
+      primary: "info@vrroboticsacademy.com",
       description: "General inquiries and support"
     },
     {

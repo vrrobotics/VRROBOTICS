@@ -18,7 +18,8 @@ import {
   Award,
   Globe
 } from "lucide-react";
-import Logo from "@/assets/YagnaTechWM.png";
+import { BRAND } from "@/branding";
+const Logo = BRAND.logo; // VR Robotics Academy logo (hosted)
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -208,7 +209,7 @@ const Login = () => {
               </CardHeader>
 
               <CardContent className="space-y-6">
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
                     <div className="relative">
@@ -222,6 +223,7 @@ const Login = () => {
                         className="pl-10"
                         required
                         disabled={loading}
+                        autoComplete="username"
                       />
                     </div>
                   </div>
@@ -239,6 +241,7 @@ const Login = () => {
                         className="pl-10 pr-10"
                         required
                         disabled={loading}
+                        autoComplete="current-password"
                       />
                       <Button
                         type="button"

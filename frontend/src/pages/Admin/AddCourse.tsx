@@ -174,7 +174,7 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
                 name="courseId"
                 value={form.courseId}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -185,7 +185,7 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
                 name="title"
                 value={form.title}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -197,7 +197,7 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
                 name="duration"
                 value={form.duration}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -208,7 +208,7 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
                   name="isPreAssessmentNeeded"
                   checked={form.isPreAssessmentNeeded}
                   onChange={handleChange}
-                  className="h-4 w-4 text-[#219A85] focus:ring-[#219A85]"
+                  className="h-4 w-4 text-[#FF6A00] focus:ring-[#FF6A00]"
                 />
                 <span>Pre-assessment required</span>
               </label>
@@ -222,7 +222,7 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
               value={form.description}
               onChange={handleChange}
               rows={3}
-              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
             />
           </div>
 
@@ -243,7 +243,7 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
               }
               disabled={instructorsLoading || !!instructorsError}
               required
-              className="w-full border rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#219A85] disabled:bg-gray-50 disabled:text-gray-500"
+              className="w-full border rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#FF6A00] disabled:bg-gray-50 disabled:text-gray-500"
             >
               <option value="">
                 {instructorsLoading
@@ -270,7 +270,7 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
                 <button
                   type="button"
                   onClick={loadInstructors}
-                  className="text-[#219A85] underline ml-1"
+                  className="text-[#FF6A00] underline ml-1"
                 >
                   Retry
                 </button>
@@ -288,7 +288,7 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
                 <button
                   type="button"
                   onClick={handleSelectAll}
-                  className="text-sm text-[#219A85] hover:underline"
+                  className="text-sm text-[#FF6A00] hover:underline"
                 >
                   {selectedClgIds.length === colleges.length ? "Clear all" : "Select all"}
                 </button>
@@ -312,13 +312,13 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
                     }
                   }}
                   placeholder="e.g. clg_cnmsph6e7"
-                  className="flex-1 border rounded-lg px-4 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                  className="flex-1 border rounded-lg px-4 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 />
                 <button
                   type="button"
                   onClick={handleAddTypedClgId}
                   disabled={!clgIdInput.trim()}
-                  className="bg-[#219A85] hover:bg-[#177385] disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                  className="bg-[#FF6A00] hover:bg-[#FF6A00] disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
                 >
                   Add ID
                 </button>
@@ -337,7 +337,7 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
                   <button
                     type="button"
                     onClick={() => refresh()}
-                    className="text-[#219A85] underline ml-1"
+                    className="text-[#FF6A00] underline ml-1"
                   >
                     Retry
                   </button>
@@ -353,7 +353,7 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
                 <button
                   type="button"
                   onClick={() => setCollegeOpen((o) => !o)}
-                  className="w-full flex items-center justify-between border rounded-lg px-4 py-2 bg-white text-left focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                  className="w-full flex items-center justify-between border rounded-lg px-4 py-2 bg-white text-left focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                   aria-haspopup="listbox"
                   aria-expanded={collegeOpen}
                 >
@@ -381,7 +381,7 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
                         value={collegeSearch}
                         onChange={(e) => setCollegeSearch(e.target.value)}
                         placeholder="Search by name or ID…"
-                        className="w-full border rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                        className="w-full border rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                       />
                     </div>
                     <div className="max-h-56 overflow-y-auto divide-y">
@@ -397,7 +397,7 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
                               type="checkbox"
                               checked={selectedClgIds.includes(c.clgId)}
                               onChange={() => toggleCollege(c.clgId)}
-                              className="h-4 w-4 mt-0.5 text-[#219A85] focus:ring-[#219A85]"
+                              className="h-4 w-4 mt-0.5 text-[#FF6A00] focus:ring-[#FF6A00]"
                             />
                             <div className="flex flex-col min-w-0">
                               <span className="text-sm font-medium text-gray-900 truncate">
@@ -427,13 +427,13 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
                     return (
                       <span
                         key={id}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#E6F4F1] text-[#177385] text-xs font-mono"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#E6F4F1] text-[#FF6A00] text-xs font-mono"
                       >
                         {match ? `${match.clgName} (${id})` : id}
                         <button
                           type="button"
                           onClick={() => toggleCollege(id)}
-                          className="text-[#177385] hover:text-rose-600 font-bold"
+                          className="text-[#FF6A00] hover:text-rose-600 font-bold"
                           aria-label={`Remove ${id}`}
                         >
                           ×
@@ -455,7 +455,7 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
           <button
             type="submit"
             disabled={submitting}
-            className="bg-[#219A85] hover:bg-[#177385] disabled:opacity-60 text-white font-semibold px-6 py-2 rounded-lg transition-colors mt-2"
+            className="bg-[#FF6A00] hover:bg-[#FF6A00] disabled:opacity-60 text-white font-semibold px-6 py-2 rounded-lg transition-colors mt-2"
           >
             {submitting ? "Saving…" : "Add Course"}
           </button>

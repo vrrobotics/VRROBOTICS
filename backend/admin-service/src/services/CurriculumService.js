@@ -5,8 +5,38 @@ const sectionRepo = require('../repositories/SectionRepository');
 const lessonRepo = require('../repositories/LessonRepository');
 const questionRepo = require('../repositories/QuestionRepository');
 const submissionRepo = require('../repositories/QuizSubmissionRepository');
-const { removeFile } = require('../helpers/fileUploader');
+const courseRepo = require('../repositories/CourseRepository');
+const { upload, removeFile } = require('../helpers/fileUploader');
+const bunny = require('./BunnyStream');
 const { HttpError } = require('../middlewares/error');
+
+// Per-course R2 key prefix — every asset for a course (thumbnail/banner/preview
+// from CourseService + lesson attachments + lesson videos via Bunny collection)
+// lives under one folder, mirroring the Udemy/Teachable layout.
+const courseFolder = (course_id) => `uploads/courses/${course_id}/lessons`;
+
+// Look up the course's Bunny Stream collection (one collection = one folder
+// per course in Bunny). Created lazily on first video upload so courses with
+// no system-video lessons never spawn an empty collection. Returns null if
+// the course row is missing or the create call fails — callers fall back to
+// uploading without a collection (videos still land in the library, just
+// ungrouped) rather than blocking the lesson save.
+async function ensureCourseCollection(course_id) {
+    if (!course_id) return null;
+    try {
+        const course = await courseRepo.findById(course_id);
+        if (!course) return null;
+        if (course.bunny_collection_id) return course.bunny_collection_id;
+        const created = await bunny.createCollection(course.title || `Course ${course_id}`);
+        const guid = created?.guid;
+        if (!guid) return null;
+        await course.update({ bunny_collection_id: guid });
+        return guid;
+    } catch (e) {
+        console.warn('[curriculum] bunny collection ensure failed:', e.message);
+        return null;
+    }
+}
 
 const PUBLIC_ROOT = path.join(__dirname, '..', '..');
 
@@ -33,14 +63,6 @@ const fileExt = (filename) => {
 };
 
 const uniqueName = (originalname) => `${Math.floor(Date.now() / 1000)}${randomToken(4)}.${fileExt(originalname)}`;
-
-const moveTo = (file, relDir) => {
-    const dir = path.join(PUBLIC_ROOT, relDir);
-    ensureDir(dir);
-    const name = uniqueName(file.originalname);
-    fs.renameSync(file.path, path.join(dir, name));
-    return name;
-};
 
 const removeDir = (relPath) => {
     if (!relPath) return;
@@ -119,7 +141,7 @@ const sortSections = async (rawIds) => {
 
 // ===== Lessons =====
 
-const buildLessonData = (b, files) => {
+const buildLessonData = async (b, files) => {
     const data = {
         title: b.title,
         user_id: b.user_id || null,
@@ -149,7 +171,8 @@ const buildLessonData = (b, files) => {
         case 'document_type': {
             const f = pickFile(files, 'attachment');
             if (f) {
-                data.attachment = moveTo(f, 'uploads/lesson_file/attachment');
+                const dest = `${courseFolder(b.course_id)}/${uniqueName(f.originalname)}`;
+                data.attachment = await upload(f, dest);
                 data.attachment_type = b.attachment_type;
             }
             break;
@@ -157,7 +180,8 @@ const buildLessonData = (b, files) => {
         case 'image': {
             const f = pickFile(files, 'attachment');
             if (f) {
-                data.attachment = moveTo(f, 'uploads/lesson_file/attachment');
+                const dest = `${courseFolder(b.course_id)}/${uniqueName(f.originalname)}`;
+                data.attachment = await upload(f, dest);
                 data.attachment_type = fileExt(f.originalname);
             }
             break;
@@ -171,12 +195,38 @@ const buildLessonData = (b, files) => {
             break;
         }
         case 'system-video': {
+            // Three input shapes the admin form can send, all converge on a
+            // Bunny-hosted lesson URL in lesson_src so playback is uniform:
+            //   1. file upload (`system_video_file`) — server-side relay to Bunny.
+            //   2. lesson_src is an external URL — ingest into Bunny via the
+            //      /fetch API so the admin doesn't have to upload to Bunny
+            //      dashboard manually.
+            //   3. lesson_src is already a Bunny URL (e.g. from the browser's
+            //      direct-TUS upload) — keep as-is.
+            // All three drop the video into the course's Bunny collection so
+            // every video for a course is grouped together.
+            const collectionId = await ensureCourseCollection(b.course_id);
             const f = pickFile(files, 'system_video_file');
             if (f) {
-                const name = moveTo(f, 'uploads/lesson_file/videos');
-                data.lesson_src = `uploads/lesson_file/videos/${name}`;
+                const up = await bunny.uploadVideoForTitle(
+                    b.title || 'Lesson Video',
+                    f,
+                    { collectionId },
+                );
+                data.lesson_src = up.hlsUrl;
+            } else if (b.lesson_src) {
+                if (bunny.isExternalImportableUrl(b.lesson_src)) {
+                    const up = await bunny.importVideoFromUrl(
+                        b.lesson_src,
+                        b.title || 'Lesson Video',
+                        { collectionId },
+                    );
+                    data.lesson_src = up.hlsUrl;
+                } else {
+                    data.lesson_src = b.lesson_src;
+                }
             }
-            data.video_type = b.lesson_provider;
+            data.video_type = b.lesson_provider || 'system-video';
             data.duration = formatDuration(b.duration);
             break;
         }
@@ -192,7 +242,7 @@ const createLesson = async ({ body, files }) => {
     if (!b.course_id || !b.section_id) throw new HttpError(422, 'course_id and section_id required');
 
     const last = await lessonRepo.findLastSortInCourse(b.course_id);
-    const data = buildLessonData(b, files);
+    const data = await buildLessonData(b, files);
     data.sort = (last ? last.sort : 0) + 1;
 
     const lesson = await lessonRepo.create(data);
@@ -227,8 +277,9 @@ const updateLesson = async ({ body, files }) => {
         case 'document_type': {
             const f = pickFile(files, 'attachment');
             if (f) {
-                if (lesson.attachment) removeFile(`uploads/lesson_file/attachment/${lesson.attachment}`);
-                data.attachment = moveTo(f, 'uploads/lesson_file/attachment');
+                if (lesson.attachment) await removeFile(lesson.attachment);
+                const dest = `${courseFolder(lesson.course_id)}/${uniqueName(f.originalname)}`;
+                data.attachment = await upload(f, dest);
                 data.attachment_type = b.attachment_type;
             }
             break;
@@ -236,8 +287,9 @@ const updateLesson = async ({ body, files }) => {
         case 'image': {
             const f = pickFile(files, 'attachment');
             if (f) {
-                if (lesson.attachment) removeFile(`uploads/lesson_file/attachment/${lesson.attachment}`);
-                data.attachment = moveTo(f, 'uploads/lesson_file/attachment');
+                if (lesson.attachment) await removeFile(lesson.attachment);
+                const dest = `${courseFolder(lesson.course_id)}/${uniqueName(f.originalname)}`;
+                data.attachment = await upload(f, dest);
                 data.attachment_type = fileExt(f.originalname);
             }
             break;
@@ -252,11 +304,32 @@ const updateLesson = async ({ body, files }) => {
             break;
         }
         case 'system-video': {
+            // Mirror the create-path behaviour: route file uploads, external
+            // URL paste-ins, and pre-uploaded Bunny URLs all through Bunny,
+            // grouped into the course's Bunny collection. Any previous video
+            // gets cleaned up before the new one is recorded.
+            const collectionId = await ensureCourseCollection(lesson.course_id);
             const f = pickFile(files, 'system_video_file');
             if (f) {
-                if (lesson.lesson_src) removeFile(lesson.lesson_src);
-                const name = moveTo(f, 'uploads/lesson_file/videos');
-                data.lesson_src = `uploads/lesson_file/videos/${name}`;
+                if (lesson.lesson_src) await removeFile(lesson.lesson_src);
+                const up = await bunny.uploadVideoForTitle(
+                    b.title || lesson.title || 'Lesson Video',
+                    f,
+                    { collectionId },
+                );
+                data.lesson_src = up.hlsUrl;
+            } else if (b.lesson_src && b.lesson_src !== lesson.lesson_src) {
+                if (lesson.lesson_src) await removeFile(lesson.lesson_src);
+                if (bunny.isExternalImportableUrl(b.lesson_src)) {
+                    const up = await bunny.importVideoFromUrl(
+                        b.lesson_src,
+                        b.title || lesson.title || 'Lesson Video',
+                        { collectionId },
+                    );
+                    data.lesson_src = up.hlsUrl;
+                } else {
+                    data.lesson_src = b.lesson_src;
+                }
             }
             data.duration = formatDuration(b.duration);
             break;
@@ -284,7 +357,7 @@ const deleteLesson = async (id) => {
     if (lesson.lesson_type === 'scorm' && lesson.attachment) {
         removeDir(`uploads/lesson_file/scorm_content/${lesson.attachment}`);
     } else if (lesson.attachment && (lesson.lesson_type === 'document_type' || lesson.lesson_type === 'image')) {
-        removeFile(`uploads/lesson_file/attachment/${lesson.attachment}`);
+        await removeFile(lesson.attachment);
     }
     if (lesson.lesson_src && lesson.lesson_type === 'system-video') {
         removeFile(lesson.lesson_src);
@@ -305,6 +378,23 @@ const showLesson = async (id) => {
     return { lesson };
 };
 
+// --- Direct-to-Bunny video upload (used by the admin lesson form) ---------
+// Step 1: register the video on Bunny (inside the course's collection so it
+// stays grouped with the rest of the course's videos) and hand the browser a
+// short-lived, presigned TUS upload ticket. The browser then streams the
+// file straight to Bunny — it never touches this server.
+const createVideoUpload = async (title, course_id) => {
+    const collectionId = await ensureCourseCollection(course_id);
+    return bunny.createDirectUpload(title || 'Lesson Video', { collectionId });
+};
+
+// Step 2 (polled by the UI): report Bunny's transcode progress so we can show
+// "Processing… / Ready".
+const getVideoStatus = (guid) => {
+    if (!guid) throw new HttpError(422, 'guid is required');
+    return bunny.getStatus(guid);
+};
+
 module.exports = {
     listByCourse,
     createSection,
@@ -316,4 +406,6 @@ module.exports = {
     sortLessons,
     deleteLesson,
     showLesson,
+    createVideoUpload,
+    getVideoStatus,
 };

@@ -74,7 +74,7 @@ const Colleges: React.FC = () => {
             <CardContent className="flex items-center gap-4 py-4 md:py-6">
               <div
                 className="rounded-lg p-3 flex items-center justify-center"
-                style={{ backgroundColor: "#219A85" }}
+                style={{ backgroundColor: "#FF6A00" }}
               >
                 <stat.icon className="h-7 w-7 md:h-8 md:w-8 text-white" />
               </div>
@@ -106,7 +106,7 @@ const Colleges: React.FC = () => {
           <input
             type="text"
             placeholder="Search colleges..."
-            className="border rounded-lg px-9 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#219A85] bg-white"
+            className="border rounded-lg px-9 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#FF6A00] bg-white"
           />
         </div>
         {/* Right Controls */}
@@ -114,7 +114,7 @@ const Colleges: React.FC = () => {
           {/* Status Dropdown */}
           <select
             id="status"
-            className="border rounded-lg px-3 py-2 w-full md:w-auto focus:outline-none focus:ring-2 focus:ring-[#219A85] bg-white"
+            className="border rounded-lg px-3 py-2 w-full md:w-auto focus:outline-none focus:ring-2 focus:ring-[#FF6A00] bg-white"
             defaultValue="All"
           >
             <option value="All">All Status</option>
@@ -125,7 +125,7 @@ const Colleges: React.FC = () => {
           {/* Sort By Date Dropdown */}
           <select
             id="sortDate"
-            className="border rounded-lg px-3 py-2 w-full md:w-auto focus:outline-none focus:ring-2 focus:ring-[#219A85] bg-white"
+            className="border rounded-lg px-3 py-2 w-full md:w-auto focus:outline-none focus:ring-2 focus:ring-[#FF6A00] bg-white"
             defaultValue="sortDate"
           >
             <option value="sortDate">Sort by Date</option>
@@ -134,7 +134,7 @@ const Colleges: React.FC = () => {
           </select>
           {/* Add College Button */}
           <button
-            className="bg-[#219A85] hover:bg-[#177385] text-white font-semibold px-5 py-2 rounded-lg transition-colors w-full md:w-auto"
+            className="bg-[#FF6A00] hover:bg-[#FF6A00] text-white font-semibold px-5 py-2 rounded-lg transition-colors w-full md:w-auto"
             onClick={() => setShowAddCollege(true)}
           >
             + Add College

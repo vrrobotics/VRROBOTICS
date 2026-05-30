@@ -51,7 +51,7 @@ const EditCompany: React.FC<EditCompanyProps> = ({ onClose }) => {
                 name="name"
                 value={form.name}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -62,7 +62,7 @@ const EditCompany: React.FC<EditCompanyProps> = ({ onClose }) => {
                 name="industry"
                 value={form.industry}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -73,7 +73,7 @@ const EditCompany: React.FC<EditCompanyProps> = ({ onClose }) => {
                 name="email"
                 value={form.email}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -84,7 +84,7 @@ const EditCompany: React.FC<EditCompanyProps> = ({ onClose }) => {
                 name="phone"
                 value={form.phone}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -95,7 +95,7 @@ const EditCompany: React.FC<EditCompanyProps> = ({ onClose }) => {
                 name="website"
                 value={form.website}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -106,7 +106,7 @@ const EditCompany: React.FC<EditCompanyProps> = ({ onClose }) => {
                 name="location"
                 value={form.location}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -118,7 +118,7 @@ const EditCompany: React.FC<EditCompanyProps> = ({ onClose }) => {
               value={form.description}
               onChange={handleChange}
               rows={3}
-              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
             />
           </div>
           {/* Primary Contact Section */}
@@ -131,7 +131,7 @@ const EditCompany: React.FC<EditCompanyProps> = ({ onClose }) => {
                 name="contactName"
                 value={form.contactName}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -142,7 +142,7 @@ const EditCompany: React.FC<EditCompanyProps> = ({ onClose }) => {
                 name="Position"
                 value={form.Position}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -153,7 +153,7 @@ const EditCompany: React.FC<EditCompanyProps> = ({ onClose }) => {
                 name="contactEmail"
                 value={form.contactEmail}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -164,7 +164,7 @@ const EditCompany: React.FC<EditCompanyProps> = ({ onClose }) => {
                 name="contactPhone"
                 value={form.contactPhone}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -176,14 +176,14 @@ const EditCompany: React.FC<EditCompanyProps> = ({ onClose }) => {
               name="companyStatus"
               value={form.companyStatus}
               onChange={handleChange}
-              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
               required
             />
           </div>
           <div className="flex gap-2 mt-4">
             <button
               type="submit"
-              className="bg-[#219A85] hover:bg-[#177385] text-white font-semibold px-6 py-2 rounded-lg transition-colors"
+              className="bg-[#FF6A00] hover:bg-[#FF6A00] text-white font-semibold px-6 py-2 rounded-lg transition-colors"
             >
               Save Changes
             </button>

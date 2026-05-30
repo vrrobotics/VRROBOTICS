@@ -8,6 +8,15 @@ const findByEmail = (email) => User.findOne({ where: { email } });
 const findByIdAndRole = (id, role) => User.findOne({ where: { id, role } });
 
 const findRootAdminId = async () => {
+    // Explicit override: when ROOT_ADMIN_EMAIL is set, that account is THE root
+    // admin (lands on /admin/dashboard). Lets a freshly-seeded branded admin be
+    // root even if an older admin row has a lower id. Falls back to the legacy
+    // "lowest-id admin" heuristic when unset / email not found.
+    const rootEmail = process.env.ROOT_ADMIN_EMAIL;
+    if (rootEmail) {
+        const byEmail = await User.findOne({ where: { email: rootEmail }, attributes: ['id'] });
+        if (byEmail) return byEmail.id;
+    }
     const root = await User.findOne({ where: { role: 'admin' }, order: [['id', 'ASC']], attributes: ['id'] });
     return root ? root.id : null;
 };

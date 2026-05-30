@@ -218,9 +218,9 @@ export default function PreAssessment() {
         {/* HEADER INFO */}
         <div className="flex justify-between items-center mb-4">
           <div className="text-sm text-gray-600 font-medium">
-            Total Marks: <span className="text-[#177385] font-bold">100</span>
-            &nbsp;|&nbsp; Questions: <span className="text-[#177385] font-bold">{questions.length}</span>
-            &nbsp;|&nbsp; Marks per Question: <span className="text-[#177385] font-bold">5</span>
+            Total Marks: <span className="text-[#FF6A00] font-bold">100</span>
+            &nbsp;|&nbsp; Questions: <span className="text-[#FF6A00] font-bold">{questions.length}</span>
+            &nbsp;|&nbsp; Marks per Question: <span className="text-[#FF6A00] font-bold">5</span>
           </div>
           {/* ⏳ TIMER */}
           <div className={`text-md font-bold ${timeLeft > 300 ? "text-black" : "text-red-600"}`}>
@@ -291,7 +291,7 @@ export default function PreAssessment() {
         {/* SUBMIT */}
         <button
           onClick={handleSubmit}
-          className="mt-6 px-6 py-3 bg-[#177385] text-white text-md rounded-lg shadow hover:bg-[#135f6e]"
+          className="mt-6 px-6 py-3 bg-[#FF6A00] text-white text-md rounded-lg shadow hover:bg-[#cc5500]"
         >
           Submit Assessment
         </button>

@@ -44,6 +44,11 @@ module.exports = (sequelize) => {
         // the public course-details page (the "Includes certificate" line) and
         // gates the certificate-issue flow.
         has_certificate: { type: DataTypes.BOOLEAN, defaultValue: true },
+        // Bunny Stream collection (folder) GUID. Created lazily on the first
+        // video upload for this course so every lesson video for the same
+        // course is grouped in one Bunny collection — matches the per-course
+        // layout we use for R2 assets (courses/<id>/...).
+        bunny_collection_id: { type: DataTypes.STRING(64), allowNull: true },
     }, { tableName: 'courses', timestamps: true, createdAt: 'created_at', updatedAt: 'updated_at' });
 
     Course.associate = (models) => {

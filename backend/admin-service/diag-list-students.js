@@ -3,18 +3,25 @@
 require('dotenv').config();
 const { Sequelize, QueryTypes } = require('sequelize');
 
-const authDb = new Sequelize(
-    process.env.AUTH_DB_NAME, process.env.DB_USER, process.env.DB_PASS,
-    { host: process.env.DB_HOST, port: process.env.DB_PORT, dialect: 'mysql', logging: false }
-);
+const authDb = process.env.DATABASE_URL
+    ? new Sequelize(process.env.DATABASE_URL, {
+          dialect: 'postgres', logging: false,
+          schema: process.env.AUTH_DB_SCHEMA || 'lucy_devdb',
+          dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
+      })
+    : new Sequelize(process.env.AUTH_DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
+          host: process.env.DB_HOST, port: process.env.DB_PORT, dialect: 'postgres', logging: false,
+          schema: process.env.AUTH_DB_SCHEMA || 'lucy_devdb',
+          dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
+      });
 
 (async () => {
     const rows = await authDb.query(
-        `SELECT u.userId, u.email, u.name, u.collegeId, u.preScore, u.postScore
+        `SELECT u."userId", u.email, u.name, u."collegeId", u."preScore", u."postScore"
            FROM users u
-           JOIN roles r ON r.roleId = u.roleId
+           JOIN roles r ON r."roleId" = u."roleId"
           WHERE r.role = 'student'
-          ORDER BY u.collegeId IS NULL, u.collegeId, u.email`,
+          ORDER BY u."collegeId" IS NULL, u."collegeId", u.email`,
         { type: QueryTypes.SELECT }
     );
     rows.forEach((r) => {

@@ -14,7 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BookOpen, Eye, EyeOff, Mail, Lock, User, ArrowLeft, Users, Award, Globe } from "lucide-react";
-import Logo from "@/assets/YagnaTechWM.png";
+import { BRAND } from "@/branding";
+const Logo = BRAND.logo; // VR Robotics Academy logo (hosted)
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);

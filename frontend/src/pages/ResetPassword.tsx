@@ -126,7 +126,7 @@ const ResetPassword = () => {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-[#177385] to-[#1bbf8a] text-white"
+                className="w-full bg-gradient-to-r from-[#FF6A00] to-[#1bbf8a] text-white"
                 disabled={loading}
               >
                 {loading ? (

@@ -1,4 +1,5 @@
 import './loadEnv.js';
+import './observability.js'; // Sentry.init() — keep first
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -9,6 +10,7 @@ import sequelize from './db/index.js';
 import cookieParser from "cookie-parser";
 import courseRoutes from './routes/course.routes.js';
 import enrollRoutes from './routes/enroll.routes.js';
+import { attachErrorHandler } from './observability.js';
 
 const app = express();
 
@@ -35,16 +37,11 @@ app.use('/', courseRoutes);
 app.use('/enroll', enrollRoutes);
 
 export async function initDb() {
-  // Connect without a database name so we can CREATE DATABASE IF NOT EXISTS
-  const bootstrap = new Sequelize('', process.env.DB_USER, process.env.DB_PASS, {
-    host: process.env.DB_HOST,
-    port: Number(process.env.DB_PORT) || 3306,
-    dialect: 'mysql',
-    logging: false,
-  });
-  await bootstrap.query(`CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME}\``);
-  await bootstrap.close();
-
+  // On Supabase Postgres the database already exists (`postgres`) and the
+  // role has no CREATE DATABASE privilege, so the old MySQL bootstrap
+  // (CREATE DATABASE IF NOT EXISTS) is gone. The schema (lucy_devdb) and
+  // tables are provisioned by supabase/migrations/*.sql; sync() below is a
+  // dev convenience to create any model table still missing in that schema.
   await sequelize.authenticate();
   await sequelize.sync();
 
@@ -70,5 +67,7 @@ export async function initDb() {
 
   console.log('🗄️  Database connected and synced---');
 }
+
+attachErrorHandler(app);
 
 export default app;

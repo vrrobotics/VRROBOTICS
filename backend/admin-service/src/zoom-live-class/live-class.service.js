@@ -116,9 +116,9 @@ const fetchHostsByIds = async (ids) => {
     if (!numericIds.length) return {};
     try {
         const rows = await authDb.query(
-            `SELECT u.userId AS id, u.name, u.email, u.instructorPhoto AS photo
+            `SELECT u."userId" AS id, u.name, u.email, u."instructorPhoto" AS photo
                FROM users u
-              WHERE u.userId IN (:ids)`,
+              WHERE u."userId" IN (:ids)`,
             { replacements: { ids: numericIds }, type: QueryTypes.SELECT }
         );
         const byId = {};
@@ -381,9 +381,9 @@ const listInstructors = async (courseId) => {
         // returns), so admins always have someone to pick.
         try {
             const rows = await authDb.query(
-                `SELECT u.userId AS id, u.name, u.email
+                `SELECT u."userId" AS id, u.name, u.email
                    FROM users u
-                   JOIN roles r ON r.roleId = u.roleId
+                   JOIN roles r ON r."roleId" = u."roleId"
                   WHERE r.role = 'instructor'
                   ORDER BY u.name ASC`,
                 { type: QueryTypes.SELECT }

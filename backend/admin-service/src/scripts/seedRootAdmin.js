@@ -4,9 +4,9 @@ const { sequelize, User } = require('../models');
 (async () => {
     try {
         await sequelize.authenticate();
-        const email = process.argv[2] || 'root@admin.com';
-        const password = process.argv[3] || 'password123';
-        const name = process.argv[4] || 'Root Admin';
+        const email = process.argv[2] || 'vrroot@vrroboticsacademy.com';
+        const password = process.argv[3] || 'VrRoot@2026';
+        const name = process.argv[4] || 'VR Robotics Root Admin';
 
         const existing = await User.findOne({ where: { email } });
         if (existing) {

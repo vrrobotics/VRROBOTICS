@@ -58,7 +58,7 @@ import { Link } from "react-router-dom";
 const FAQs = () => {
   const faqs = [
     {
-      question: "What are the eligibility criteria for Yagna Tech programs?",
+      question: "What are the eligibility criteria for VR Robotics Academy programs?",
       answer: "Our programs require enrollment at a partner university/institution. Specific prerequisites requires basic Python & ML proficiency."
     },
     {
@@ -75,7 +75,7 @@ const FAQs = () => {
             ]
    },
     {
-      question: "What distinguishes Yagna Tech's pedagogy?",
+      question: "What distinguishes VR Robotics Academy's pedagogy?",
       answer: ["Our industry-integrated approach combines:", 
       "1.Curriculum designed by AI corporate experts",
       "2.Continuous mentor guidance from industry experts"]

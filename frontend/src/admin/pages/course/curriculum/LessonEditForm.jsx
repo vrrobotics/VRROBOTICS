@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { getLesson, updateLesson } from '../../../api/curriculum';
-import { detectVideoDuration, detectFileDuration } from './videoDuration';
+import { detectVideoDuration } from './videoDuration';
+import BunnyVideoUploader from './BunnyVideoUploader';
 
 const URL_TYPES = ['video-url', 'vimeo-url', 'html5', 'google_drive'];
 const DOC_PROVIDERS = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'];
@@ -35,7 +36,6 @@ export default function LessonEditForm({ lessonId, sections, onDone }) {
     const [attachmentType, setAttachmentType] = useState(DOC_PROVIDERS[0]);
     const [scormFile, setScormFile] = useState(null);
     const [scormProvider, setScormProvider] = useState(SCORM_PROVIDERS[0]);
-    const [systemVideoFile, setSystemVideoFile] = useState(null);
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(true);
     const [detectingDuration, setDetectingDuration] = useState(false);
@@ -46,15 +46,6 @@ export default function LessonEditForm({ lessonId, sections, onDone }) {
         if (!trimmed) return;
         setDetectingDuration(true);
         detectVideoDuration(trimmed)
-            .then((d) => { if (d) setDuration(d); })
-            .finally(() => setDetectingDuration(false));
-    };
-
-    const handleSystemVideoChange = (file) => {
-        setSystemVideoFile(file);
-        if (!file) return;
-        setDetectingDuration(true);
-        detectFileDuration(file)
             .then((d) => { if (d) setDuration(d); })
             .finally(() => setDetectingDuration(false));
     };
@@ -103,7 +94,7 @@ export default function LessonEditForm({ lessonId, sections, onDone }) {
             } else if (lesson.lesson_type === 'text') {
                 fd.append('text_description', textDescription);
             } else if (lesson.lesson_type === 'system-video') {
-                if (systemVideoFile) fd.append('system_video_file', systemVideoFile);
+                fd.append('lesson_src', lessonSrc);
                 fd.append('duration', duration || '00:00:00');
             } else if (lesson.lesson_type === 'document_type') {
                 if (attachment) fd.append('attachment', attachment);
@@ -185,16 +176,13 @@ export default function LessonEditForm({ lessonId, sections, onDone }) {
 
             {t === 'system-video' && (
                 <>
-                    {lesson.lesson_src && <p className="text-[13px] text-gray mb-2">Current: {lesson.lesson_src}</p>}
-                    <div className="mb-3">
-                        <label className="ol-form-label">Replace video file (optional)</label>
-                        <input
-                            type="file"
-                            className="ol-form-control"
-                            accept="video/*"
-                            onChange={(e) => handleSystemVideoChange(e.target.files?.[0] || null)}
-                        />
-                    </div>
+                    <BunnyVideoUploader
+                        title={title}
+                        currentSrc={lesson.lesson_src}
+                        onUploaded={(hlsUrl) => setLessonSrc(hlsUrl)}
+                        onDuration={(d) => setDuration(d)}
+                    />
+                    <p className="text-[12px] text-gray mb-3">Leave the picker empty to keep the current video; choose a file to replace it.</p>
                     <div className="mb-3">
                         <label className="ol-form-label">
                             Duration (HH:MM:SS)

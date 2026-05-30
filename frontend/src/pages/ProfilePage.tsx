@@ -85,7 +85,7 @@ function DobPicker({
         }
         .dob-popover .rdp-dropdown:focus {
           outline: none;
-          border-color: #177385;
+          border-color: #FF6A00;
           box-shadow: 0 0 0 2px rgba(23, 115, 133, 0.25);
         }
         .dob-popover .rdp-dropdown_year { min-width: 5rem; }
@@ -102,16 +102,16 @@ function DobPicker({
           disabled={disabled}
           className={cn(
             "group relative flex h-11 w-full items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm text-left transition-colors",
-            "hover:border-[#177385]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#177385]/40 focus-visible:border-[#177385]",
+            "hover:border-[#FF6A00]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6A00]/40 focus-visible:border-[#FF6A00]",
             "disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-input",
-            open && "border-[#177385] ring-2 ring-[#177385]/30"
+            open && "border-[#FF6A00] ring-2 ring-[#FF6A00]/30"
           )}
           aria-label="Select date of birth"
         >
           <Calendar
             className={cn(
               "h-4 w-4 shrink-0 transition-colors",
-              selected ? "text-[#177385]" : "text-muted-foreground"
+              selected ? "text-[#FF6A00]" : "text-muted-foreground"
             )}
           />
           <span
@@ -123,7 +123,7 @@ function DobPicker({
             {selected ? format(selected, "PPP") : "Select your date of birth"}
           </span>
           {ageHint && (
-            <span className="hidden sm:inline-block text-xs text-muted-foreground bg-[#177385]/10 text-[#177385] px-2 py-0.5 rounded-full">
+            <span className="hidden sm:inline-block text-xs text-muted-foreground bg-[#FF6A00]/10 text-[#FF6A00] px-2 py-0.5 rounded-full">
               {ageHint}
             </span>
           )}
@@ -160,11 +160,11 @@ function DobPicker({
               "text-muted-foreground rounded-md w-10 font-medium text-[0.75rem]",
             row: "flex w-full mt-1",
             cell: "h-10 w-10 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
-            day: "h-10 w-10 p-0 font-normal rounded-md hover:bg-[#177385]/10 aria-selected:opacity-100",
+            day: "h-10 w-10 p-0 font-normal rounded-md hover:bg-[#FF6A00]/10 aria-selected:opacity-100",
             day_selected:
-              "bg-[#177385] text-white hover:bg-[#177385] hover:text-white focus:bg-[#177385] focus:text-white",
+              "bg-[#FF6A00] text-white hover:bg-[#FF6A00] hover:text-white focus:bg-[#FF6A00] focus:text-white",
             day_today:
-              "border border-[#177385]/60 text-[#177385] font-semibold",
+              "border border-[#FF6A00]/60 text-[#FF6A00] font-semibold",
             day_outside: "text-muted-foreground/40",
             day_disabled: "text-muted-foreground/30 cursor-not-allowed",
           }}
@@ -183,7 +183,7 @@ function DobPicker({
           </button>
           <button
             type="button"
-            className="text-xs font-medium text-[#177385] hover:underline px-2 py-1"
+            className="text-xs font-medium text-[#FF6A00] hover:underline px-2 py-1"
             onClick={() => setOpen(false)}
           >
             Done
@@ -330,7 +330,7 @@ const ProfilePage = () => {
       <section className="section-padding bg-gradient-subtle py-4">
         <div className="container-ngo max-w-4xl mx-auto flex justify-center items-center min-h-64">
           <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-[#177385]" />
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-[#FF6A00]" />
             <p className="mt-2 text-gray-600">Loading your profile...</p>
           </div>
         </div>
@@ -369,7 +369,7 @@ const ProfilePage = () => {
         )}
 
         <div className="flex flex-col items-center mb-6">
-          <div className="w-24 h-24 rounded-full bg-[#177385] flex items-center justify-center text-white">
+          <div className="w-24 h-24 rounded-full bg-[#FF6A00] flex items-center justify-center text-white">
             <User className="h-10 w-10" />
           </div>
           <h3 className="mt-4 text-xl font-semibold text-gray-800">
@@ -378,14 +378,14 @@ const ProfilePage = () => {
         </div>
 
         <div className="flex justify-between">
-        <div className="bg-[#177385]/10 text-[#177385] text-sm font-medium px-4 py-2 rounded-full inline-block mb-6">
+        <div className="bg-[#FF6A00]/10 text-[#FF6A00] text-sm font-medium px-4 py-2 rounded-full inline-block mb-6">
           {user.role ? `${user.role.charAt(0).toUpperCase() + user.role.slice(1)} Account` : "Student Account"}
         </div>
         <div className="flex justify-end gap-4">
           {!isEditing ? (
             <Button
               onClick={() => setIsEditing(true)}
-              className="bg-[#177385] text-white hover:bg-[#135f6e]"
+              className="bg-[#FF6A00] text-white hover:bg-[#cc5500]"
             >
               Edit Profile
             </Button>
@@ -401,7 +401,7 @@ const ProfilePage = () => {
               <Button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="bg-[#177385] text-white hover:bg-[#135f6e]"
+                className="bg-[#FF6A00] text-white hover:bg-[#cc5500]"
               >
                 {isSaving ? (
                   <>
@@ -422,7 +422,7 @@ const ProfilePage = () => {
           <Card>
             <CardContent className="p-4 space-y-2">
               <Label className="flex items-center gap-2 text-gray-700">
-                <Mail className="h-4 w-4 text-[#177385]" /> Email Address
+                <Mail className="h-4 w-4 text-[#FF6A00]" /> Email Address
               </Label>
               <Input
                 type="email"
@@ -436,7 +436,7 @@ const ProfilePage = () => {
           <Card>
             <CardContent className="p-4 space-y-2">
               <Label className="flex items-center gap-2 text-gray-700">
-                <User className="h-4 w-4 text-[#177385]" /> Full Name
+                <User className="h-4 w-4 text-[#FF6A00]" /> Full Name
               </Label>
               <Input
                 value={formData.name}
@@ -449,7 +449,7 @@ const ProfilePage = () => {
           <Card>
             <CardContent className="p-4 space-y-2">
               <Label className="flex items-center gap-2 text-gray-700">
-                <Phone className="h-4 w-4 text-[#177385]" /> Phone Number
+                <Phone className="h-4 w-4 text-[#FF6A00]" /> Phone Number
               </Label>
               <Input
                 type="tel"
@@ -463,7 +463,7 @@ const ProfilePage = () => {
           <Card>
             <CardContent className="p-4 space-y-2">
               <Label className="flex items-center gap-2 text-gray-700">
-                <Calendar className="h-4 w-4 text-[#177385]" /> Date of Birth
+                <Calendar className="h-4 w-4 text-[#FF6A00]" /> Date of Birth
               </Label>
               <DobPicker
                 value={formData.dob}
@@ -476,7 +476,7 @@ const ProfilePage = () => {
           <Card>
             <CardContent className="p-4 space-y-2">
               <Label className="flex items-center gap-2 text-gray-700">
-                <BookOpen className="h-4 w-4 text-[#177385]" /> Branch / Stream
+                <BookOpen className="h-4 w-4 text-[#FF6A00]" /> Branch / Stream
               </Label>
               <Input
                 value={formData.branch}
@@ -491,7 +491,7 @@ const ProfilePage = () => {
           <Card>
             <CardContent className="p-4 space-y-2">
               <Label className="flex items-center gap-2 text-gray-700">
-                <GraduationCap className="h-4 w-4 text-[#177385]" /> Year of Study
+                <GraduationCap className="h-4 w-4 text-[#FF6A00]" /> Year of Study
               </Label>
               <Input
                 value={formData.yearOfStudy}
@@ -505,7 +505,7 @@ const ProfilePage = () => {
           <Card>
             <CardContent className="p-4 space-y-2">
               <Label className="flex items-center gap-2 text-gray-700">
-                <Building2 className="h-4 w-4 text-[#177385]" /> College / Organization
+                <Building2 className="h-4 w-4 text-[#FF6A00]" /> College / Organization
               </Label>
               {/* Must be a select bound to clgId — the College Admin dashboard
                   matches student.collegeId against admin.college_id, so a
@@ -549,7 +549,7 @@ const ProfilePage = () => {
           <Card>
             <CardContent className="p-4 space-y-2">
               <Label className="flex items-center gap-2 text-gray-700">
-                <User className="h-4 w-4 text-[#177385]" /> Program Interested
+                <User className="h-4 w-4 text-[#FF6A00]" /> Program Interested
               </Label>
               <Input
                 value={formData.programInterested}

@@ -40,14 +40,27 @@ api.interceptors.response.use(
         const status = error?.response?.status;
         const url = error?.config?.url || '';
 
-        // 401 = not authenticated (no/expired/invalid token). The session is
-        // genuinely dead — clear the token and route back to /login.
+        // 401 handling. Previously this cleared the token + hard-redirected on
+        // EVERY 401 — which logged the admin out whenever a single dashboard
+        // widget's endpoint returned 401 (service down, etc.), producing the
+        // post-login "dashboard then bounce to /login" loop.
+        //
+        // New rule: only treat a 401 as real session-death when it's the
+        // auth-check probe (/auth/me) OR no token exists at all. A 401 from any
+        // other endpoint keeps the session intact and is left for the calling
+        // component to handle (same spirit as the 403 branch below).
         if (status === 401) {
-            const isSilent = SILENT_AUTH_PATHS.some((p) => url.includes(p));
-            clearToken();
-            if (!isSilent && typeof window !== 'undefined' && window.location.pathname !== '/login') {
-                console.warn(`[admin api] 401 on ${url} — clearing token, redirecting to /login`);
-                window.location.href = '/login';
+            const isAuthProbe = SILENT_AUTH_PATHS.some((p) => url.includes(p));
+            const hasToken = Boolean(getToken() || localStorage.getItem('accessToken'));
+
+            if (isAuthProbe || !hasToken) {
+                clearToken();
+                // Don't hard-redirect — AuthProvider / ProtectedRoute route the
+                // logged-out user to /login via React Router. Hard redirects
+                // here stacked on top of that and caused whole-app reload blinks.
+                console.warn(`[admin api] 401 on ${url} — session ended, token cleared`);
+            } else {
+                console.warn(`[admin api] 401 on ${url} — kept session (single endpoint failed)`);
             }
             return Promise.reject(error);
         }

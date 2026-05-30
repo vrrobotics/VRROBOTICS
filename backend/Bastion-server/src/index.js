@@ -2,6 +2,8 @@
 'use strict';
 
 import dotenv from 'dotenv';
+dotenv.config();
+import './observability.js'; // Sentry.init() — keep right after env load
 import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -10,8 +12,7 @@ import cors from 'cors';
 import rateLimiter from './middlewares/rateLimiter.js';
 import routes from './routes/index.js';
 import { bastionAllowedOrigins } from './utils/cors.js';
-
-dotenv.config();
+import { attachErrorHandler } from './observability.js';
 
 const app = express();
 
@@ -52,5 +53,6 @@ app.use('/', (req,res) => {
   res.send('Welcome to Bastion Server');
 });
 
+attachErrorHandler(app);
 
 export default app;

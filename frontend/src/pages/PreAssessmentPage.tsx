@@ -68,7 +68,7 @@ const PreAssessmentPage = () => {
         {/* Welcome Section */}
         <div className="text-center mb-10">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
-            Welcome to YagnaTech!
+            Welcome to VR Robotics Academy!
           </h1>
           <p className="mt-2 text-gray-600">
             Let's get started by evaluating your current knowledge before the program begins.
@@ -102,7 +102,7 @@ const PreAssessmentPage = () => {
         {/* Assessment Info Card */}
         <Card className="rounded-2xl shadow-lg border border-gray-200">
           <CardHeader className="text-center">
-            <CardTitle className="text-[#177385] text-2xl font-semibold">
+            <CardTitle className="text-[#FF6A00] text-2xl font-semibold">
               Pre-Assessment Test
             </CardTitle>
           </CardHeader>
@@ -110,17 +110,17 @@ const PreAssessmentPage = () => {
             {/* Instructions */}
             <div className="grid md:grid-cols-3 gap-6 text-center">
               <div className="flex flex-col items-center">
-                <ClipboardList className="h-8 w-8 text-[#177385] mb-2" />
+                <ClipboardList className="h-8 w-8 text-[#FF6A00] mb-2" />
                 <p className="text-gray-700 font-medium">20 Questions</p>
                 <p className="text-sm text-gray-500">MCQs & Scenario-based</p>
               </div>
               <div className="flex flex-col items-center">
-                <Clock className="h-8 w-8 text-[#177385] mb-2" />
+                <Clock className="h-8 w-8 text-[#FF6A00] mb-2" />
                 <p className="text-gray-700 font-medium">30 Minutes</p>
                 <p className="text-sm text-gray-500">Complete in one sitting</p>
               </div>
               <div className="flex flex-col items-center">
-                <Award className="h-8 w-8 text-[#177385] mb-2" />
+                <Award className="h-8 w-8 text-[#FF6A00] mb-2" />
                 <p className="text-gray-700 font-medium">Program Ready</p>
                 <p className="text-sm text-gray-500">Unlock after results</p>
               </div>
@@ -139,7 +139,7 @@ const PreAssessmentPage = () => {
               <Button
                 onClick={startAssessment}
                 disabled={profileLoading || starting}
-                className="px-8 py-3 text-lg rounded-xl bg-[#177385] text-white hover:bg-[#135f6e] transition-all shadow-md disabled:opacity-60"
+                className="px-8 py-3 text-lg rounded-xl bg-[#FF6A00] text-white hover:bg-[#cc5500] transition-all shadow-md disabled:opacity-60"
               >
                 {profileLoading ? "Loading…" : starting ? "Starting…" : "Go To Assessment"}
               </Button>

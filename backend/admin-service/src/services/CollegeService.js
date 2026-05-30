@@ -11,7 +11,7 @@ const { HttpError } = require('../middlewares/error');
 // this check.
 const assertOrgExists = async (orgId) => {
     const rows = await authDb.query(
-        'SELECT orgId FROM organisations WHERE orgId = :orgId LIMIT 1',
+        'SELECT "orgId" FROM organisations WHERE "orgId" = :orgId LIMIT 1',
         { replacements: { orgId }, type: QueryTypes.SELECT }
     );
     if (!rows.length) {
@@ -33,8 +33,8 @@ const list = async ({ page = 1, per_page = 10, search = '' } = {}) => {
     if (search) {
         const term = `%${String(search).trim()}%`;
         where[Op.or] = [
-            { clgName: { [Op.like]: term } },
-            { clgId: { [Op.like]: term } },
+            { clgName: { [Op.iLike]: term } },
+            { clgId: { [Op.iLike]: term } },
         ];
     }
 

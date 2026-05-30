@@ -2,36 +2,45 @@ const { Sequelize } = require('sequelize');
 const env = require('./env');
 
 /**
- * Read-only Sequelize handle for the assessment-service database.
- * Used by Manage Students to surface the selectedProgram value the student
- * picked on the pre-assessment onboarding form. Schema lives in
- * `pre_assessment_registrations` (camelCase columns by convention).
+ * Read-only Sequelize handle pointed at the assessment-service tables
+ * (lucy_devdb.pre_assessment_registrations) on Supabase Postgres. Used by
+ * Manage Students to surface the selectedProgram value the student picked
+ * on the pre-assessment onboarding form.
  *
- * We don't define models here — raw SQL via `query()` is enough for the
- * single lookup the listing needs and avoids re-declaring the registration
- * schema in two services.
+ * On Supabase both auth + assessment tables live in the same physical DB
+ * (lucy_devdb schema) — this handle exists as a separate slot so it can
+ * be re-pointed at a different DB without code changes.
  */
-const assessmentSequelize = new Sequelize(
-    env.assessmentDb.name,
-    env.assessmentDb.user,
-    env.assessmentDb.pass,
-    {
-        host: env.assessmentDb.host,
-        port: env.assessmentDb.port,
-        dialect: env.assessmentDb.dialect,
-        logging: false,
-        define: { underscored: false, freezeTableName: true },
-        pool: { max: 5, min: 0, acquire: 60000, idle: 10000 },
-        retry: {
-            max: 2,
-            match: [/ECONNRESET/, /ETIMEDOUT/, /SequelizeConnectionError/],
+const assessmentSchema = env.assessmentDb.schema || 'lucy_devdb';
+
+const baseOptions = {
+    dialect: 'postgres',
+    logging: false,
+    schema: assessmentSchema,
+    define: { underscored: false, freezeTableName: true },
+    pool: { max: 5, min: 0, acquire: 60000, idle: 10000 },
+    retry: {
+        max: 2,
+        match: [/ECONNRESET/, /ETIMEDOUT/, /SequelizeConnectionError/],
+    },
+    dialectOptions: {
+        ssl: { require: true, rejectUnauthorized: false },
+    },
+    // Pin search_path so raw queries (Manage Students' selectedProgram join)
+    // resolve to lucy_devdb rather than the default public schema.
+    hooks: {
+        afterConnect: async (connection) => {
+            await connection.query(`SET search_path TO "${assessmentSchema}", public`);
         },
-        dialectOptions: {
-            connectTimeout: 60000,
-            enableKeepAlive: true,
-            keepAliveInitialDelay: 10000,
-        },
-    }
-);
+    },
+};
+
+const assessmentSequelize = env.assessmentDb.url
+    ? new Sequelize(env.assessmentDb.url, baseOptions)
+    : new Sequelize(env.assessmentDb.name, env.assessmentDb.user, env.assessmentDb.pass, {
+          host: env.assessmentDb.host,
+          port: env.assessmentDb.port,
+          ...baseOptions,
+      });
 
 module.exports = assessmentSequelize;

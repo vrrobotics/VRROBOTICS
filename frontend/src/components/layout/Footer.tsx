@@ -1,174 +1,100 @@
 import { Link } from "react-router-dom";
-import { BookOpen, Mail, Phone, MapPin, FacebookIcon,
+import {
+  MapPin,
+  Phone,
+  Mail,
+  Sparkles,
+  FacebookIcon,
   InstagramIcon,
   LinkedinIcon,
-  TwitterIcon } from "lucide-react";
-  import Logo from "@/assets/yagnatech.png"; // Adjust the path as necessary
+  YoutubeIcon,
+} from "lucide-react";
 
+const explore = [
+  { name: "Home", href: "/" },
+  { name: "About Us", href: "/about" },
+  { name: "Curriculum", href: "/#curriculum" },
+  { name: "Certificates", href: "/#certs" },
+  { name: "Why VR Robotics", href: "/#why" },
+  { name: "What Kids Learn", href: "/#learn" },
+];
+
+const scrollTo = (href: string) => {
+  const hash = href.split("#")[1];
+  if (hash) {
+    const el = document.getElementById(hash);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+  }
+  window.scrollTo({ top: 0, behavior: "instant" });
+};
 
 const Footer = () => {
   return (
-    <footer className="bg-gradient-subtle border-t border-border/50">
+    <footer className="bg-[#13131f] text-white/80">
       <div className="container-ngo">
-        <div className="py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Brand Section */}
-            <div className="space-y-4">
-              <Link 
-            to="/" 
-            className="flex items-center space-x-3 text-xl font-bold text-gradient hover:scale-105 transition-transform"
-            >
-            <img
-              src={Logo}  
-              alt="yagnatech Logo"
-              className="w-15 h-15 rounded-lg object-cover"
-            />
-            {/* <span>YAGNATECH</span> */}
+        <div className="py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          {/* Brand / about */}
+          <div className="space-y-5">
+            <Link to="/" className="font-heading text-2xl font-extrabold tracking-tight block">
+              <span className="text-gradient">VR</span>{" "}
+              <span className="text-white">Robotics Academy</span>
             </Link>
-
-              <p className="text-muted-foreground leading-relaxed">
-             Empowering students with industry-relevant skills while connecting colleges and companies for sustainable growth.
-              </p>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <BookOpen className="w-4 h-4 text-warm-green" />
-                <span>Bridging Academia and Industries</span>
-              </div>
+            <p className="leading-relaxed">
+              Empowering the next generation of innovators through robotics,
+              coding, and VR education. Building young innovators through
+              hands-on technology learning.
+            </p>
+            <div className="flex items-center gap-2 text-sm text-primary">
+              <Sparkles className="w-4 h-4" /> Live in Future
             </div>
-
-            {/* Quick Links */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-foreground">Quick Links</h3>
-              <nav className="space-y-3">
-                <Link 
-                  to="/" 
-                  className="block text-muted-foreground hover:text-primary transition-colors"
-                  onClick={() => {
-          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-              }}
-                >
-                  Home
-                </Link>
-                <Link 
-                  to="/about" 
-                  className="block text-muted-foreground hover:text-primary transition-colors"
-                  onClick={() => {
-          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-              }}
-                >
-                  About Us
-                </Link>
-                <Link 
-                  to="/students" 
-                  className="block text-muted-foreground hover:text-primary transition-colors"
-                  onClick={() => {
-          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-              }}
-                >
-                  Opportunities
-                </Link>
-                <Link 
-                  to="/contact" 
-                  className="block text-muted-foreground hover:text-primary transition-colors"
-                  onClick={() => {
-          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-              }}
-                >
-                  Contact Us
-                </Link>
-                 <Link 
-                  to="/colleges" 
-                  className="block text-muted-foreground hover:text-primary transition-colors"
-                  onClick={() => {
-          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-              }}
-                >
-                  Partners - Colleges
-                </Link>
-                 <Link 
-                  to="/companies" 
-                  className="block text-muted-foreground hover:text-primary transition-colors"
-                  onClick={() => {
-          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-              }}
-                >
-                  Partners - Companies
-                </Link>
-
-                <Link 
-                  to="/faqs" 
-                  className="block text-muted-foreground hover:text-primary transition-colors"
-                  onClick={() => {
-          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-              }}
-                >
-                  FAQ's
-                </Link>
-              </nav>
+            <div className="flex items-center gap-4 pt-1">
+              <a href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors"><LinkedinIcon className="w-5 h-5" /></a>
+              <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors"><FacebookIcon className="w-5 h-5" /></a>
+              <a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors"><YoutubeIcon className="w-5 h-5" /></a>
+              <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors"><InstagramIcon className="w-5 h-5" /></a>
             </div>
+          </div>
 
-            {/* Programs */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-foreground">Programs</h3>
-              <div className="space-y-3 text-muted-foreground">
-                <div>AI Frontier Program</div>
-                <div>AI Frontier Plus Program</div>
-                <div>Elite AI Residency</div>
-                {/* <div>Technical Training</div> */}
-                {/* <div className="text-sm text-primary">More coming soon...</div> */}
-              </div>
+          {/* Explore */}
+          <div>
+            <h3 className="font-semibold text-white mb-5">Explore</h3>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+              {explore.map((l) => (
+                <Link
+                  key={l.name}
+                  to={l.href.startsWith("/#") ? "/" : l.href}
+                  onClick={() => scrollTo(l.href)}
+                  className="hover:text-primary transition-colors"
+                >
+                  {l.name}
+                </Link>
+              ))}
             </div>
+          </div>
 
-            {/* Contact Info */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-foreground">Get in Touch</h3>
-              <div className="space-y-3">
-                <div className="flex items-start space-x-3">
-                  <Mail className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <div className="text-muted-foreground">
-                    <div>info@yagnatech.org</div>
-                    {/* <div>support@yagnatech.org</div> */}
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <Phone className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <div className="text-muted-foreground">
-                    <div>+91 9491829495</div>
-                    {/* <div>Mon-Fri 9AM-6PM</div> */}
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <MapPin className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <div className="text-muted-foreground">
-                    Guntur,<br />
-                    AndhraPradesh, India
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Get in touch */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-white">Get in Touch</h3>
+            <a href="mailto:vrroboticsacademy@gmail.com" className="flex items-center gap-3 hover:text-primary transition-colors">
+              <Mail className="w-5 h-5 text-primary shrink-0" />
+              vrroboticsacademy@gmail.com
+            </a>
+            <a href="tel:+917483430092" className="flex items-center gap-3 hover:text-primary transition-colors">
+              <Phone className="w-5 h-5 text-primary shrink-0" />
+              +91 74834 30092
+            </a>
+            <p className="flex items-start gap-3">
+              <MapPin className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+              Andhra Pradesh, India
+            </p>
           </div>
         </div>
 
-        {/* Bottom Section */}
-        <div className="py-6 border-t border-border/50">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="text-sm text-muted-foreground">
-              © 2025 YagnaTech Foundation. All rights reserved.
-            </div>
-            <div className="flex items-center space-x-6 text-muted-foreground">
-  <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-    <FacebookIcon className="w-5 h-5" />
-  </a>
-  <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-    <InstagramIcon className="w-5 h-5" />
-  </a>
-  <a href="https://www.linkedin.com/in/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-    <LinkedinIcon className="w-5 h-5" />
-  </a>
-  <a href="https://twitter.com/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-    <TwitterIcon className="w-5 h-5" />
-  </a>
-</div>
-          </div>
+        <div className="py-6 border-t border-white/10 text-center text-sm text-white/60">
+          © {new Date().getFullYear()} VR Robotics Academy. All rights reserved.
         </div>
       </div>
     </footer>

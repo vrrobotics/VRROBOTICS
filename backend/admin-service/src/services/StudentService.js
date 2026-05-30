@@ -1,10 +1,10 @@
-const bcrypt = require('bcryptjs');
 const { QueryTypes } = require('sequelize');
 const { sequelize } = require('../models');
 const authDb = require('../config/authDatabase');
 const assessmentDb = require('../config/assessmentDatabase');
 const { upload, removeFile, niceFileName } = require('../helpers/fileUploader');
 const { HttpError } = require('../middlewares/error');
+const supabaseAdmin = require('../lib/supabaseAdmin');
 
 // Students sign up through auth-service, which writes to lucy_devdb.users
 // (string userId PK, roleId -> roles table). The admin "Manage Students"
@@ -18,68 +18,50 @@ const list = async ({ page = 1, per_page = 10, search = '', college = '', batch 
     try {
         const like = `%${String(search).trim()}%`;
         const searchClause = search
-            ? 'AND (u.name LIKE :like OR u.email LIKE :like)'
+            ? 'AND (u.name ILIKE :like OR u.email ILIKE :like)'
             : '';
 
-        // Filter by the resolved college name (exact match on what the
-        // dropdown shows). Same COALESCE expression as the SELECT so the
-        // filter matches exactly what's displayed. The colleges JOIN is
-        // always present so the count stays consistent with the rows.
         const collegeName = String(college).trim();
         const collegeClause = collegeName
-            ? "AND COALESCE(c.clgName, NULLIF(TRIM(u.collegeName), '')) = :college"
+            ? `AND COALESCE(c."clgName", NULLIF(TRIM(u."collegeName"), '')) = :college`
             : '';
 
         const [{ count }] = await authDb.query(
             `SELECT COUNT(*) AS count
                FROM users u
-               JOIN roles r ON r.roleId = u.roleId
-               LEFT JOIN colleges c ON c.clgId = u.collegeId
+               JOIN roles r ON r."roleId" = u."roleId"
+               LEFT JOIN colleges c ON c."clgId" = u."collegeId"
               WHERE r.role = 'student' ${searchClause} ${collegeClause}`,
             { replacements: { like, college: collegeName }, type: QueryTypes.SELECT }
         );
 
-        // Pre-assessment score AND time-taken now live in the student schema
-        // itself (users.preScore / users.preScoreDuration), written by the
-        // auth-service prescore endpoint. We read them straight off the user
-        // row — no cross-DB join needed for the value the UI shows.
-        // College the student picked in their profile: ProfilePage saves the
-        // chosen clgId into users.collegeId, so we LEFT JOIN the colleges
-        // table (same lucy_devdb) to resolve its display name. Fallbacks:
-        // matched clgName → any free-text collegeName they typed → null.
         const rows = await authDb.query(
-            `SELECT u.userId AS id, u.name, u.email, u.phone,
-                    u.createdAt, u.preScore, u.preScoreDuration,
-                    u.postScore, u.postScoreDuration,
-                    u.studentPhoto,
-                    -- Program the student picked at signup (display-only).
-                    u.programInterested AS program_interested,
-                    -- Graduation year doubles as the student's batch on the
-                    -- Manage Students table; no separate batch column exists.
-                    u.graduationYear  AS batch,
-                    COALESCE(c.clgName, NULLIF(TRIM(u.collegeName), '')) AS college,
+            `SELECT u."userId" AS id, u.name, u.email, u.phone,
+                    u."createdAt", u."preScore", u."preScoreDuration",
+                    u."postScore", u."postScoreDuration",
+                    u."studentPhoto",
+                    u."programInterested" AS program_interested,
+                    u."graduationYear"    AS batch,
+                    COALESCE(c."clgName", NULLIF(TRIM(u."collegeName"), '')) AS college,
                     pr.program AS program_request,
                     pr.status  AS program_request_status
                FROM users u
-               JOIN roles r ON r.roleId = u.roleId
-               LEFT JOIN colleges c ON c.clgId = u.collegeId
-               LEFT JOIN program_requests pr ON pr.user_id = u.userId
+               JOIN roles r ON r."roleId" = u."roleId"
+               LEFT JOIN colleges c ON c."clgId" = u."collegeId"
+               LEFT JOIN program_requests pr ON pr.user_id = u."userId"
               WHERE r.role = 'student' ${searchClause} ${collegeClause}
               ORDER BY
                   -- 1. Group same-college students together (A→Z); students
                   --    with no college fall to the very end.
-                  (COALESCE(c.clgName, NULLIF(TRIM(u.collegeName), '')) IS NULL) ASC,
-                  COALESCE(c.clgName, NULLIF(TRIM(u.collegeName), '')) ASC,
-                  -- 2. Within a college: highest pre-assessment score first;
-                  --    students who haven't taken it sink below scored ones.
-                  (u.preScore IS NULL) ASC,
-                  u.preScore DESC,
-                  -- 3. Tie-break equal scores by lowest time taken; rows
-                  --    without a recorded duration come after timed ones.
-                  (u.preScoreDuration IS NULL) ASC,
-                  u.preScoreDuration ASC,
-                  -- Stable final order for otherwise-identical rows.
-                  u.createdAt DESC
+                  (COALESCE(c."clgName", NULLIF(TRIM(u."collegeName"), '')) IS NULL) ASC,
+                  COALESCE(c."clgName", NULLIF(TRIM(u."collegeName"), '')) ASC,
+                  -- 2. Within a college: highest pre-assessment score first.
+                  (u."preScore" IS NULL) ASC,
+                  u."preScore" DESC,
+                  -- 3. Tie-break equal scores by lowest time taken.
+                  (u."preScoreDuration" IS NULL) ASC,
+                  u."preScoreDuration" ASC,
+                  u."createdAt" DESC
               LIMIT :limit OFFSET :offset`,
             { replacements: { like, college: collegeName, limit, offset }, type: QueryTypes.SELECT }
         );
@@ -173,10 +155,10 @@ const list = async ({ page = 1, per_page = 10, search = '', college = '', batch 
             // at row-shape time if no registration exists.
             try {
                 const regs = await assessmentDb.query(
-                    `SELECT userId, selectedProgram, createdAt
+                    `SELECT "userId", "selectedProgram", "createdAt"
                        FROM pre_assessment_registrations
-                      WHERE userId IN (:ids)
-                      ORDER BY createdAt DESC`,
+                      WHERE "userId" IN (:ids)
+                      ORDER BY "createdAt" DESC`,
                     { replacements: { ids }, type: QueryTypes.SELECT }
                 );
                 // First write wins because the query is sorted DESC by
@@ -292,13 +274,13 @@ const list = async ({ page = 1, per_page = 10, search = '', college = '', batch 
 
 const get = async (id) => {
     const rows = await authDb.query(
-        `SELECT u.userId AS id, u.name, u.email, u.phone, u.dob, u.gender,
-                u.educationLevel, u.branch, u.collegeName, u.collegeId,
-                u.graduationYear, u.collegeCode, u.programInterested,
-                u.studentPhoto, u.createdAt
+        `SELECT u."userId" AS id, u.name, u.email, u.phone, u.dob, u.gender,
+                u."educationLevel", u.branch, u."collegeName", u."collegeId",
+                u."graduationYear", u."collegeCode", u."programInterested",
+                u."studentPhoto", u."createdAt"
            FROM users u
-           JOIN roles r ON r.roleId = u.roleId
-          WHERE r.role = 'student' AND u.userId = :id
+           JOIN roles r ON r."roleId" = u."roleId"
+          WHERE r.role = 'student' AND u."userId" = :id
           LIMIT 1`,
         { replacements: { id: String(id) }, type: QueryTypes.SELECT }
     );
@@ -318,24 +300,28 @@ const generateUserId = () => {
 
 const resolveStudentRoleId = async () => {
     const rows = await authDb.query(
-        "SELECT roleId FROM roles WHERE role = :role LIMIT 1",
+        `SELECT "roleId" FROM roles WHERE role = :role LIMIT 1`,
         { replacements: { role: 'student' }, type: QueryTypes.SELECT }
     );
-    if (!rows.length) throw new HttpError(500, "student role not found in roles table");
+    if (!rows.length) throw new HttpError(500, 'student role not found in roles table');
     return rows[0].roleId;
 };
 
 const isAuthEmailTaken = async (email) => {
     const rows = await authDb.query(
-        "SELECT 1 FROM users WHERE email = :email LIMIT 1",
+        `SELECT 1 FROM users WHERE email = :email LIMIT 1`,
         { replacements: { email }, type: QueryTypes.SELECT }
     );
     return rows.length > 0;
 };
 
-// Students added from Manage Students must land in the same auth-service
-// users table the list() query reads from (lucy_devdb.users), otherwise the
-// new row never appears in the admin students grid. Mirrors InstructorService.
+// Students added from Manage Students must land in the same auth schema
+// the list() query reads from (lucy_devdb.users) AND be able to log in via
+// Supabase Auth. Two writes:
+//   1. supabase.auth.admin.createUser() — owns the password.
+//   2. INSERT into lucy_devdb.users — the application profile row keyed on
+//      our legacy generated userId, with `supabase:<uid>` stashed in
+//      passwordHash so the auth middleware can map JWT.sub back to a row.
 const create = async (body, file) => {
     if (!body.name || !body.email || !body.password) {
         throw new HttpError(422, 'Name, email, and password are required');
@@ -349,7 +335,16 @@ const create = async (body, file) => {
 
     const roleId = await resolveStudentRoleId();
     const userId = generateUserId();
-    const passwordHash = await bcrypt.hash(body.password, 10);
+
+    // 1. Supabase Auth user — owns the password from here on.
+    const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+        email: body.email,
+        password: body.password,
+        email_confirm: true,
+        user_metadata: { name: body.name, role: 'student' },
+    });
+    if (createErr) throw new HttpError(400, createErr.message);
+    const supabaseUid = created.user.id;
 
     let studentPhoto = null;
     if (file) {
@@ -359,30 +354,37 @@ const create = async (body, file) => {
         studentPhoto = destPath;
     }
 
-    await authDb.query(
-        `INSERT INTO users
-            (userId, name, email, passwordHash, phone, roleId,
-             collegeId, studentPhoto, createdAt, updatedAt)
-         VALUES
-            (:userId, :name, :email, :passwordHash, :phone, :roleId,
-             :collegeId, :studentPhoto, NOW(), NOW())`,
-        {
-            replacements: {
-                userId,
-                name: body.name,
-                email: body.email,
-                passwordHash,
-                phone: body.phone || null,
-                roleId,
-                collegeId: body.collegeId ? String(body.collegeId) : null,
-                studentPhoto,
-            },
-            type: QueryTypes.INSERT,
-        }
-    );
+    // 2. Profile row. Roll back the Supabase user on any failure so we
+    //    don't leak orphaned auth accounts.
+    try {
+        await authDb.query(
+            `INSERT INTO users
+                ("userId", name, email, "passwordHash", phone, "roleId",
+                 "collegeId", "studentPhoto", "createdAt", "updatedAt")
+             VALUES
+                (:userId, :name, :email, :passwordHash, :phone, :roleId,
+                 :collegeId, :studentPhoto, NOW(), NOW())`,
+            {
+                replacements: {
+                    userId,
+                    name: body.name,
+                    email: body.email,
+                    passwordHash: `supabase:${supabaseUid}`,
+                    phone: body.phone || null,
+                    roleId,
+                    collegeId: body.collegeId ? String(body.collegeId) : null,
+                    studentPhoto,
+                },
+                type: QueryTypes.INSERT,
+            }
+        );
+    } catch (e) {
+        await supabaseAdmin.auth.admin.deleteUser(supabaseUid).catch(() => {});
+        throw e;
+    }
 
-    const created = await get(userId);
-    return { message: 'Student added successfully', student: created.student };
+    const createdProfile = await get(userId);
+    return { message: 'Student added successfully', student: createdProfile.student };
 };
 
 // Students live in auth-service's lucy_devdb.users (string userId PK,
@@ -391,14 +393,14 @@ const create = async (body, file) => {
 // form's fields — name/email/phone/password map across; about/address/
 // social/photo have no auth columns and are intentionally ignored.
 const findAuthStudent = async (id) => {
-    // Include studentPhoto so update() can delete the previous file when
-    // the admin uploads a replacement, and remove() can clean it up on
-    // delete.
+    // Include studentPhoto + passwordHash (back-pointer to supabase uid)
+    // so update() / remove() can both clean up the photo file AND keep
+    // Supabase Auth in sync.
     const rows = await authDb.query(
-        `SELECT u.userId, u.name, u.email, u.phone, u.studentPhoto
+        `SELECT u."userId", u.name, u.email, u.phone, u."studentPhoto", u."passwordHash"
            FROM users u
-           JOIN roles r ON r.roleId = u.roleId
-          WHERE r.role = 'student' AND u.userId = :id
+           JOIN roles r ON r."roleId" = u."roleId"
+          WHERE r.role = 'student' AND u."userId" = :id
           LIMIT 1`,
         { replacements: { id: String(id) }, type: QueryTypes.SELECT }
     );
@@ -413,7 +415,7 @@ const update = async (id, body, file = null) => {
 
     // Email uniqueness within the auth users table, excluding this user.
     const dup = await authDb.query(
-        'SELECT 1 FROM users WHERE email = :email AND userId <> :id LIMIT 1',
+        `SELECT 1 FROM users WHERE email = :email AND "userId" <> :id LIMIT 1`,
         { replacements: { email: body.email, id: String(id) }, type: QueryTypes.SELECT }
     );
     if (dup.length) throw new HttpError(422, 'Email already in use');
@@ -426,42 +428,52 @@ const update = async (id, body, file = null) => {
         phone: body.phone ?? student.phone ?? null,
     };
 
-    // Only touch collegeId when the form actually submitted the field.
-    // Empty string from the "— Not assigned —" option clears it; absent
-    // key (e.g. legacy callers) leaves the existing value alone.
     if (Object.prototype.hasOwnProperty.call(body, 'collegeId')) {
-        sets.push('collegeId = :collegeId');
+        sets.push('"collegeId" = :collegeId');
         replacements.collegeId = body.collegeId ? String(body.collegeId) : null;
     }
 
+    // Password change routes through Supabase Auth so the user can still
+    // log in. The local passwordHash column stays as `supabase:<uid>` — it
+    // is the back-pointer used by the JWT middleware, not a real hash.
     if (body.password) {
         if (String(body.password).length < 8) {
             throw new HttpError(422, 'Password must be at least 8 characters');
         }
-        sets.push('passwordHash = :passwordHash');
-        replacements.passwordHash = await bcrypt.hash(body.password, 10);
+        const supabaseUid = String(student.passwordHash || '').replace(/^supabase:/, '');
+        if (supabaseUid) {
+            const { error: updErr } = await supabaseAdmin.auth.admin.updateUserById(
+                supabaseUid, { password: body.password }
+            );
+            if (updErr) throw new HttpError(400, `Password update failed: ${updErr.message}`);
+        }
     }
 
-    // Photo upload — only touch studentPhoto when a new file was actually
-    // uploaded. Same pattern as InstructorService.update. Stored under
-    // uploads/users/student/ so old admin-DB-side files (different role)
-    // don't collide.
     if (file) {
         const ext = (file.originalname || '').split('.').pop() || 'jpg';
         const destPath = `uploads/users/student/${niceFileName(body.name, ext)}`;
         await upload(file, destPath, 400, 400);
-        sets.push('studentPhoto = :studentPhoto');
+        sets.push('"studentPhoto" = :studentPhoto');
         replacements.studentPhoto = destPath;
     }
 
     await authDb.query(
-        `UPDATE users SET ${sets.join(', ')} WHERE userId = :id`,
+        `UPDATE users SET ${sets.join(', ')}, "updatedAt" = NOW() WHERE "userId" = :id`,
         { replacements, type: QueryTypes.UPDATE }
     );
 
-    // Best-effort old-file cleanup after the UPDATE succeeded.
+    // Keep Supabase email in sync.
+    if (body.email && body.email !== student.email) {
+        const uid = String(student.passwordHash || '').replace(/^supabase:/, '');
+        if (uid) {
+            await supabaseAdmin.auth.admin
+                .updateUserById(uid, { email: body.email })
+                .catch((e) => console.warn('[student] Supabase email sync failed:', e.message));
+        }
+    }
+
     if (file && student.studentPhoto && student.studentPhoto !== replacements.studentPhoto) {
-        try { removeFile(student.studentPhoto); } catch { /* ignore */ }
+        try { await removeFile(student.studentPhoto); } catch { /* ignore */ }
     }
 
     const updated = await get(id);
@@ -472,28 +484,29 @@ const remove = async (id) => {
     const student = await findAuthStudent(id);
     if (!student) throw new HttpError(404, 'Student not found');
     await authDb.query(
-        'DELETE FROM users WHERE userId = :id',
+        `DELETE FROM users WHERE "userId" = :id`,
         { replacements: { id: String(id) }, type: QueryTypes.DELETE }
     );
-    // Drop the avatar file too so deleting a student doesn't leave
-    // orphaned images in uploads/users/student/.
     if (student.studentPhoto) {
-        try { removeFile(student.studentPhoto); } catch { /* ignore */ }
+        try { await removeFile(student.studentPhoto); } catch { /* ignore */ }
+    }
+    const uid = String(student.passwordHash || '').replace(/^supabase:/, '');
+    if (uid) {
+        await supabaseAdmin.auth.admin
+            .deleteUser(uid)
+            .catch((e) => console.warn('[student] Supabase delete failed:', e.message));
     }
     return { message: 'Student removed successfully' };
 };
 
-// Distinct, non-empty college names across all students — powers the
-// Manage Students filter dropdown. Uses the same COALESCE resolution as
-// list() so the options exactly match the displayed College column.
 const collegeOptions = async () => {
     const rows = await authDb.query(
-        `SELECT DISTINCT COALESCE(c.clgName, NULLIF(TRIM(u.collegeName), '')) AS college
+        `SELECT DISTINCT COALESCE(c."clgName", NULLIF(TRIM(u."collegeName"), '')) AS college
            FROM users u
-           JOIN roles r ON r.roleId = u.roleId
-           LEFT JOIN colleges c ON c.clgId = u.collegeId
+           JOIN roles r ON r."roleId" = u."roleId"
+           LEFT JOIN colleges c ON c."clgId" = u."collegeId"
           WHERE r.role = 'student'
-            AND COALESCE(c.clgName, NULLIF(TRIM(u.collegeName), '')) IS NOT NULL
+            AND COALESCE(c."clgName", NULLIF(TRIM(u."collegeName"), '')) IS NOT NULL
           ORDER BY college ASC`,
         { type: QueryTypes.SELECT }
     );
@@ -526,7 +539,7 @@ const sendProgramRequest = async (id, program, requestedBy = null) => {
     // a brand-new install (no DB programs yet) still works for the legacy
     // three-program flow.
     const matches = await sequelize.query(
-        'SELECT id FROM programs WHERE title = :title AND is_active = 1 LIMIT 1',
+        'SELECT id FROM programs WHERE title = :title AND is_active = TRUE LIMIT 1',
         { replacements: { title }, type: QueryTypes.SELECT }
     ).catch(() => []);
     const allowed = matches.length > 0 || PROGRAM_OPTIONS.includes(title);
@@ -537,9 +550,9 @@ const sendProgramRequest = async (id, program, requestedBy = null) => {
     await authDb.query(
         `INSERT INTO program_requests (user_id, program, requested_by, status)
          VALUES (:userId, :program, :requestedBy, 'sent')
-         ON DUPLICATE KEY UPDATE
-            program      = VALUES(program),
-            requested_by = VALUES(requested_by),
+         ON CONFLICT (user_id) DO UPDATE SET
+            program      = EXCLUDED.program,
+            requested_by = EXCLUDED.requested_by,
             status       = 'sent',
             updated_at   = CURRENT_TIMESTAMP`,
         {
@@ -609,22 +622,23 @@ const respondProgramRequest = async (userId, action) => {
             : null;
     if (!next) throw new HttpError(422, "action must be 'accept' or 'reject'");
 
-    const [, meta] = await authDb.query(
+    // RETURNING gives a reliable affected-row signal across pg versions
+    // (the old mysql2 `affectedRows` shape doesn't exist on Postgres).
+    const updated = await authDb.query(
         `UPDATE program_requests
             SET status = :next, responded_at = CURRENT_TIMESTAMP
-          WHERE user_id = :uid AND status = 'sent'`,
-        { replacements: { uid, next }, type: QueryTypes.UPDATE }
+          WHERE user_id = :uid AND status = 'sent'
+        RETURNING user_id`,
+        { replacements: { uid, next }, type: QueryTypes.SELECT }
     );
-    // mysql2 returns affectedRows on meta; 0 means nothing was pending.
-    const affected = meta?.affectedRows ?? meta ?? 0;
-    if (!affected) throw new HttpError(404, 'No pending program request to respond to');
+    if (!updated.length) throw new HttpError(404, 'No pending program request to respond to');
 
-    // Mirror the decision onto the student schema.
+    // Mirror the decision onto the student schema (camelCase → quoted).
     await authDb.query(
         `UPDATE users
-            SET programResponseStatus = :next,
-                programRespondedAt = CURRENT_TIMESTAMP
-          WHERE userId = :uid`,
+            SET "programResponseStatus" = :next,
+                "programRespondedAt" = CURRENT_TIMESTAMP
+          WHERE "userId" = :uid`,
         { replacements: { uid, next }, type: QueryTypes.UPDATE }
     );
 

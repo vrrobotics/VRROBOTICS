@@ -174,7 +174,7 @@ const listEligible = async (userId) => {
     // Read the student row from the shared auth DB (admin-service has no
     // duplicate User model). collation/case is preserved as stored.
     const [userRow] = await authDb.query(
-        'SELECT collegeId FROM users WHERE userId = :userId LIMIT 1',
+        'SELECT "collegeId" FROM users WHERE "userId" = :userId LIMIT 1',
         { replacements: { userId: String(userId) }, type: QueryTypes.SELECT }
     );
     const collegeId = userRow?.collegeId || null;
@@ -219,7 +219,7 @@ const listForCollegeBatch = async ({ clgId = '', clgName = '', batchId = '', bat
     let resolvedClgId = String(clgId || '').trim();
     if (!resolvedClgId && clgName) {
         const rows = await authDb.query(
-            'SELECT clgId FROM colleges WHERE clgName = :name LIMIT 1',
+            'SELECT "clgId" FROM colleges WHERE "clgName" = :name LIMIT 1',
             { replacements: { name: String(clgName).trim() }, type: QueryTypes.SELECT }
         ).catch(() => []);
         resolvedClgId = rows[0]?.clgId || '';

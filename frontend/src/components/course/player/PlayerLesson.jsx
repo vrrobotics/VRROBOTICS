@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+import Hls from 'hls.js';
 import QuizPlayer from './QuizPlayer';
 
 // Same env var the rest of the app uses (Home/Overview/Programspage). System
@@ -99,22 +101,18 @@ function LessonRenderer({ lesson, course, onLessonEnded, onTimeUpdate }) {
     }
 
     if (t === 'system-video' || t === 'html5') {
-        // system-video is a file uploaded via the admin and stored as a
-        // RELATIVE upload path; html5 is a direct .mp4 URL the admin typed
-        // (already absolute). resolveUploadUrl handles both.
+        // system-video is now a Bunny Stream HLS playlist (.m3u8) — played via
+        // hls.js. Legacy rows may still be a relative local path or a direct
+        // .mp4 URL; HlsVideo handles all three. resolveUploadUrl leaves
+        // absolute (Bunny) URLs untouched and only prefixes relative paths.
         const videoUrl = resolveUploadUrl(lesson.lesson_src);
         return (
-            <video
+            <HlsVideo
                 key={lesson.id}
-                playsInline
-                controls
-                onContextMenu={(e) => e.preventDefault()}
+                src={videoUrl}
                 onEnded={onLessonEnded}
-                onTimeUpdate={(e) => onTimeUpdate?.(e.currentTarget.currentTime)}
-                className="w-full max-h-[80vh] bg-black"
-            >
-                <source src={videoUrl} type="video/mp4" />
-            </video>
+                onTimeUpdate={onTimeUpdate}
+            />
         );
     }
 
@@ -195,6 +193,51 @@ function LessonRenderer({ lesson, course, onLessonEnded, onTimeUpdate }) {
         <div className="bg-black/40 p-6 text-white/70 text-center">
             Unsupported lesson type: <code className="text-white">{t}</code>
         </div>
+    );
+}
+
+// Plays a Bunny Stream HLS playlist (.m3u8) via hls.js, falling back to native
+// playback for Safari (which plays HLS directly) and for plain .mp4 URLs /
+// legacy local paths. Keeps the same <video> element so onEnded / onTimeUpdate
+// continue to drive lesson-completion + progress tracking.
+function HlsVideo({ src, onEnded, onTimeUpdate }) {
+    const ref = useRef(null);
+
+    useEffect(() => {
+        const video = ref.current;
+        if (!video || !src) return undefined;
+
+        const isHls = /\.m3u8(\?|$)/i.test(src);
+        if (!isHls) {
+            video.src = src;
+            return undefined;
+        }
+        // Safari / iOS play HLS natively — no hls.js needed.
+        if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = src;
+            return undefined;
+        }
+        if (Hls.isSupported()) {
+            const hls = new Hls({ enableWorker: true });
+            hls.loadSource(src);
+            hls.attachMedia(video);
+            return () => hls.destroy();
+        }
+        // No HLS support anywhere — best-effort direct assignment.
+        video.src = src;
+        return undefined;
+    }, [src]);
+
+    return (
+        <video
+            ref={ref}
+            playsInline
+            controls
+            onContextMenu={(e) => e.preventDefault()}
+            onEnded={onEnded}
+            onTimeUpdate={(e) => onTimeUpdate?.(e.currentTarget.currentTime)}
+            className="w-full max-h-[80vh] bg-black"
+        />
     );
 }
 

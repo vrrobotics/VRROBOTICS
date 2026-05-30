@@ -9,7 +9,6 @@
 // import { Tabs, TabsContent } from "@/components/ui/tabs";
 // import { Badge } from "@/components/ui/badge";
 // import { Button } from "@/components/ui/button";
-// import Logo from "@/assets/yagnatech.png";
 // import Overview from "./Overview";
 // import Assessment from "./Assesments";
 // import Certificate from "./Certificate";
@@ -69,7 +68,7 @@
 //               key={tab.value}
 //                className={`w-full justify-start text-black bg-transparent border border-black/2 ${
 //     activeTab === tab.value
-//       ? "bg-[#177385] text-white hover:bg-gradient-hero"
+//       ? "bg-[#FF6A00] text-white hover:bg-gradient-hero"
 //       : "hover:bg-gradient-hero"
 //   }`}
 //   onClick={() => setActiveTab(tab.value)}
@@ -137,7 +136,7 @@
 //           onClick={() => setSidebarOpen(false)}
 //           className="hover:bg-red-100"
 //         >
-//           <X className="h-10 w-10 text-[#177385]-500" />
+//           <X className="h-10 w-10 text-[#FF6A00]-500" />
 //         </Button>
 //       </div>
 
@@ -148,7 +147,7 @@
 //               key={tab.value}
 //                className={`w-full justify-start text-black bg-transparent border border-black/2 ${
 //     activeTab === tab.value
-//       ? "bg-[#177385] text-white hover:bg-gradient-hero"
+//       ? "bg-[#FF6A00] text-white hover:bg-gradient-hero"
 //       : "hover:bg-gradient-hero"
 //   }`}
 //             onClick={() => {
@@ -224,7 +223,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import Logo from "@/assets/yagnatech.png";
+import { BRAND } from "@/branding";
+const Logo = BRAND.logo; // VR Robotics Academy logo (hosted)
 import Overview from "./Overview";
 import Assessment from "./Assesments";
 import Certificate from "./Certificate";
@@ -347,7 +347,7 @@ const StudentDashboard = ({ contentOverride }: StudentDashboardProps = {}) => {
               key={tab.value}
               className={`w-full justify-start text-black bg-transparent border border-black/2 ${
                 activeTab === tab.value
-                  ? "bg-[#177385] text-white hover:bg-gradient-hero"
+                  ? "bg-[#FF6A00] text-white hover:bg-gradient-hero"
                   : "hover:bg-gradient-hero"
               }`}
               onClick={() => goToTab(tab.value)}
@@ -422,7 +422,7 @@ const StudentDashboard = ({ contentOverride }: StudentDashboardProps = {}) => {
                 onClick={() => setSidebarOpen(false)}
                 className="hover:bg-red-100"
               >
-                <X className="h-10 w-10 text-[#177385]-500" />
+                <X className="h-10 w-10 text-[#FF6A00]-500" />
               </Button>
             </div>
 
@@ -444,7 +444,7 @@ const StudentDashboard = ({ contentOverride }: StudentDashboardProps = {}) => {
                   key={tab.value}
                   className={`w-full justify-start text-black bg-transparent border border-black/2 ${
                     activeTab === tab.value
-                      ? "bg-[#177385] text-white hover:bg-gradient-hero"
+                      ? "bg-[#FF6A00] text-white hover:bg-gradient-hero"
                       : "hover:bg-gradient-hero"
                   }`}
                   onClick={() => goToTab(tab.value)}

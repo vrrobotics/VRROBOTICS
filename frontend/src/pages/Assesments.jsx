@@ -125,7 +125,7 @@ const Assesments = () => {
           {/* Pre-Assessment Score */}
           <Card className="rounded-2xl shadow-lg border border-gray-200 hover:shadow-xl transition-all">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[#177385]">
+              <CardTitle className="flex items-center gap-2 text-[#FF6A00]">
                 <Clock className="h-5 w-5" />
                 Pre-Assessment Score
               </CardTitle>
@@ -137,11 +137,11 @@ const Assesments = () => {
               <div className="flex flex-col items-center justify-center mb-6">
                 {loadingProfile ? (
 
-                  <div className="w-10 h-10 border-4 border-[#177385] border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-10 h-10 border-4 border-[#FF6A00] border-t-transparent rounded-full animate-spin"></div>
 
                 ) : profile?.preScore !== null && profile?.preScore !== undefined ? (
                   <>
-                    <span className="text-4xl font-bold text-[#177385]">
+                    <span className="text-4xl font-bold text-[#FF6A00]">
                       {profile.preScore} / 100
                     </span>
                   </>
@@ -182,7 +182,7 @@ const Assesments = () => {
                     className={`w-full rounded-lg transition-colors
     ${isPreCompleted
                         ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                        : "bg-[#177385] text-white hover:bg-[#135f6e]"
+                        : "bg-[#FF6A00] text-white hover:bg-[#cc5500]"
                       }`}
                     disabled={isPreCompleted || existingRegistration === undefined}
                   >
@@ -207,7 +207,7 @@ const Assesments = () => {
           {/* Post-Assessment Score */}
           <Card className="rounded-2xl shadow-lg border border-gray-200 hover:shadow-xl transition-all">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[#177385]">
+              <CardTitle className="flex items-center gap-2 text-[#FF6A00]">
                 <Award className="h-5 w-5" />
                 Post-Assessment
               </CardTitle>
@@ -219,10 +219,10 @@ const Assesments = () => {
               </p>
               <div className="flex flex-col items-center justify-center mb-6">
                 {loadingProfile ? (
-                  <div className="w-10 h-10 border-4 border-[#177385] border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-10 h-10 border-4 border-[#FF6A00] border-t-transparent rounded-full animate-spin"></div>
                 ) : profile?.postScore !== null && profile?.postScore !== undefined ? (
                   <>
-                    <span className="text-4xl font-bold text-[#177385]">
+                    <span className="text-4xl font-bold text-[#FF6A00]">
                       {profile.postScore} / 100
                     </span>
                   </>
@@ -261,7 +261,7 @@ const Assesments = () => {
                   disabled={!isPostEnabled}
                   className={`w-full rounded-lg transition-colors ${
                     isPostEnabled
-                      ? "bg-[#177385] text-white hover:bg-[#135f6e]"
+                      ? "bg-[#FF6A00] text-white hover:bg-[#cc5500]"
                       : "bg-gray-300 text-gray-600 cursor-not-allowed"
                   }`}
                 >

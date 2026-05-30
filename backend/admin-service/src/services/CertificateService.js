@@ -245,7 +245,7 @@ async function enqueueCertificateIssuedEmail({ certificate }) {
         if (!userId || !Number.isFinite(courseId)) return;
 
         const [userRow] = await authDb.query(
-            'SELECT userId, name, email FROM users WHERE userId = :userId LIMIT 1',
+            'SELECT "userId", name, email FROM users WHERE "userId" = :userId LIMIT 1',
             { replacements: { userId }, type: QueryTypes.SELECT }
         );
         if (!userRow || !userRow.email) return;

@@ -33,10 +33,10 @@ const getStats = async ({ collegeId }) => {
     //    LOWER+TRIM both sides so admin/student college_id casing/whitespace
     //    drift doesn't silently zero the dashboard.
     const students = await authDb.query(
-        `SELECT u.userId, u.collegeId, u.preScore, u.postScore
+        `SELECT u."userId", u."collegeId", u."preScore", u."postScore"
            FROM users u
-           JOIN roles r ON r.roleId = u.roleId
-          WHERE LOWER(TRIM(u.collegeId)) = LOWER(:filter)
+           JOIN roles r ON r."roleId" = u."roleId"
+          WHERE LOWER(TRIM(u."collegeId")) = LOWER(:filter)
             AND r.role = 'student'`,
         { replacements: { filter }, type: QueryTypes.SELECT }
     );
@@ -44,7 +44,7 @@ const getStats = async ({ collegeId }) => {
     // Resolve the display name so the dashboard can filter the read-only
     // student list by clgName (which is what listStudents matches on).
     const [collegeRow] = await authDb.query(
-        `SELECT clgName FROM colleges WHERE LOWER(TRIM(clgId)) = LOWER(:filter) LIMIT 1`,
+        `SELECT "clgName" FROM colleges WHERE LOWER(TRIM("clgId")) = LOWER(:filter) LIMIT 1`,
         { replacements: { filter }, type: QueryTypes.SELECT }
     );
     const collegeName = collegeRow?.clgName || null;

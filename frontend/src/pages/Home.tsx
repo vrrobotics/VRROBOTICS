@@ -1,522 +1,247 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import RoadMap from "@/assets/RM.png"; // Adjust the path as necessary
-import Vid from "@/assets/Vid1.mp4"; // Adjust the path as necessary
-
-import { 
-  BookOpen,  
-  Award, 
-  Heart, 
-  GraduationCap, 
-  Globe, 
-  Target,
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   ArrowRight,
-  CheckCircle,
-  Star, 
-  School,
-  Building2,
+  Sparkles,
+  Code2,
+  Gamepad2,
+  Box,
+  CircuitBoard,
+  Bot,
+  Cpu,
+  Brain,
+  Eye,
+  Wifi,
+  Trophy,
+  Rocket,
+  Lightbulb,
+  Wrench,
+  Terminal,
+  Bug,
+  Presentation,
+  PartyPopper,
+  ClipboardList,
+  CalendarCheck,
+  MessageSquare,
+  ListChecks,
+  KeyRound,
+  Award,
+  Users,
+  GraduationCap,
+  ShieldCheck,
+  Quote,
 } from "lucide-react";
-import { 
-  FaUserEdit, FaEnvelopeOpenText, FaPencilAlt, FaListAlt,
-  FaPlayCircle, FaGraduationCap, FaClipboardCheck, FaCertificate
-} from "react-icons/fa";
 
-const ADMIN_BASE =
-  (import.meta.env.VITE_ADMIN_API_URL as string) || "http://localhost:4000";
+/**
+ * VR Robotics Academy landing page — recreated in React/Tailwind from the
+ * VR Robotics static export (index.vrrobotics-backup.html). Replaces the
+ * previous Roboprenr content. Self-contained: copy, team, curriculum, process,
+ * certificates, projects and partners all come from that backup.
+ */
 
-interface HomeCategory {
-  id: number;
-  title: string;
-  description: string;
-  // keywords is a comma-separated string in the admin model; we split it into
-  // the card's bullet list so what an admin types under a category shows here.
-  bullets: string[];
-}
+const ROBOT_IMG =
+  "https://image2url.com/r2/default/images/1775200145399-f0e4d8bd-15f4-46de-b4ea-3a5744599aa1.png";
 
-const Home = () => {
-  // "Opportunities for Students" cards. Previously a hardcoded 3-item array
-  // ("AI Frontier Program", etc.); now driven by the categories an admin
-  // creates. This is a public, pre-login page so we call /api/public/categories
-  // without a clgId — the backend returns the full category tree in that mode.
-  const [programCategories, setProgramCategories] = useState<HomeCategory[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data } = await axios.get(`${ADMIN_BASE}/api/public/categories`, {
-          timeout: 30000,
-        });
-        if (cancelled) return;
-        const cats = Array.isArray(data?.categories) ? data.categories : [];
-        setProgramCategories(
-          cats.map((c: any) => ({
-            id: Number(c.id),
-            title: String(c.title || ""),
-            description: String(c.description || ""),
-            bullets: String(c.keywords || "")
-              .split(",")
-              .map((s: string) => s.trim())
-              .filter(Boolean),
-          })),
-        );
-      } catch {
-        // Network/API failure: leave the list empty. The section renders an
-        // empty-state line rather than stale hardcoded programs.
-        if (!cancelled) setProgramCategories([]);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
-  const features = [
-    {
-      icon: BookOpen,
-      title: "Expert-Led Live Sessions",
-      description: "Learn from industry professionals with real-world experience"
-    },
-    {
-      icon: GraduationCap,
-      title: "Hands-On Corporate Internships",
-      description: "Gain practical experience with leading companies"
-    },
-    {
-      icon: Award,
-      title: "Verifiable Certification",
-      description: "Earn recognized certificates upon course completion with comprehensive testing."
-    },
-    {
-      icon: Target,
-      title: "Placement Assistance",
-      description: "Top performers receive dedicated placement support."
-    },
-    {
-      icon: Heart,
-      title: "Financial Aid",
-      description: "Financial aid for top performing underprivileged students"
-    },
-    {
-      icon: Globe,
-      title: "Industry-Relevant Curriculum",
-      description: "Stay updated with the latest AI/ML trends and technologies"
-    }
-  ];
-
-
-  const milestones = [
-  {
-    icon: <FaUserEdit />,
-    year: "Step-1",
-    title: "Register for Assessment",
-    description: "Sign up and take our initial assessment to evaluate your current skills and interests."
-  },
-  {
-    icon: <FaEnvelopeOpenText />,
-    year: "Step-2",
-    title: "Receive Test Invitation",
-    description: "Get invited to participate in skill-based tests tailored to your chosen field."
-  },
-  {
-    icon: <FaPencilAlt />,
-    year: "Step-3",
-    title: "Complete Assessment Test",
-    description: "Finish the assessment to unlock access to specialized learning modules."
-  },
-  {
-    icon: <FaListAlt />,
-    year: "Step-4",
-    title: "Eligibility & Program Selection",
-    description: "Based on your results, select the most suitable program for your career goals."
-  },
-  {
-    icon: <FaPlayCircle />,
-    year: "Step-5",
-    title: "Module Activation",
-    description: "Begin your learning journey with interactive modules and real-world content."
-  },
-  {
-    icon: <FaGraduationCap />,
-    year: "Step-6",
-    title: "Complete the Program",
-    description: "Finish all required coursework and projects under expert guidance."
-  },
-  {
-    icon: <FaClipboardCheck />,
-    year: "Step-7",
-    title: "Final Assessment",
-    description: "Take the final evaluation to demonstrate your mastery of the subject."
-  },
-  {
-    icon: <FaCertificate />,
-    year: "Step-8",
-    title: "Certificate Issuance",
-    description: "Receive your official certificate and prepare to launch your professional career."
-  }
+const learnTracks = [
+  { title: "Coding Foundations", icon: Code2, tint: "from-blue-500 to-indigo-600", desc: "Build your first programs and understand core computational thinking." },
+  { title: "Creative Game Design", icon: Gamepad2, tint: "from-fuchsia-500 to-purple-600", desc: "Design interactive animations and games using visual programming." },
+  { title: "3D Innovation Studio", icon: Box, tint: "from-amber-500 to-orange-600", desc: "Transform ideas into 3D models and prototypes for real-world solutions." },
+  { title: "Electronics & Circuit Design", icon: CircuitBoard, tint: "from-emerald-500 to-teal-600", desc: "Master circuits, sensors, and microcontroller programming." },
+  { title: "Robotics Engineering", icon: Bot, tint: "from-rose-500 to-red-600", desc: "Assemble and program intelligent robots from scratch." },
+  { title: "Advanced Robotics Engineering", icon: Cpu, tint: "from-cyan-600 to-blue-700", desc: "Design autonomous systems with complex sensors and actuators." },
+  { title: "Python Programming", icon: Terminal, tint: "from-sky-500 to-indigo-600", desc: "Master professional coding with the industry-standard Python language." },
+  { title: "AI & Machine Learning Basics", icon: Brain, tint: "from-violet-500 to-fuchsia-600", desc: "Train intelligent systems and understand artificial intelligence concepts." },
+  { title: "Computer Vision Projects", icon: Eye, tint: "from-slate-600 to-slate-800", desc: "Enable robots to see and interpret the world through cameras." },
+  { title: "IoT & Smart Technology", icon: Wifi, tint: "from-teal-500 to-emerald-600", desc: "Connect devices to the internet and build smart home systems." },
+  { title: "Innovation Challenge", icon: Trophy, tint: "from-yellow-500 to-amber-600", desc: "Compete in robotics challenges and showcase your skills." },
+  { title: "Final Grand Project", icon: Rocket, tint: "from-orange-500 to-rose-600", desc: "Apply all your knowledge in a comprehensive capstone project." },
 ];
 
-  const testimonials = [
-    {
-      name: "- Rakesh Kumar",
-      // course: "Digital Literacy Program",
-      text: "YagnaTech changed my life. I went from having no computer skills to landing my first office job!",
-      rating: 5
-    },
-    {
-      name: "- Anjali",
-      // course: "Professional Development",
-      text: "The courses are well-structured and the support from mentors is incredible. Highly recommend!",
-      rating: 5
-    },
-    {
-      name: "- Chandra Sekhar",
-      // course: "Basic Computer Skills",
-      text: "As a passed out graduate, these courses gave me the skills I needed to provide better for my family.",
-      rating: 5
-    }
-  ];
+const modules = [
+  "Meet Your Robot", "Circuit Basics", "Your First Code", "Variables",
+  "Functions", "Sensors", "Digital I/O", "Loops", "PWM & Motors",
+  "Line Following", "Obstacle Avoidance", "Final Robot",
+];
 
-  const missionAction = [
-    {
-      icon: GraduationCap,
-      title: "For Students",
-      description: "Access industry-aligned skill development programs that prepare you for real-world challenges",
-      points: [
-        {
-          icon: CheckCircle,
-          text: "Hands-on learning with industry mentors"
-        },
-        {
-          icon: CheckCircle,
-          text: "Build professional portfolios with real projects"
-        },
-        {
-          icon: CheckCircle,
-          text: "Pathways to corporate experience opportunitie"
-        }
-      ]
-    },
+const buildSteps = [
+  { title: "Ideation & Planning", icon: Lightbulb, desc: "Students brainstorm ideas, sketch designs, and plan their project. Mentors guide them through the design thinking process." },
+  { title: "Building & Assembly", icon: Wrench, desc: "Time to bring ideas to life! Students assemble robots, connect components, and build physical prototypes with hands-on guidance." },
+  { title: "Programming", icon: Code2, desc: "Students write code to control their creations. They learn to program sensors, motors, and create interactive behaviors." },
+  { title: "Testing & Debugging", icon: Bug, desc: "Projects are tested, refined, and improved. Students learn that failure is part of the learning process and iterate to perfection." },
+  { title: "Presentation", icon: Presentation, desc: "Students showcase their projects to peers and mentors, explaining their design choices and demonstrating functionality." },
+  { title: "Celebration & Reflection", icon: PartyPopper, desc: "Celebrate achievements and reflect on learnings. Students receive feedback and plan their next innovative project!" },
+];
 
-    {
-      icon: School,
-      title: "For Colleges",
-      description: "Enhance your curriculum with industry-relevant programs and corporate connections",
-      points: [
-        {
-          icon: CheckCircle,
-          text: "Integrate practical skill development modules"
-        },
-        {
-          icon: CheckCircle,
-          text: "Track student progress and industry readiness"
-        },
-        {
-          icon: CheckCircle,
-          text: "Build corporate partnerships for student opportunities"
-        }
-      ]
-    },
+const admissionSteps = [
+  { title: "Online Application", icon: ClipboardList, desc: "Fill out our quick online form with basic information about your child — their interests, age, and goals. It takes just 5 minutes!" },
+  { title: "Demo Session", icon: CalendarCheck, desc: "Schedule a 30-minute demo where your child can experience our VR robotics platform, meet our instructors, and ask questions." },
+  { title: "Assessment & Feedback", icon: MessageSquare, desc: "After the demo, we provide personalized feedback and recommend the best learning path for your child based on their skill level." },
+  { title: "Choose Your Program", icon: ListChecks, desc: "Select from our flexible plans — beginner, intermediate, or advanced. Start immediately in the next batch or your preferred schedule." },
+  { title: "Get Started", icon: KeyRound, desc: "Get access to our platform, instructors, learning materials, and community. Your child begins their journey to becoming a tech innovator!" },
+];
 
-    {
-      icon: Building2,
-      title: "For Companies",
-      description: "Access pre-trained talent aligned with your industry needs",
-      points: [
-        {
-          icon: CheckCircle,
-          text: "Reduce recruitment costs with pre-assessed talent"
-        },
-        {
-          icon: CheckCircle,
-          text: "Build professional portfolios with real projects"
-        },
-        {
-          icon: CheckCircle,
-          text: "Pathways to corporate experience opportunities"
-        }
-      ]
-    }
-  ];
-  
+const certificates = [
+  { tier: "Foundation", desc: "Foundation-level completion certificate for core robotics concepts, sensors, and basic automation." },
+  { tier: "Basic", desc: "Basic program completion certificate focused on robotics fundamentals, creativity, and practical learning." },
+  { tier: "Standard", desc: "Standard program completion certificate covering structured robotics learning and real project execution." },
+  { tier: "Advanced", desc: "Advanced program completion certificate for higher-level robotics thinking, execution, and innovation." },
+];
+
+const whyChoose = [
+  { title: "Expert Engineering Trainers", icon: GraduationCap, desc: "Every session is led by degree-qualified, background-verified engineers certified in our curriculum delivery methodology." },
+  { title: "Project-Based Learning", icon: Wrench, desc: "100% hands-on — students build real robots and ship real projects rather than just watching lectures." },
+  { title: "Recognized Certificates", icon: Award, desc: "Earn Foundation to Advanced completion certificates that document your child's growing expertise." },
+  { title: "Future-Ready Curriculum", icon: Brain, desc: "An 18-module path spanning robotics, coding, AI, computer vision, and IoT — built for tomorrow's innovators." },
+  { title: "Small, Personal Batches", icon: Users, desc: "Focused attention in small batches so every student gets mentor guidance at their own pace." },
+  { title: "Trusted by Schools", icon: ShieldCheck, desc: "Partnered with reputed institutions to deliver world-class robotics, coding, and AI education on campus." },
+];
+
+const projects = [
+  { title: "Line-Following Robot", desc: "A robot that uses sensors to follow a path autonomously.", icon: Bot, tint: "from-rose-500 to-red-600" },
+  { title: "Obstacle-Avoiding Car", desc: "Self-driving car that navigates around obstacles.", icon: Cpu, tint: "from-blue-500 to-indigo-600" },
+  { title: "VR Puzzle Game", desc: "Immersive virtual reality puzzle game.", icon: Gamepad2, tint: "from-fuchsia-500 to-purple-600" },
+  { title: "Smart IoT Home", desc: "IoT project controlling lights and sensors.", icon: Wifi, tint: "from-teal-500 to-emerald-600" },
+  { title: "Robotic Arm", desc: "Programmable arm for picking and placing objects.", icon: Wrench, tint: "from-amber-500 to-orange-600" },
+  { title: "AI Chatbot", desc: "Conversational AI with natural language processing.", icon: Brain, tint: "from-violet-500 to-fuchsia-600" },
+];
+
+const Home = () => {
+  const [demoOpen, setDemoOpen] = useState(false);
 
   return (
     <div className="overflow-hidden">
-      {/* Hero Section */}
-     <section className="relative section-padding py-24 lg:py-44 overflow-hidden">
-  {/* Background video */}
-  <video
-    className="absolute inset-0 w-full h-full object-cover"
-    autoPlay
-    loop
-    muted
-    playsInline
-  >
-    <source src={Vid} type="video/mp4" />
-  </video>
-
-  {/* Overlay for better text visibility */}
-  <div className="absolute inset-0 bg-black/50"></div>
-
-  <div className="relative z-10 container-ngo text-center text-white">
-    <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-      <span className="block animate-slide-up mb-5">Building Bridges Between</span>
-      <span className="block text-gradient animate-slide-up delay-300">
-        Academia and Industries
-      </span>
-    </h1>
-
-    <p className="mt-6 text-lg md:text-xl max-w-2xl mx-auto mb-8 ">
-      Empowering students with industry-relevant skills while connecting
-      colleges and companies for sustainable growth.
-    </p>
-
-    <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4 ">
-      <Button
-        size="lg"
-        className="bg-gradient-hero border-0 text-lg px-8"
-        asChild
-      >
-        <Link to="/students" className="flex items-center space-x-2 "onClick={() => {
-          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-              }}>
-          <span>Explore Opportunities</span>
-          <ArrowRight className="w-5 h-5" />
-        </Link>
-      </Button>
-      <Button
-        // variant="outline"
-        size="lg"
-        className="text-lg px-8 bg-white text-primary hover:bg-white/90 border-0"
-        asChild
-      >
-        <Link to="/contact" onClick={() => {
-          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-              }}>Partner with Us</Link>
-      </Button>
-    </div>
-  </div>
-</section>
-
-
-      {/* Stats Section */}
-      {/* <section className="py-16 bg-card/50">
-        <div className="container-ngo">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center space-y-2">
-                <div className="text-3xl md:text-4xl font-bold text-gradient">
-                  {stat.number}
-                </div>
-                <div className="text-sm md:text-base text-muted-foreground">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section> */}
-
-       {/* Mission Action Section */}
-      <section className="section-padding ">
-        <div className="container-ngo">
-          <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold">
-              Our Mission in <span className="text-gradient">Action</span>
-            </h2>
-            {/* <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Discover how our mission empowers students to unlock their
-              potential, enables colleges to bridge the gap with industry, and
-              helps companies find skilled, job-ready talent.
-            </p> */}
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {missionAction.map((action, index) => (
-              <Card key={index} className="card-ngo border-2 border-warm-green rounded-xl">
-
-                <CardHeader className="text-center space-y-4">
-                  <div className="w-12 h-12 bg-gradient-hero rounded-lg flex items-center justify-center mx-auto">
-                    <action.icon className="w-6 h-6 text-white" />
-                  </div>
-                  <CardTitle className="text-lg">{action.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-center leading-relaxed mb-6">
-                    {action.description}
-                  </CardDescription>
-                  <div className="flex flex-col items-start space-y-3">
-                    {action.points.map((point, idx) => (
-                      <div key={idx} className="flex items-center space-x-2">
-                        <point.icon className="w-5 h-5 text-warm-green" />
-                        <span className="text-muted-foreground">
-                          {point.text}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-       {/* Student Opportunities*/}
-
-      <section className="section-padding bg-gradient-subtle">
-        <div className="container-ngo">
-          <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold">
-              Opportunities for <span className="text-gradient">Students</span>
-            </h2>
-            {/* <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Industry exposure and mentoring opportunities designed to bridge
-              the gap between academic knowledge and industry requirements
-            </p> */}
-          </div>
-
-          {programCategories.length === 0 && (
-            <p className="text-center text-muted-foreground">
-              No programs available yet.
+      {/* ───────────── Hero ───────────── */}
+      <section id="home" className="relative bg-gradient-subtle">
+        <div className="container-ngo grid lg:grid-cols-2 gap-10 items-center py-16 lg:py-24">
+          <div className="space-y-6">
+            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 text-primary px-4 py-1.5 text-sm font-semibold">
+              <Sparkles className="w-4 h-4" /> The Future of STEM Education
+            </span>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+              Learn <span className="text-gradient">Robotics & AI</span> Faster —
+              With Clear Guidance and Real Projects.
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-xl">
+              Structured courses, expert support, and hands-on learning for
+              students and beginners. Live in Future with VR Robotics Academy.
             </p>
-          )}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button size="lg" className="bg-gradient-hero border-0 text-lg px-8" onClick={() => setDemoOpen(true)}>
+                Book Demo <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+              <Button size="lg" variant="outline" className="text-lg px-8" asChild>
+                <a href="#curriculum">Explore Curriculum</a>
+              </Button>
+            </div>
+          </div>
 
-          <div className="roadmapt grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {programCategories.map((action, index) => {
-              // Cycle the three original lucide icons so cards keep their
-              // visual variety regardless of how many categories an admin adds.
-              const Icon = [Globe, GraduationCap, Building2][index % 3];
-              return (
-              <Card
-                key={action.id}
-                className="card-ngo border-0 flex flex-col h-full border-2 border-warm-green rounded-xl"
-              >
-                <CardHeader className="text-center space-y-4">
-                  <div className="w-12 h-12 bg-gradient-hero rounded-lg flex items-center justify-center mx-auto">
-                    <Icon className="w-6 h-6 text-white" />
+          <div className="relative flex justify-center items-center min-h-[420px]">
+            {/* Soft pulsing aura */}
+            <div className="absolute w-[360px] h-[360px] rounded-full bg-gradient-to-br from-primary/40 via-orange-300/30 to-transparent blur-3xl animate-glow-pulse" />
+
+            {/* Slowly spinning dashed orbit ring */}
+            <div className="absolute w-[420px] h-[420px] rounded-full border-2 border-dashed border-primary/30 animate-ring-spin" />
+
+            {/* Drifting glow orbs */}
+            <span className="absolute top-6 left-10 w-4 h-4 rounded-full bg-primary/70 blur-[2px] animate-orb-drift" />
+            <span className="absolute bottom-16 right-8 w-6 h-6 rounded-full bg-orange-400/60 blur-[2px] animate-orb-drift" style={{ animationDelay: "1.5s" }} />
+            <span className="absolute top-1/2 right-16 w-3 h-3 rounded-full bg-amber-300/80 blur-[1px] animate-orb-drift" style={{ animationDelay: "3s" }} />
+            <span className="absolute bottom-8 left-20 w-2.5 h-2.5 rounded-full bg-primary/80 animate-orb-drift" style={{ animationDelay: "0.8s" }} />
+
+            {/* Floating robot */}
+            <img
+              src={ROBOT_IMG}
+              alt="VR Robotics learning robot"
+              className="relative z-10 w-full max-w-md object-contain drop-shadow-2xl animate-robot-float"
+              loading="lazy"
+            />
+
+            {/* Breathing ground shadow */}
+            <div className="absolute bottom-4 left-1/2 w-52 h-5 bg-black/40 rounded-[50%] blur-xl animate-shadow-breathe" />
+          </div>
+        </div>
+
+      </section>
+
+      {/* ───────────── What Kids Learn ───────────── */}
+      <section id="learn" className="section-padding">
+        <div className="container-ngo">
+          <div className="text-center space-y-3 mb-14">
+            <p className="text-primary font-semibold">What Kids Learn</p>
+            <h2 className="text-3xl md:text-4xl font-bold">
+              A complete journey across <span className="text-gradient">robotics, coding & AI</span>
+            </h2>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {learnTracks.map((t) => (
+              <Card key={t.title} className="card-ngo border-0 overflow-hidden flex flex-col">
+                <div className={`h-2 bg-gradient-to-r ${t.tint}`} />
+                <CardContent className="p-6 flex-1 flex flex-col">
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${t.tint} flex items-center justify-center mb-4`}>
+                    <t.icon className="w-6 h-6 text-white" />
                   </div>
-                  <CardTitle className="text-lg">{action.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col">
-                  <CardDescription className="text-center leading-relaxed mb-6">
-                    {action.description}
-                  </CardDescription>
-                  <div className="flex flex-col items-start space-y-3 mb-4">
-                    {action.bullets.map((text, idx) => (
-                      <div key={idx} className="flex items-center space-x-2">
-                        <CheckCircle className="w-5 h-5 text-warm-green" />
-                        <span className="text-muted-foreground">
-                          {text}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-auto pt-2">
-                    <Button
-                      size="sm"
-                      className="w-1/2 bg-gradient-hero border-0 flex justify-center mx-auto"
-                      asChild
-                    >
-                      <Link to="/students" onClick={() => {
-          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-              }}>View More</Link>
-                    </Button>
-                  </div>
+                  <h3 className="font-semibold text-lg mb-2">{t.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{t.desc}</p>
                 </CardContent>
               </Card>
-              );
-            })}
+            ))}
           </div>
         </div>
       </section>
 
- {/* Timeline Section */}
-      <section className="section-padding">
-        <div className="max-w-7xl mx-auto px-4">
-          {/* Heading */}
-          <div className="text-center space-y-4 mb-16">
+      {/* ───────────── 18-Module Learning Path ───────────── */}
+      <section id="curriculum" className="section-padding bg-gradient-subtle">
+        <div className="container-ngo">
+          <div className="text-center space-y-3 mb-14">
+            <p className="text-primary font-semibold">Curriculum</p>
             <h2 className="text-3xl md:text-4xl font-bold">
-              Student <span className=" text-gradient">Roadmap</span>
+              18-Module <span className="text-gradient">Learning Path</span>
             </h2>
-            {/* <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Key milestones in our mission to democratize education worldwide.
-            </p> */}
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              A structured, step-by-step progression from your first circuit to a
+              fully autonomous robot.
+            </p>
           </div>
-
-          {/* Timeline */}
-          {/* <div className="max-w-4xl mx-auto">
-      <div className="relative pl-0.5 space-y-8 before:absolute before:top-0 before:left-6 before:w-px before:h-full before:bg-gray-800">
-        {milestones.map((milestone, index) => (
-          <div key={index} className="flex gap-6 items-start">
-            
-            <div className="flex-shrink-0 relative z-10">
-              <div className="w-12 h-12 bg-gradient-hero rounded-full flex items-center justify-center shadow-md">
-                <span className="text-white font-bold text-xl">
-                  {milestone.icon}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {modules.map((m, i) => (
+              <div key={m} className="flex items-center gap-4 rounded-xl bg-white border border-orange-100 p-4 shadow-soft">
+                <span className="w-10 h-10 shrink-0 rounded-lg bg-gradient-hero text-white font-bold flex items-center justify-center">
+                  {i + 1}
                 </span>
+                <span className="font-medium">{m}</span>
               </div>
-            </div>
-
-           
-            <div className="bg-white shadow-sm rounded-lg p-6 flex-1">
-              <h3 className="text-lg font-semibold mb-2">{milestone.title}</h3>
-              <p className="text-gray-600">{milestone.description}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div> */}
-
-          <div className="relative">
-            {/* Path line */}
-            <div className="absolute top-1/2 left-0 right-0 h-1 bg-white/40 rounded-full"></div>
-
-            {/* Milestones */}
-            <div className="relative w-full">
-              <img
-                src={RoadMap}
-                alt="Student Roadmap"
-                className="w-full h-auto rounded-lg  object-contain"
-              />
-            </div>
-          </div>
-
-          <div className="text-center mt-12">
-            <Button className="bg-gradient-hero" size="lg">
-              <Link to="/signup">Register for Assessment</Link>
-            </Button>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="section-padding bg-gradient-subtle">
+      {/* ───────────── How We Build ───────────── */}
+      <section id="build" className="section-padding">
         <div className="container-ngo">
-          <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold">
-              Why Choose <span className="text-gradient">YagnaTech</span>?
-            </h2>
-            {/* <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Our programs are tailored to meet industry demands, providing
-              practical experience and professional connections.
-            </p> */}
+          <div className="text-center space-y-3 mb-14">
+            <p className="text-primary font-semibold">How We Build</p>
+            <h2 className="text-3xl md:text-4xl font-bold">Our project-based learning process</h2>
           </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => (
-              <Card key={index} className="card-ngo border-2 border-warm-green rounded-xl">
-                <CardHeader className="text-center space-y-4">
-                  <div className="w-12 h-12 bg-gradient-hero rounded-lg flex items-center justify-center mx-auto">
-                    <feature.icon className="w-6 h-6 text-white" />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {buildSteps.map((s, i) => (
+              <Card key={s.title} className="card-ngo border-0">
+                <CardContent className="p-6 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-lg bg-gradient-hero flex items-center justify-center">
+                      <s.icon className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="text-xs font-bold text-primary">STEP {i + 1}</span>
                   </div>
-                  <CardTitle className="text-lg">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-center leading-relaxed">
-                    {feature.description}
-                  </CardDescription>
+                  <h3 className="font-semibold text-lg">{s.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
                 </CardContent>
               </Card>
             ))}
@@ -524,162 +249,151 @@ const Home = () => {
         </div>
       </section>
 
-     
-      {/* Roadmap */}
-      {/* <section className="section-padding">
+      {/* ───────────── Why Choose ───────────── */}
+      <section id="why" className="section-padding bg-gradient-subtle">
         <div className="container-ngo">
-          <div className="text-center space-y-4 mb-16">
+          <div className="text-center space-y-3 mb-14">
+            <p className="text-primary font-semibold">Why VR Robotics</p>
             <h2 className="text-3xl md:text-4xl font-bold">
-              Student <span className="text-gradient">Roadmap</span>
+              Why Choose <span className="text-gradient">VR Robotics Academy?</span>
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Follow our step-by-step roadmap to become industry-ready: from foundational skills to hands-on experience and certification.
-            </p>
           </div>
-
-            <div className="roadmapt grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              {
-                icon: BookOpen,
-                title: "Step 1: Register for Assessment",
-                description: "Sign up and take our initial assessment to evaluate your current skills and interests."
-              },
-              {
-                icon: GraduationCap,
-                title: "Step 2: Receive Test Invitation",
-                description: "Get invited to participate in skill-based tests tailored to your chosen field."
-              },
-              {
-                icon: Award,
-                title: "Step 3: Complete Assessment Test",
-                description: "Finish the assessment to unlock access to specialized learning modules."
-              },
-              {
-                icon: Target,
-                title: "Step 4: Eligibility & Program Selection",
-                description: "Based on your results, select the most suitable program for your career goals."
-              },
-              {
-                icon: Globe,
-                title: "Step 5: Module Activation",
-                description: "Begin your learning journey with interactive modules and real-world content."
-              },
-              {
-                icon: School,
-                title: "Step 6: Complete the Program",
-                description: "Finish all required coursework and projects under expert guidance."
-              },
-              {
-                icon: CheckCircle,
-                title: "Step 7: Final Assessment",
-                description: "Take the final evaluation to demonstrate your mastery of the subject."
-              },
-              {
-                icon: Award,
-                title: "Step 8: Certificate Issuance",
-                description: "Receive your official certificate and prepare to launch your professional career."
-              }
-            ].map((step, index) => (
-              <Card key={index} className="card-ngo border-0">
-                <CardHeader className="text-center space-y-4">
-                  <div className="w-12 h-12 bg-gradient-hero rounded-lg flex items-center justify-center mx-auto">
-                    <step.icon className="w-6 h-6 text-white" />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {whyChoose.map((w) => (
+              <Card key={w.title} className="card-ngo border-0">
+                <CardHeader className="space-y-3">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-hero flex items-center justify-center">
+                    <w.icon className="w-6 h-6 text-white" />
                   </div>
-                  <CardTitle className="text-lg">{step.title}</CardTitle>
+                  <CardTitle className="text-lg">{w.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-center leading-relaxed">
-                    {step.description}
-                  </CardDescription>
+                  <CardDescription className="leading-relaxed">{w.desc}</CardDescription>
                 </CardContent>
               </Card>
             ))}
-            </div>
+          </div>
         </div>
-      </section> */}
+      </section>
 
-     
-
-     
-
-      {/* Testimonials Section */}
-      {/* <section className="section-padding bg-gradient-subtle">
+      {/* ───────────── Admission Process ───────────── */}
+      <section id="admission" className="section-padding">
         <div className="container-ngo">
-          <div className="text-center space-y-4 mb-16">
+          <div className="text-center space-y-3 mb-14">
+            <p className="text-primary font-semibold">Admission Process</p>
+            <h2 className="text-3xl md:text-4xl font-bold">Getting started is easy</h2>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
+            {admissionSteps.map((s, i) => (
+              <div key={s.title} className="text-center space-y-3">
+                <div className="relative mx-auto w-16 h-16 rounded-2xl bg-gradient-hero flex items-center justify-center">
+                  <s.icon className="w-7 h-7 text-white" />
+                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white border border-orange-200 text-primary text-xs font-bold flex items-center justify-center">
+                    {i + 1}
+                  </span>
+                </div>
+                <h3 className="font-semibold">{s.title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ───────────── Certificates ───────────── */}
+      <section id="certs" className="section-padding bg-gradient-subtle">
+        <div className="container-ngo">
+          <div className="text-center space-y-3 mb-14">
+            <p className="text-primary font-semibold">Certificates</p>
+            <h2 className="text-3xl md:text-4xl font-bold">Recognized completion certificates</h2>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {certificates.map((c) => (
+              <Card key={c.tier} className="card-ngo border-0 text-center">
+                <CardContent className="p-6 space-y-3">
+                  <Award className="w-10 h-10 text-primary mx-auto" />
+                  <CardTitle className="text-lg">{c.tier}</CardTitle>
+                  <CardDescription className="leading-relaxed">{c.desc}</CardDescription>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ───────────── Student Projects ───────────── */}
+      <section id="projects" className="section-padding">
+        <div className="container-ngo">
+          <div className="text-center space-y-3 mb-14">
+            <p className="text-primary font-semibold">Student Projects</p>
+            <h2 className="text-3xl md:text-4xl font-bold">What our students build</h2>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {projects.map((p) => (
+              <Card key={p.title} className="card-ngo border-0 overflow-hidden">
+                <div className={`h-40 bg-gradient-to-br ${p.tint} flex items-center justify-center`}>
+                  <p.icon className="w-14 h-14 text-white/90" />
+                </div>
+                <CardContent className="p-5 space-y-2">
+                  <h3 className="font-semibold text-lg">{p.title}</h3>
+                  <p className="text-muted-foreground text-sm">{p.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ───────────── CTA / Book Demo ───────────── */}
+      <section id="contact" className="section-padding pt-0">
+        <div className="container-ngo">
+          <div className="rounded-3xl bg-gradient-hero text-white p-10 md:p-16 text-center space-y-6">
+            <Quote className="w-10 h-10 mx-auto opacity-80" />
             <h2 className="text-3xl md:text-4xl font-bold">
-              Stories of <span className="text-gradient">Transformation</span>
+              Ready to build young innovators?
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Real stories from learners whose lives have been changed through our programs.
+            <p className="text-white/90 max-w-2xl mx-auto">
+              Book a 30-minute demo session — your child can experience our VR
+              robotics platform, meet our instructors, and ask questions.
             </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="card-ngo border-0">
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex items-center space-x-1">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-current text-soft-orange" />
-                    ))}
-                  </div>
-                  <p className="text-muted-foreground leading-relaxed italic">
-                    "{testimonial.text}"
-                  </p>
-                  <div className="space-y-1">
-                    <div className="font-semibold">{testimonial.name}</div>
-                   
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section> */}
-
-     
-
-      {/* CTA Section */}
-      {/* <section className="section-padding">
-        <div className="container-ngo">
-          <div className="card-ngo max-w-4xl mx-auto text-center p-8 lg:p-12 space-y-8 bg-gradient-hero">
-            <div className="space-y-4">
-              <h2 className="text-3xl md:text-4xl font-bold text-white">
-                Ready to Transform Your Future?
-              </h2>
-              <p className="text-lg text-white/90 max-w-2xl mx-auto">
-                Join thousands of learners who have already started their
-                journey towards a brighter future. Your education is our
-                mission.
-              </p>
-            </div>
-
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                variant="secondary"
-                className="text-lg px-8"
-                asChild
-              >
-                <Link to="/courses">Browse Opportunities</Link>
+              <Button size="lg" variant="secondary" className="text-lg px-8" onClick={() => setDemoOpen(true)}>
+                Book Demo
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="text-lg px-8 border-white text-primary hover:bg-white hover:text-primary"
-                asChild
-              >
-                <Link to="/contact">Get Support</Link>
+              <Button size="lg" variant="outline" className="text-lg px-8 border-white text-white hover:bg-white hover:text-primary" asChild>
+                <Link to="/contact">Contact Us</Link>
               </Button>
-            </div>
-
-            <div className="flex items-center justify-center space-x-2 text-white/80">
-              <Heart className="w-5 h-5" />
-              <span className="text-sm">Changing lives through education</span>
             </div>
           </div>
         </div>
-      </section> */}
+      </section>
+
+      {/* ───────────── Book Demo modal ───────────── */}
+      {demoOpen && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4"
+          onClick={() => setDemoOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-md p-7 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center space-y-1">
+              <div className="w-12 h-12 mx-auto rounded-xl bg-gradient-hero flex items-center justify-center">
+                <Bot className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold">Book a Demo Session</h3>
+              <p className="text-sm text-muted-foreground">Enter your details and we'll reach out to schedule.</p>
+            </div>
+            <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); setDemoOpen(false); }}>
+              <input required placeholder="Child's name" className="w-full rounded-lg border px-4 py-2.5 outline-none focus:border-primary" />
+              <input required type="tel" placeholder="Parent's phone" className="w-full rounded-lg border px-4 py-2.5 outline-none focus:border-primary" />
+              <input type="email" placeholder="Email (optional)" className="w-full rounded-lg border px-4 py-2.5 outline-none focus:border-primary" />
+              <Button type="submit" className="w-full bg-gradient-hero border-0">Request Demo</Button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

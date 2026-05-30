@@ -66,9 +66,9 @@ const instructors = async () => {
     // so the Live Class form picker shows the same people as Manage → Instructors.
     try {
         const rows = await authDb.query(
-            `SELECT u.userId AS id, u.name, u.email
+            `SELECT u."userId" AS id, u.name, u.email
                FROM users u
-               JOIN roles r ON r.roleId = u.roleId
+               JOIN roles r ON r."roleId" = u."roleId"
               WHERE r.role = :role
               ORDER BY u.name ASC`,
             { replacements: { role: 'instructor' }, type: QueryTypes.SELECT }

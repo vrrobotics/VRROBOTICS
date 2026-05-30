@@ -49,7 +49,7 @@ export interface RegisterData {
 export interface AuthContextType {
   user: User | null;
   loading: boolean;
-  loginUser: (credentials: LoginCredentials) => Promise<void>;
+  loginUser: (credentials: LoginCredentials) => Promise<User>;
   registerUser: (data: RegisterData) => Promise<void>;
   logoutUser: () => Promise<void>;
   checkAuth: () => Promise<void>;

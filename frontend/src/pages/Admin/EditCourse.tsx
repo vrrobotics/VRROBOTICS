@@ -47,7 +47,7 @@ const EditCourse: React.FC<EditCourseProps> = ({ onClose }) => {
                 name="name"
                 value={form.name}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -58,7 +58,7 @@ const EditCourse: React.FC<EditCourseProps> = ({ onClose }) => {
                 name="category"
                 value={form.category}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -69,7 +69,7 @@ const EditCourse: React.FC<EditCourseProps> = ({ onClose }) => {
                 name="duration"
                 value={form.duration}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -80,7 +80,7 @@ const EditCourse: React.FC<EditCourseProps> = ({ onClose }) => {
                 name="instructor"
                 value={form.instructor}
                 onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -92,7 +92,7 @@ const EditCourse: React.FC<EditCourseProps> = ({ onClose }) => {
               value={form.description}
               onChange={handleChange}
               rows={3}
-              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -104,7 +104,7 @@ const EditCourse: React.FC<EditCourseProps> = ({ onClose }) => {
                 value={form.startDate}
                 onChange={handleChange}
                 placeholder="dd-mm-yyyy"
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -116,7 +116,7 @@ const EditCourse: React.FC<EditCourseProps> = ({ onClose }) => {
                 value={form.endDate}
                 onChange={handleChange}
                 placeholder="dd-mm-yyyy"
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required
               />
             </div>
@@ -128,13 +128,13 @@ const EditCourse: React.FC<EditCourseProps> = ({ onClose }) => {
               name="status"
               value={form.status}
               onChange={handleChange}
-              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#219A85]"
+              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
               required
             />
           </div>
            <button
             type="submit"
-            className="bg-[#219A85] hover:bg-[#177385] text-white font-semibold px-6 py-2 rounded-lg transition-colors mt-2"
+            className="bg-[#FF6A00] hover:bg-[#FF6A00] text-white font-semibold px-6 py-2 rounded-lg transition-colors mt-2"
           >
             Save Changes
           </button>

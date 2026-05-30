@@ -88,7 +88,7 @@ exports.selectProgram = asyncHandler(async (req, res) => {
     if (programName && ALLOWED_PROGRAM_NAMES.has(programName)) {
         try {
             await authDb.query(
-                'UPDATE users SET assignedProgram = :programName WHERE userId = :userId',
+                'UPDATE users SET "assignedProgram" = :programName WHERE "userId" = :userId',
                 {
                     replacements: { programName, userId: String(userId) },
                     type: QueryTypes.UPDATE,
