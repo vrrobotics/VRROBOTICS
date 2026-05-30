@@ -17,42 +17,18 @@ import {
   ChevronDown,
   Home,
   Mail,
-  LogIn,
-  UserPlus,
   GraduationCap,
-  LayoutDashboard,
-  LogOut,
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { logout as adminLogout } from "@/admin/api/auth";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // Which top-level dropdown is open (by name), or null.
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logoutUser } = useAuth();
 
   const isActive = (path) => location.pathname === path;
-
-  const dashboardPath = user?.role === "admin" ? "/admin/dashboard" : "/dashboard";
-  const initials = (user?.name || user?.email || "U")
-    .split(/\s+/)
-    .map((s) => s[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
-  const handleLogout = async () => {
-    setIsProfileOpen(false);
-    try { await adminLogout(); } catch { /* ignore */ }
-    try { await logoutUser(); } catch { /* ignore */ }
-    navigate("/login", { replace: true });
-  };
 
   // Scroll helper. Supports plain routes ("/about") and home-section anchors
   // ("/#curriculum") — navigate to "/" then smooth-scroll to the element id.
@@ -101,14 +77,12 @@ const Navbar = () => {
     { name: "Contact Us", href: "/contact", icon: Mail },
   ];
 
-  // Options shown under the "Courses" dropdown — jump to the matching
-  // section on the VR Robotics courses page.
-  // Each Courses option opens the existing auth UI (login / signup) before
-  // letting the visitor reach course content.
+  // Options shown under the "Courses" dropdown — jump straight to the matching
+  // section on the public VR Robotics courses page (login/signup was removed).
   const courseItems = [
-    { name: "For Age 8 - 12", href: "/auth" },
-    { name: "For Age 12 - 18", href: "/auth" },
-    { name: "Teachers", href: "/auth?role=teacher" },
+    { name: "For Age 8 - 12", href: "/vr-courses#age-8-12" },
+    { name: "For Age 12 - 18", href: "/vr-courses#age-12-18" },
+    { name: "Teachers", href: "/teacher" },
   ];
 
   // Options shown under the "Books" dropdown — jump to the matching book.
@@ -220,68 +194,6 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Auth Buttons */}
-          <div className="hidden lg:flex items-center space-x-3">
-            {user ? (
-              <DropdownMenu open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="flex items-center space-x-2 px-2 py-1 rounded-full hover:bg-secondary/50"
-                  >
-                    <span className="w-9 h-9 rounded-full bg-gradient-hero text-white text-sm font-semibold flex items-center justify-center">
-                      {initials}
-                    </span>
-                    <span className="text-sm font-medium text-foreground max-w-[140px] truncate">
-                      {user.name || user.email}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" sideOffset={8} className="min-w-[200px]">
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground border-b mb-1">
-                    {user.email}
-                    {user.role && (
-                      <span className="ml-1 inline-block px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] uppercase">
-                        {user.role}
-                      </span>
-                    )}
-                  </div>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      to={dashboardPath}
-                      onClick={(e) => {
-                        scrollToTopWithOffset(e, dashboardPath);
-                        setIsProfileOpen(false);
-                      }}
-                      className="flex items-center gap-2"
-                    >
-                      <LayoutDashboard className="w-4 h-4" />
-                      <span>Dashboard</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 text-destructive focus:text-destructive"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button size="sm" asChild className="bg-gradient-hero border-0">
-                <Link
-                  to="/auth"
-                  onClick={(e) => scrollToTopWithOffset(e, "/auth")}
-                  className="flex items-center space-x-2"
-                >
-                  <LogIn className="w-4 h-4" />
-                  <span>Sign In</span>
-                </Link>
-              </Button>
-            )}
-          </div>
-
           {/* Mobile Menu Button */}
           <Button
             variant="ghost"
@@ -339,59 +251,6 @@ const Navbar = () => {
                   </Link>
                 )
               )}
-              {/* Auth Buttons in Mobile */}
-              <div className="pt-4 space-y-2">
-                {user ? (
-                  <>
-                    <div className="flex items-center gap-3 px-3 py-2 border-t border-border/50 pt-4">
-                      <span className="w-10 h-10 rounded-full bg-gradient-hero text-white text-sm font-semibold flex items-center justify-center">
-                        {initials}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-foreground truncate">
-                          {user.name || user.email}
-                        </div>
-                        <div className="text-xs text-muted-foreground truncate">{user.email}</div>
-                      </div>
-                    </div>
-                    <Button
-                      className="w-full justify-start bg-gradient-hero border-0"
-                      asChild
-                    >
-                      <Link
-                        to={dashboardPath}
-                        onClick={(e) => scrollToTopWithOffset(e, dashboardPath)}
-                        className="flex items-center space-x-3"
-                      >
-                        <LayoutDashboard className="w-5 h-5" />
-                        <span>Dashboard</span>
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={handleLogout}
-                    >
-                      <LogOut className="w-5 h-5 mr-2" />
-                      <span>Logout</span>
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    className="w-full justify-start bg-gradient-hero border-0"
-                    asChild
-                  >
-                    <Link
-                      to="/auth"
-                      onClick={(e) => scrollToTopWithOffset(e, "/auth")}
-                      className="flex items-center space-x-3"
-                    >
-                      <UserPlus className="w-5 h-5" />
-                      <span>Sign In</span>
-                    </Link>
-                  </Button>
-                )}
-              </div>
             </div>
           </div>
         )}

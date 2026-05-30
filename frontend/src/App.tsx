@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthProvider";
 import { CollegeProvider } from "./context/CollegeProvider";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -16,7 +16,6 @@ import Books from "./pages/Books";
 import Gallery from "./pages/Gallery";
 import Locations from "./pages/Locations";
 import TeacherDashboard from "./pages/TeacherDashboard";
-import Auth from "./pages/Auth";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import Register from "./pages/RegisterForm";
@@ -38,8 +37,6 @@ import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminCollegeIndex from "./admin/pages/college/Index";
 import AdminCollegeCreate from "./admin/pages/college/Create";
 import AdminCollegeEdit from "./admin/pages/college/Edit";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
 import AssessmentDetails from "./pages/PreAssessment";
 import PreAssessment from "./pages/PreAssessment";
 import PostAssessmentPage from "./pages/PostAssessmentPage";
@@ -105,7 +102,6 @@ const App = () => (
             <Route path="/gallery" element={<Layout><Gallery /></Layout>} />
             <Route path="/locations" element={<Layout><Locations /></Layout>} />
             <Route path="/teacher" element={<TeacherDashboard />} />
-            <Route path="/auth" element={<Auth />} />
             <Route path="/contact" element={<Layout><Contact /></Layout>} />
             <Route path="/register" element={<Layout><Register /></Layout>} />
             <Route path="/faqs" element={<Layout><FAQs /></Layout>} />
@@ -113,14 +109,11 @@ const App = () => (
             <Route path="/colleges" element={<Layout><Colleges /></Layout>} />
             <Route path="/companies" element={<Layout><Companies /></Layout>} />
 
-            {/* Authentication Pages — the old /login and /signup screens are
-                retired in favour of the single unified /auth page. Redirect
-                both (and keep ?role=teacher etc.) so existing links still work. */}
-            <Route path="/login" element={<Navigate to="/auth" replace />} />
-            <Route path="/signup" element={<Navigate to="/auth?mode=signup" replace />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
+            {/* Login / signup removed — /login, /signup, /auth, /forgot-password
+                all now fall through to the catch-all (NotFound). Every other
+                route below is public (ProtectedRoute is a pass-through). */}
 
-            {/* Protected Routes */}
+            {/* (formerly protected) Routes — now public */}
             <Route
               path="/dashboard"
               element={
