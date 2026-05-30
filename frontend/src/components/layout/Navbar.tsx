@@ -269,16 +269,16 @@ const Navbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link
-                to="/auth"
-                onClick={(e) => scrollToTopWithOffset(e, "/auth")}
-                className="group relative inline-flex items-center gap-2 rounded-full bg-gradient-hero px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/50 hover:-translate-y-0.5 overflow-hidden"
-              >
-                {/* sheen sweep on hover */}
-                <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-                <LogIn className="w-4 h-4 relative z-10 transition-transform group-hover:scale-110" />
-                <span className="relative z-10">Sign In</span>
-              </Link>
+              <Button size="sm" asChild className="bg-gradient-hero border-0">
+                <Link
+                  to="/auth"
+                  onClick={(e) => scrollToTopWithOffset(e, "/auth")}
+                  className="flex items-center space-x-2"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Sign In</span>
+                </Link>
+              </Button>
             )}
           </div>
 
