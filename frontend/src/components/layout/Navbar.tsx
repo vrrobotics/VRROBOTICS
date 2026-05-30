@@ -269,16 +269,14 @@ const Navbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button size="sm" asChild className="bg-gradient-hero border-0">
-                <Link
-                  to="/auth"
-                  onClick={(e) => scrollToTopWithOffset(e, "/auth")}
-                  className="flex items-center space-x-2"
-                >
-                  <LogIn className="w-4 h-4" />
-                  <span>Sign In</span>
-                </Link>
-              </Button>
+              <Link
+                to="/auth"
+                onClick={(e) => scrollToTopWithOffset(e, "/auth")}
+                className="inline-flex items-center gap-2 rounded-full bg-gradient-hero px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:opacity-90"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Sign In</span>
+              </Link>
             )}
           </div>
 
