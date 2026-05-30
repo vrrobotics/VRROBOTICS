@@ -13,7 +13,7 @@ Microservices behind a single gateway. Each service owns its routes; all share o
 Supabase Postgres instance (two schemas), Supabase Auth, and the same CDN/storage backends.
 
 ```
-                         Users (students / admins / instructors)
+                         Users (students / admins / teachers)
                                         │
                         React SPA (Vite)  +  Flutter (future)
                                         │
@@ -105,7 +105,7 @@ Every service exposes `GET /health` → `{ status: 'ok' }` for uptime probes.
   - `lms_admin` — Laravel-style LMS content + progress (snake_case columns).
 - **Schema source of truth:** [supabase/migrations/](YagnaTechOrg/supabase/migrations/) (`01`→`05`, or `06_apply_all.sql`). Apply via Supabase SQL Editor or `supabase db push`.
 - **Connection:** every service reads `DATABASE_URL` (pooled, port 6543 for runtime; direct 5432 for migrations) and sets `DB_SCHEMA`. SSL is on (`rejectUnauthorized:false` for Supabase's cert chain).
-- **Cross-schema:** admin-service uses a second Sequelize handle (`authDb`, schema `lucy_devdb`) for student/instructor/college reads. Both handles hit the same DB.
+- **Cross-schema:** admin-service uses a second Sequelize handle (`authDb`, schema `lucy_devdb`) for student/teacher/college reads. Both handles hit the same DB.
 
 ### MySQL → Postgres translation applied
 | MySQL | Postgres |
@@ -136,7 +136,7 @@ Every service exposes `GET /health` → `{ status: 'ok' }` for uptime probes.
   (signed with `JWT_SECRET`) for the bootstrap root/college admin stored in `lms_admin.users`.
   The admin middleware **dual-verifies**: Supabase token first, then the local admin JWT. This
   keeps admin login working even before any Supabase user exists.
-- **Admin-created users** (students/instructors added in the admin UI) are created through
+- **Admin-created users** (students/teachers added in the admin UI) are created through
   `supabase.auth.admin.createUser()` + a profile row, with rollback if the profile write fails.
 
 Required secrets per service: `SUPABASE_JWT_SECRET` (all), plus `SUPABASE_URL` +

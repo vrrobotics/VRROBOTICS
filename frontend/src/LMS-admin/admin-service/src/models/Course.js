@@ -31,7 +31,7 @@ module.exports = (sequelize) => {
       requirements: { type: DataTypes.TEXT('medium'), allowNull: true },
       outcomes: { type: DataTypes.TEXT('medium'), allowNull: true },
       faqs: { type: DataTypes.TEXT('medium'), allowNull: true },
-      instructor_ids: { type: DataTypes.TEXT, allowNull: true },
+      teacher_ids: { type: DataTypes.TEXT, allowNull: true },
       average_rating: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 0 },
       expiry_period: { type: DataTypes.INTEGER, allowNull: true },
     },

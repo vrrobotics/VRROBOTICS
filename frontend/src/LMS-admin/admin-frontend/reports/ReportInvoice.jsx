@@ -111,7 +111,7 @@ export default function ReportInvoice() {
                         <thead>
                           <tr>
                             <th>{translate('Item')}</th>
-                            <th>{translate('Instructor')}</th>
+                            <th>{translate('Teacher')}</th>
                             <th>{translate('Qty/Hr Rate')}</th>
                             <th className="text-right">{translate('Amount')}</th>
                           </tr>
@@ -119,7 +119,7 @@ export default function ReportInvoice() {
                         <tbody>
                           <tr>
                             <td className="min-w-250px"><b>{report.course_title}</b></td>
-                            <td className="min-w-250px"><b>{report.instructor_name}</b></td>
+                            <td className="min-w-250px"><b>{report.teacher_name}</b></td>
                             <td className="min-w-250px">1</td>
                             <td className="min-w-250px">{getCurrency(report.amount)}</td>
                           </tr>

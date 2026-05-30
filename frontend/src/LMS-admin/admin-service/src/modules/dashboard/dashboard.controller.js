@@ -3,7 +3,7 @@ const asyncHandler = require('../../shared/utils/asyncHandler');
 
 /**
  * Role-specific dashboard aggregations
- * TODO: mirror the CRUD/custom actions from DashboardController, Admin/DashboardController, Instructor/DashboardController, Student/DashboardController.
+ * TODO: mirror the CRUD/custom actions from DashboardController, Admin/DashboardController, Teacher/DashboardController, Student/DashboardController.
  */
 exports.index = asyncHandler(async (req, res) => {
   res.json(await service.list(req.query));

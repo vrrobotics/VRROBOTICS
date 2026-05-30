@@ -14,7 +14,7 @@ module.exports = (sequelize) => {
       payment_details: { type: DataTypes.TEXT, allowNull: true },
       status: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 0 },
       admin_revenue: { type: DataTypes.DOUBLE, allowNull: true },
-      instructor_revenue: { type: DataTypes.DOUBLE, allowNull: true },
+      teacher_revenue: { type: DataTypes.DOUBLE, allowNull: true },
     },
     { tableName: 'bootcamp_purchases', underscored: true, timestamps: true, createdAt: 'created_at', updatedAt: 'updated_at' }
   );

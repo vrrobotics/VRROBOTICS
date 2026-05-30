@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/LiveClassController');
 
-router.get('/instructors', ctrl.instructors);
+router.get('/teachers', ctrl.teachers);
 
 router.get('/course/:course_id/live-classes', ctrl.live_classes_by_course);
 router.post('/course/:course_id/live-class', ctrl.live_class_store);

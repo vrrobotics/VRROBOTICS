@@ -3,7 +3,7 @@ const AppError = require('../../shared/errors/AppError');
 // Pull in the specific models this domain owns, e.g. { Course } = models.
 
 /**
- * Course/instructor/bootcamp reviews + like/dislike
+ * Course/teacher/bootcamp reviews + like/dislike
  * TODO: implement business logic ported from ReviewController.
  */
 

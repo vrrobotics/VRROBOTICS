@@ -4,7 +4,7 @@ const AppError = require('../../shared/errors/AppError');
 
 /**
  * User CRUD + profile updates + role changes
- * TODO: implement business logic ported from UsersController, Instructor/ProfileController, Student/ProfileController.
+ * TODO: implement business logic ported from UsersController, Teacher/ProfileController, Student/ProfileController.
  */
 
 async function list(/* query */) {

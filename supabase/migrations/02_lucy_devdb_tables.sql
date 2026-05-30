@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS lucy_devdb.branches (
 -- -----------------------------------------------------------------------------
 -- users  (canonical identity table)
 -- Includes:
---   * boot-time ALTERs from admin-service (instructorPhoto, studentPhoto)
+--   * boot-time ALTERs from admin-service (teacherPhoto, studentPhoto)
 --   * undeclared columns written via raw SQL (assignedProgram,
 --     programResponseStatus, programRespondedAt) -- promoted to first-class
 --     here per DATABASE.md §5.5.
@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS lucy_devdb.users (
   "assignedProgram"       VARCHAR(255),
   "programResponseStatus" VARCHAR(255),
   "programRespondedAt"    TIMESTAMPTZ,
-  "instructorPhoto"       VARCHAR(255),
+  "teacherPhoto"       VARCHAR(255),
   "studentPhoto"          VARCHAR(255),
   -- Per-user quiz state: JSONB object keyed by quiz_id. Each slot stores
   -- { score, total, attempts, lastAttemptAt }. Written by PublicCourseService
@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS lucy_devdb.courses (
   "isPreAssessmentNeeded"  BOOLEAN DEFAULT FALSE,
   "modules"                JSONB,
   "clgIds"                 JSONB NOT NULL DEFAULT '[]'::jsonb,
-  "instructorId"           VARCHAR(255),
+  "teacherId"           VARCHAR(255),
   "createdAt"              TIMESTAMPTZ NOT NULL DEFAULT now(),
   "updatedAt"              TIMESTAMPTZ NOT NULL DEFAULT now()
 );

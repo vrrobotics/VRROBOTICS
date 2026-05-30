@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useCourse } from "@/hooks/useCourse";
 import { useCollege } from "@/hooks/useCollege";
-import { listInstructors } from "@/admin/api/instructor";
+import { listTeachers } from "@/admin/api/teacher";
 
 interface AddCourseProps {
   onClose: () => void;
 }
 
-// Row shape returned by GET /api/admin/manage/instructors. Only the fields we
+// Row shape returned by GET /api/admin/manage/teachers. Only the fields we
 // actually render in the dropdown are required here; the API returns more.
-interface InstructorRow {
+interface TeacherRow {
   id: string;
   name?: string | null;
   email?: string | null;
@@ -26,38 +26,38 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
     description: "",
     duration: "",
     isPreAssessmentNeeded: false,
-    instructorId: "",
+    teacherId: "",
   });
   const [selectedClgIds, setSelectedClgIds] = useState<string[]>([]);
   const [clgIdInput, setClgIdInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Instructor dropdown is sourced from the admin instructor API (auth-service
-  // users with role='instructor'). Kept local to this modal — no provider —
+  // Teacher dropdown is sourced from the admin teacher API (auth-service
+  // users with role='teacher'). Kept local to this modal — no provider —
   // because the list is small and only needed while the form is open.
-  const [instructors, setInstructors] = useState<InstructorRow[]>([]);
-  const [instructorsLoading, setInstructorsLoading] = useState(true);
-  const [instructorsError, setInstructorsError] = useState<string | null>(null);
+  const [teachers, setTeachers] = useState<TeacherRow[]>([]);
+  const [teachersLoading, setTeachersLoading] = useState(true);
+  const [teachersError, setTeachersError] = useState<string | null>(null);
 
-  const loadInstructors = async () => {
-    setInstructorsLoading(true);
-    setInstructorsError(null);
+  const loadTeachers = async () => {
+    setTeachersLoading(true);
+    setTeachersError(null);
     try {
-      const res = await listInstructors({ per_page: 1000 });
-      setInstructors(res?.instructors || []);
+      const res = await listTeachers({ per_page: 1000 });
+      setTeachers(res?.teachers || []);
     } catch (e) {
       const err = e as { response?: { data?: { error?: string } }; message?: string };
-      setInstructorsError(
-        err?.response?.data?.error || err?.message || "Failed to load instructors"
+      setTeachersError(
+        err?.response?.data?.error || err?.message || "Failed to load teachers"
       );
     } finally {
-      setInstructorsLoading(false);
+      setTeachersLoading(false);
     }
   };
 
   useEffect(() => {
-    loadInstructors();
+    loadTeachers();
   }, []);
 
   // Dropdown UI state — closed by default, click-outside closes it.
@@ -120,8 +120,8 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
       setSubmitError("Select at least one college.");
       return;
     }
-    if (!form.instructorId) {
-      setSubmitError("Select an instructor.");
+    if (!form.teacherId) {
+      setSubmitError("Select an teacher.");
       return;
     }
 
@@ -134,7 +134,7 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
         duration: Number(form.duration),
         isPreAssessmentNeeded: form.isPreAssessmentNeeded,
         clgIds: selectedClgIds,
-        instructorId: form.instructorId,
+        teacherId: form.teacherId,
       });
       onClose();
     } catch (err: unknown) {
@@ -226,35 +226,35 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
             />
           </div>
 
-          {/* Instructor — list comes from /api/admin/manage/instructors
-              (auth-service users with role='instructor'). Required: every
-              course must have an assigned instructor. Disabled while
+          {/* Teacher — list comes from /api/admin/manage/teachers
+              (auth-service users with role='teacher'). Required: every
+              course must have an assigned teacher. Disabled while
               loading or on fetch failure so the form can't be submitted
               with an empty/invalid value. */}
           <div>
             <label className="block mb-1 font-medium text-gray-700">
-              Instructor <span className="text-rose-500">*</span>
+              Teacher <span className="text-rose-500">*</span>
             </label>
             <select
-              name="instructorId"
-              value={form.instructorId}
+              name="teacherId"
+              value={form.teacherId}
               onChange={(e) =>
-                setForm((f) => ({ ...f, instructorId: e.target.value }))
+                setForm((f) => ({ ...f, teacherId: e.target.value }))
               }
-              disabled={instructorsLoading || !!instructorsError}
+              disabled={teachersLoading || !!teachersError}
               required
               className="w-full border rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#FF6A00] disabled:bg-gray-50 disabled:text-gray-500"
             >
               <option value="">
-                {instructorsLoading
-                  ? "Loading instructors…"
-                  : instructorsError
-                    ? "Failed to load instructors"
-                    : instructors.length === 0
-                      ? "No instructors available — add one first"
-                      : "Select instructor…"}
+                {teachersLoading
+                  ? "Loading teachers…"
+                  : teachersError
+                    ? "Failed to load teachers"
+                    : teachers.length === 0
+                      ? "No teachers available — add one first"
+                      : "Select teacher…"}
               </option>
-              {instructors.map((ins) => {
+              {teachers.map((ins) => {
                 const label = ins.name || ins.email || ins.id;
                 const sub = ins.expertise ? ` — ${ins.expertise}` : "";
                 return (
@@ -264,12 +264,12 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
                 );
               })}
             </select>
-            {instructorsError && (
+            {teachersError && (
               <div className="text-sm text-rose-600 mt-1">
-                {instructorsError}{" "}
+                {teachersError}{" "}
                 <button
                   type="button"
-                  onClick={loadInstructors}
+                  onClick={loadTeachers}
                   className="text-[#FF6A00] underline ml-1"
                 >
                   Retry

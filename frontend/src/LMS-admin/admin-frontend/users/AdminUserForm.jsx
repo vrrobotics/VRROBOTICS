@@ -1,6 +1,6 @@
 /**
- * AdminUserForm — create/edit admin or instructor user with 4-tab layout.
- * Ports create_instructor/edit_instructor + partials, and create_admin/edit_admin.
+ * AdminUserForm — create/edit admin or teacher user with 4-tab layout.
+ * Ports create_teacher/edit_teacher + partials, and create_admin/edit_admin.
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -55,10 +55,10 @@ export default function AdminUserForm({ userType = 'admin' }) {
     },
   });
 
-  const listEndpoint = userType === 'admin' ? API.ADMIN_ADMINS : API.ADMIN_INSTRUCTORS;
-  const itemEndpoint = userType === 'admin' ? API.ADMIN_ADMIN(id) : API.ADMIN_INSTRUCTOR(id);
+  const listEndpoint = userType === 'admin' ? API.ADMIN_ADMINS : API.ADMIN_TEACHERS;
+  const itemEndpoint = userType === 'admin' ? API.ADMIN_ADMIN(id) : API.ADMIN_TEACHER(id);
   const listRoute = `/admin/${userType}s`;
-  const typeLabel = userType === 'admin' ? 'Admin' : 'Instructor';
+  const typeLabel = userType === 'admin' ? 'Admin' : 'Teacher';
   const title = isEdit ? translate(`Edit ${typeLabel}`) : translate(`Create ${typeLabel}`);
 
   const fetchData = useCallback(async () => {
@@ -331,7 +331,7 @@ export default function AdminUserForm({ userType = 'admin' }) {
 }
 
 AdminUserForm.propTypes = {
-  userType: PropTypes.oneOf(['admin', 'instructor', 'student']),
+  userType: PropTypes.oneOf(['admin', 'teacher', 'student']),
 };
 
 function Field({ label, required, capitalize, children }) {

@@ -3,7 +3,7 @@ const c = require('./section.controller');
 
 /**
  * Course sections ordering + CRUD
- * Laravel source: Instructor/SectionController, CurriculumController
+ * Laravel source: Teacher/SectionController, CurriculumController
  *
  * TODO: port Laravel route definitions from routes/web.php / routes/api.php.
  * Mount under /api/section from src/modules/index.js.

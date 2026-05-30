@@ -1,6 +1,6 @@
 /**
- * AdminUsers — generic list for admins, instructors, students.
- * Ports index.blade.php for admin/admin, admin/instructor, admin/student.
+ * AdminUsers — generic list for admins, teachers, students.
+ * Ports index.blade.php for admin/admin, admin/teacher, admin/student.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -23,12 +23,12 @@ const CONFIG = {
     createRoute: ROUTES.ADMIN_ADMIN_CREATE,
     editRoute: ROUTES.ADMIN_ADMIN_EDIT,
   },
-  instructor: {
-    title: 'Instructor List',
-    addLabel: 'Add new Instructor',
-    apiList: API.ADMIN_INSTRUCTORS,
-    createRoute: ROUTES.ADMIN_INSTRUCTOR_CREATE,
-    editRoute: ROUTES.ADMIN_INSTRUCTOR_EDIT,
+  teacher: {
+    title: 'Teacher List',
+    addLabel: 'Add new Teacher',
+    apiList: API.ADMIN_TEACHERS,
+    createRoute: ROUTES.ADMIN_TEACHER_CREATE,
+    editRoute: ROUTES.ADMIN_TEACHER_EDIT,
   },
   student: {
     title: 'Student List',
@@ -110,8 +110,8 @@ export default function AdminUsers({ userType }) {
 
   const handleRevoke = async (id) => {
     try {
-      await post(API.ADMIN_INSTRUCTOR_REVOKE(id), {});
-      toast.success(translate('Instructor access revoked'));
+      await post(API.ADMIN_TEACHER_REVOKE(id), {});
+      toast.success(translate('Teacher access revoked'));
       fetchUsers();
     } catch {
       toast.error(translate('Failed to revoke access'));
@@ -172,7 +172,7 @@ export default function AdminUsers({ userType }) {
                     <th className="px-3 py-2">#</th>
                     <th className="px-3 py-2">{translate('Name')}</th>
                     <th className="px-3 py-2">{translate('Phone')}</th>
-                    {userType === 'instructor' && (
+                    {userType === 'teacher' && (
                       <th className="px-3 py-2">{translate('Number Of Course')}</th>
                     )}
                     <th className="px-3 py-2 text-center">{translate('Options')}</th>
@@ -198,7 +198,7 @@ export default function AdminUsers({ userType }) {
                       <td className="px-3 py-3 min-w-[150px] text-sm text-gray-700">
                         {user.phone || '-'}
                       </td>
-                      {userType === 'instructor' && (
+                      {userType === 'teacher' && (
                         <td className="px-3 py-3 text-sm text-gray-700">
                           {(user.course_count ?? 0)} {translate('Courses')}
                         </td>
@@ -216,10 +216,10 @@ export default function AdminUsers({ userType }) {
                             ref={menuRef}
                             className="absolute right-3 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30 text-left"
                           >
-                            {userType === 'instructor' && (
+                            {userType === 'teacher' && (
                               <li>
                                 <Link
-                                  to={`/admin/courses?instructor=${user.id}`}
+                                  to={`/admin/courses?teacher=${user.id}`}
                                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                                   onClick={() => setOpenMenuId(null)}
                                 >
@@ -250,10 +250,10 @@ export default function AdminUsers({ userType }) {
                                   });
                                 }}
                               >
-                                {userType === 'instructor' ? translate('Remove account') : translate('Delete')}
+                                {userType === 'teacher' ? translate('Remove account') : translate('Delete')}
                               </button>
                             </li>
-                            {userType === 'instructor' && (
+                            {userType === 'teacher' && (
                               <li>
                                 <button
                                   type="button"
@@ -262,13 +262,13 @@ export default function AdminUsers({ userType }) {
                                     setOpenMenuId(null);
                                     setConfirmState({
                                       open: true,
-                                      title: translate('Revoke Instructor Access'),
+                                      title: translate('Revoke Teacher Access'),
                                       message: translate('This user will become a regular student.'),
                                       onConfirm: () => handleRevoke(user.id),
                                     });
                                   }}
                                 >
-                                  {translate('Revoke Instructor Access')}
+                                  {translate('Revoke Teacher Access')}
                                 </button>
                               </li>
                             )}
@@ -301,5 +301,5 @@ export default function AdminUsers({ userType }) {
 }
 
 AdminUsers.propTypes = {
-  userType: PropTypes.oneOf(['admin', 'instructor', 'student']).isRequired,
+  userType: PropTypes.oneOf(['admin', 'teacher', 'student']).isRequired,
 };

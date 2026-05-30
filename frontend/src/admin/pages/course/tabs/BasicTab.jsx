@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { listInstructors } from '../../../api/instructor';
+import { listTeachers } from '../../../api/teacher';
 import CollegeMultiSelect from '../../../components/CollegeMultiSelect';
 import BatchMultiSelect from '../../../components/BatchMultiSelect';
 
-// Mirrors the backend parseInstructorIds — instructor_ids comes off the
+// Mirrors the backend parseTeacherIds — teacher_ids comes off the
 // course row as a TEXT column that may hold a JSON array, a CSV string, or a
 // single bare value. Always returns an array of id strings.
-const parseInstructorIds = (raw) => {
+const parseTeacherIds = (raw) => {
     if (raw == null || raw === '') return [];
     if (Array.isArray(raw)) return raw.map(String).filter(Boolean);
     const s = String(raw).trim();
@@ -25,7 +25,7 @@ const parseInstructorIds = (raw) => {
 // with Edit.jsx, but it's no longer used — courses are mapped to colleges
 // via clg_ids instead of category_id.
 export default function BasicTab({ course, onSave, formId }) {
-    const currentInstructorId = parseInstructorIds(course.instructor_ids)[0] || '';
+    const currentTeacherId = parseTeacherIds(course.teacher_ids)[0] || '';
     const [f, setF] = useState({
         title: course.title || '',
         short_description: course.short_description || '',
@@ -41,7 +41,7 @@ export default function BasicTab({ course, onSave, formId }) {
         has_certificate: course.has_certificate === undefined || course.has_certificate === null
             ? true
             : !!course.has_certificate,
-        instructor_id: String(currentInstructorId),
+        teacher_id: String(currentTeacherId),
     });
     const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
 
@@ -61,25 +61,25 @@ export default function BasicTab({ course, onSave, formId }) {
         Array.isArray(course.batch_ids) ? course.batch_ids.map(Number) : [],
     );
 
-    // Instructor dropdown source — admin instructors API (auth-service users
-    // with role='instructor'). Same loader the Create page uses. We pull the
+    // Teacher dropdown source — admin teachers API (auth-service users
+    // with role='teacher'). Same loader the Create page uses. We pull the
     // full list in one request; the count is small.
-    const [instructors, setInstructors] = useState([]);
-    const [instructorsLoading, setInstructorsLoading] = useState(true);
-    const [instructorsError, setInstructorsError] = useState(null);
+    const [teachers, setTeachers] = useState([]);
+    const [teachersLoading, setTeachersLoading] = useState(true);
+    const [teachersError, setTeachersError] = useState(null);
 
     useEffect(() => {
         let alive = true;
-        setInstructorsLoading(true);
-        setInstructorsError(null);
-        listInstructors({ per_page: 1000 })
-            .then((r) => { if (alive) setInstructors(r?.instructors || []); })
+        setTeachersLoading(true);
+        setTeachersError(null);
+        listTeachers({ per_page: 1000 })
+            .then((r) => { if (alive) setTeachers(r?.teachers || []); })
             .catch((e) => {
-                if (alive) setInstructorsError(
-                    e?.response?.data?.error || e?.message || 'Failed to load instructors'
+                if (alive) setTeachersError(
+                    e?.response?.data?.error || e?.message || 'Failed to load teachers'
                 );
             })
-            .finally(() => { if (alive) setInstructorsLoading(false); });
+            .finally(() => { if (alive) setTeachersLoading(false); });
         return () => { alive = false; };
     }, []);
 
@@ -87,8 +87,8 @@ export default function BasicTab({ course, onSave, formId }) {
         e.preventDefault();
         const fd = new FormData();
         Object.entries(f).forEach(([k, v]) => {
-            // instructor_id is sent on the wire as instructors[] (see below).
-            if (k === 'instructor_id') return;
+            // teacher_id is sent on the wire as teachers[] (see below).
+            if (k === 'teacher_id') return;
             // FormData stringifies booleans to 'true'/'false'; send '1'/'0'
             // so the backend's toBool() reads them as numbers consistently
             // with the other on/off flags (is_paid etc.).
@@ -97,10 +97,10 @@ export default function BasicTab({ course, onSave, formId }) {
         });
         // Prefer the value the admin picked in the dropdown; fall back to
         // whatever was already on the course so a partial save can't wipe
-        // the assignment (e.g. instructors list failed to load).
-        const chosen = String(f.instructor_id || '').trim();
-        const ids = chosen ? [chosen] : parseInstructorIds(course.instructor_ids);
-        ids.forEach((id) => fd.append('instructors[]', id));
+        // the assignment (e.g. teachers list failed to load).
+        const chosen = String(f.teacher_id || '').trim();
+        const ids = chosen ? [chosen] : parseTeacherIds(course.teacher_ids);
+        ids.forEach((id) => fd.append('teachers[]', id));
         // Send clgIds[] when at least one college is selected so the backend
         // replaces the column with the visible state. If the admin cleared
         // every college we send a single empty sentinel so the backend can
@@ -151,24 +151,24 @@ export default function BasicTab({ course, onSave, formId }) {
                 />
             </Row>
 
-            <Row label="Instructor" required>
+            <Row label="Teacher" required>
                 <select
                     className="ol-form-control w-full"
-                    value={f.instructor_id}
-                    onChange={(e) => set('instructor_id', e.target.value)}
-                    disabled={instructorsLoading || !!instructorsError}
+                    value={f.teacher_id}
+                    onChange={(e) => set('teacher_id', e.target.value)}
+                    disabled={teachersLoading || !!teachersError}
                     required
                 >
                     <option value="">
-                        {instructorsLoading
-                            ? 'Loading instructors…'
-                            : instructorsError
-                                ? 'Failed to load instructors'
-                                : instructors.length === 0
-                                    ? 'No instructors available — add one first'
-                                    : 'Select an instructor'}
+                        {teachersLoading
+                            ? 'Loading teachers…'
+                            : teachersError
+                                ? 'Failed to load teachers'
+                                : teachers.length === 0
+                                    ? 'No teachers available — add one first'
+                                    : 'Select an teacher'}
                     </option>
-                    {instructors.map((ins) => {
+                    {teachers.map((ins) => {
                         const label = ins.name || ins.email || ins.id;
                         const sub = ins.expertise ? ` — ${ins.expertise}` : '';
                         return (
@@ -178,12 +178,12 @@ export default function BasicTab({ course, onSave, formId }) {
                         );
                     })}
                 </select>
-                {instructorsError && (
-                    <div className="text-[13px] text-danger mt-1">{instructorsError}</div>
+                {teachersError && (
+                    <div className="text-[13px] text-danger mt-1">{teachersError}</div>
                 )}
-                {!instructorsLoading && !instructorsError && currentInstructorId && !instructors.some((i) => String(i.id) === String(currentInstructorId)) && (
+                {!teachersLoading && !teachersError && currentTeacherId && !teachers.some((i) => String(i.id) === String(currentTeacherId)) && (
                     <div className="text-[12px] text-gray mt-1">
-                        Currently assigned id <code>{currentInstructorId}</code> isn't in the instructors list — selecting a new one will replace it.
+                        Currently assigned id <code>{currentTeacherId}</code> isn't in the teachers list — selecting a new one will replace it.
                     </div>
                 )}
             </Row>

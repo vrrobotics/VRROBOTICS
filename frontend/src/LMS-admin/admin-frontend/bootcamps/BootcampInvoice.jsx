@@ -1,10 +1,10 @@
 /**
- * BootcampInvoice - Admin/instructor bootcamp purchase invoice (printable).
+ * BootcampInvoice - Admin/teacher bootcamp purchase invoice (printable).
  *
  * ============================================================================
  * ORIGINAL BLADES:
  *   resources/views/admin/bootcamp/invoice.blade.php
- *   resources/views/instructor/bootcamp/invoice.blade.php
+ *   resources/views/teacher/bootcamp/invoice.blade.php
  * ============================================================================
  */
 
@@ -22,7 +22,7 @@ export default function BootcampInvoice({ role = 'admin' }) {
   const [loading, setLoading] = useState(true);
   const [invoice, setInvoice] = useState(null);
 
-  const prefix = role === 'instructor' ? '/api/instructor' : '/api/admin';
+  const prefix = role === 'teacher' ? '/api/teacher' : '/api/admin';
 
   const load = useCallback(async () => {
     setLoading(true);

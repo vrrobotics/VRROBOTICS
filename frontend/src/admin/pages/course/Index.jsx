@@ -73,8 +73,8 @@ function CollegeChips({ clgIds, nameById }) {
 
 export default function CourseIndex() {
     const [params, setParams] = useSearchParams();
-    // Instructors can't create courses — hide the "Add New Course" button.
-    const isInstructor = useMemo(() => getStoredUser()?.role === 'instructor', []);
+    // Teachers can't create courses — hide the "Add New Course" button.
+    const isTeacher = useMemo(() => getStoredUser()?.role === 'teacher', []);
     const [data, setData] = useState(null);
     // Colleges for the filter dropdown + the chip strip on each row. The hook
     // hydrates once and is shared across the admin (Category page uses the
@@ -192,9 +192,9 @@ export default function CourseIndex() {
         { label: 'Active courses', value: data.active_courses, filter: { status: 'active' } },
         { label: 'Pending courses', value: data.pending_courses, filter: { status: 'pending' } },
         { label: 'Upcoming courses', value: data.upcoming_courses, filter: { status: 'upcoming' } },
-        // Free/Paid stats are hidden for instructors — they manage courses,
+        // Free/Paid stats are hidden for teachers — they manage courses,
         // not pricing.
-        ...(isInstructor
+        ...(isTeacher
             ? []
             : [
                 { label: 'Free courses', value: data.free_courses, filter: { price: 'free' } },
@@ -214,7 +214,7 @@ export default function CourseIndex() {
                             <i className="fi-rr-settings-sliders" />
                             Manage Courses
                         </h4>
-                        {!isInstructor && (
+                        {!isTeacher && (
                             <Link className="ol-btn-outline-secondary flex items-center gap-10px" to="/admin/course/create">
                                 <span className="fi-rr-plus" />
                                 <span>Add New Course</span>
@@ -288,7 +288,7 @@ export default function CourseIndex() {
                         <div className="py-12 text-center border border-dashed border-border rounded-ol-8">
                             <p className="text-[16px] font-semibold text-dark mb-1">No courses found</p>
                             <p className="text-[13px] text-gray">
-                                {isInstructor
+                                {isTeacher
                                     ? 'Try adjusting your filters. Courses assigned to you by an admin appear here.'
                                     : 'Try adjusting your filters or add a new course.'}
                             </p>
@@ -319,10 +319,10 @@ export default function CourseIndex() {
                                                             {c.title}
                                                         </Link>
                                                     </h4>
-                                                    {c.instructor && (
+                                                    {c.teacher && (
                                                         <div className="mt-1">
-                                                            <p className="text-[12px] text-gray m-0">Instructor: {c.instructor.name}</p>
-                                                            <p className="text-[12px] text-gray m-0">Email: {c.instructor.email}</p>
+                                                            <p className="text-[12px] text-gray m-0">Teacher: {c.teacher.name}</p>
+                                                            <p className="text-[12px] text-gray m-0">Email: {c.teacher.email}</p>
                                                         </div>
                                                     )}
                                                 </div>
@@ -477,7 +477,7 @@ function FilterDropdown({ query, colleges, courses, onApply }) {
     const [local, setLocal] = useState({
         college: query.college || 'all',
         status: query.status || 'all',
-        instructor: query.instructor || 'all',
+        teacher: query.teacher || 'all',
         price: query.price || 'all',
     });
     const ref = useRef(null);
@@ -486,10 +486,10 @@ function FilterDropdown({ query, colleges, courses, onApply }) {
         setLocal({
             college: query.college || 'all',
             status: query.status || 'all',
-            instructor: query.instructor || 'all',
+            teacher: query.teacher || 'all',
             price: query.price || 'all',
         });
-    }, [query.college, query.status, query.instructor, query.price]);
+    }, [query.college, query.status, query.teacher, query.price]);
 
     useEffect(() => {
         if (!open) return;
@@ -503,11 +503,11 @@ function FilterDropdown({ query, colleges, courses, onApply }) {
         };
     }, [open]);
 
-    const instructors = useMemo(() => {
+    const teachers = useMemo(() => {
         const seen = new Map();
         (courses || []).forEach((c) => {
-            if (c.instructor && !seen.has(c.instructor.id)) {
-                seen.set(c.instructor.id, { id: c.instructor.id, name: c.instructor.name });
+            if (c.teacher && !seen.has(c.teacher.id)) {
+                seen.set(c.teacher.id, { id: c.teacher.id, name: c.teacher.name });
             } else if (c.user_id && !seen.has(c.user_id)) {
                 seen.set(c.user_id, { id: c.user_id, name: `User #${c.user_id}` });
             }
@@ -572,14 +572,14 @@ function FilterDropdown({ query, colleges, courses, onApply }) {
                             </select>
                         </div>
                         <div>
-                            <label className="ol-form-label">Instructor</label>
+                            <label className="ol-form-label">Teacher</label>
                             <select
                                 className="ol-form-control w-full"
-                                value={local.instructor}
-                                onChange={(e) => change('instructor', e.target.value)}
+                                value={local.teacher}
+                                onChange={(e) => change('teacher', e.target.value)}
                             >
                                 <option value="all">All</option>
-                                {instructors.map((i) => (
+                                {teachers.map((i) => (
                                     <option key={i.id} value={i.id}>{i.name}</option>
                                 ))}
                             </select>

@@ -34,7 +34,7 @@ async function verifySupabaseToken(token) {
 }
 
 // Small role cache keyed by supabase uid. 5min TTL — propagates role
-// changes (admin → instructor demotion etc.) without a service restart.
+// changes (admin → teacher demotion etc.) without a service restart.
 const profileCache = new Map();
 const PROFILE_TTL_MS = 5 * 60 * 1000;
 
@@ -86,7 +86,7 @@ const auth = async (req, res, next) => {
 
         // TWO token types reach this service:
         //   1. Supabase access tokens (HS256, SUPABASE_JWT_SECRET) — students,
-        //      instructors, college admins provisioned through Supabase Auth.
+        //      teachers, college admins provisioned through Supabase Auth.
         //   2. admin-service-issued JWTs (env.jwt.secret) — the root/college
         //      admin break-glass login (AuthService.login → lms_admin.users).
         //      This bootstrap path must keep working even before any Supabase
@@ -139,18 +139,18 @@ const adminOnly = (req, res, next) => {
     });
 };
 
-// Allows admin/root OR instructor. Used on course read/write surfaces that
-// instructors may legitimately reach (course list, course edit, curriculum,
+// Allows admin/root OR teacher. Used on course read/write surfaces that
+// teachers may legitimately reach (course list, course edit, curriculum,
 // zoom-live-class). The service layer further scopes results to courses they
 // own / are assigned to (see CourseService.list scoping by req.user).
-const adminOrInstructor = (req, res, next) => {
+const adminOrTeacher = (req, res, next) => {
     auth(req, res, () => {
         const role = req.user?.role;
-        if (role !== 'admin' && role !== 'root' && role !== 'instructor') {
+        if (role !== 'admin' && role !== 'root' && role !== 'teacher') {
             return res.status(403).json({ error: 'Forbidden' });
         }
         next();
     });
 };
 
-module.exports = { auth, adminOnly, adminOrInstructor };
+module.exports = { auth, adminOnly, adminOrTeacher };

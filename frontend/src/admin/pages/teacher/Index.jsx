@@ -4,18 +4,18 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { BsThreeDotsVertical } from 'react-icons/bs';
 import ConfirmDialog from '../../components/ConfirmDialog';
-import { listInstructors, deleteInstructor } from '../../api/instructor';
+import { listTeachers, deleteTeacher } from '../../api/teacher';
 import { API_BASE } from '../../api/client';
 
 // Prefer the admin-uploaded photo (relative path served from admin-service's
-// /uploads mount). Fall back to the initials avatar for instructors who
+// /uploads mount). Fall back to the initials avatar for teachers who
 // haven't been given an image yet.
 const avatarUrl = (row) =>
     row.photo
         ? `${API_BASE}/${row.photo}`
         : `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name || row.email || 'I')}&background=169f48&color=fff`;
 
-export default function InstructorIndex() {
+export default function TeacherIndex() {
     const [params, setParams] = useSearchParams();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -28,10 +28,10 @@ export default function InstructorIndex() {
         setLoading(true);
         setError(null);
         try {
-            const res = await listInstructors(query);
+            const res = await listTeachers(query);
             setData(res);
         } catch (err) {
-            setError(err?.response?.data?.error || err?.message || 'Failed to load instructors');
+            setError(err?.response?.data?.error || err?.message || 'Failed to load teachers');
         } finally {
             setLoading(false);
         }
@@ -51,8 +51,8 @@ export default function InstructorIndex() {
 
     const handleDelete = async (id) => {
         try {
-            await deleteInstructor(id);
-            toast.success('Instructor removed successfully');
+            await deleteTeacher(id);
+            toast.success('Teacher removed successfully');
             setConfirm(null);
             load();
         } catch (e) {
@@ -65,7 +65,7 @@ export default function InstructorIndex() {
         return (
             <div className="flex flex-col items-center justify-center py-20 text-gray">
                 <div className="w-10 h-10 border-4 border-gray-200 border-t-skin rounded-full animate-spin mb-3" />
-                <p className="text-[14px]">Loading instructors…</p>
+                <p className="text-[14px]">Loading teachers…</p>
             </div>
         );
     }
@@ -74,7 +74,7 @@ export default function InstructorIndex() {
         return (
             <div className="ol-card rounded-ol-8">
                 <div className="ol-card-body py-10 px-6 text-center">
-                    <p className="text-[16px] font-semibold text-danger mb-2">Couldn't load instructors</p>
+                    <p className="text-[16px] font-semibold text-danger mb-2">Couldn't load teachers</p>
                     <p className="text-[13px] text-gray mb-4">{error}</p>
                     <button className="ol-btn-primary" onClick={load}>Retry</button>
                 </div>
@@ -82,7 +82,7 @@ export default function InstructorIndex() {
         );
     }
 
-    const rows = data.instructors || [];
+    const rows = data.teachers || [];
     const isEmpty = rows.length === 0;
 
     return (
@@ -91,10 +91,10 @@ export default function InstructorIndex() {
                 <div className="ol-card-body py-12px px-20px my-3">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                         <h4 className="text-[16px] font-semibold text-dark m-0 flex items-center gap-2">
-                            <i className="fi-rr-graduation-cap" /> Instructor List
+                            <i className="fi-rr-graduation-cap" /> Teacher List
                         </h4>
-                        <Link to="/admin/instructors/create" className="ol-btn-outline-secondary flex items-center gap-10px">
-                            <span className="fi-rr-plus" /> <span>Add new Instructor</span>
+                        <Link to="/admin/teachers/create" className="ol-btn-outline-secondary flex items-center gap-10px">
+                            <span className="fi-rr-plus" /> <span>Add new Teacher</span>
                         </Link>
                     </div>
                 </div>
@@ -120,8 +120,8 @@ export default function InstructorIndex() {
 
                     {isEmpty ? (
                         <div className="py-12 text-center border border-dashed border-border rounded-ol-8">
-                            <p className="text-[16px] font-semibold text-dark mb-1">No instructors found</p>
-                            <p className="text-[13px] text-gray">Try adjusting your search or add a new instructor.</p>
+                            <p className="text-[16px] font-semibold text-dark mb-1">No teachers found</p>
+                            <p className="text-[13px] text-gray">Try adjusting your search or add a new teacher.</p>
                         </div>
                     ) : (
                         <>
@@ -162,8 +162,8 @@ export default function InstructorIndex() {
                                                         : <span className="text-gray">—</span>}
                                                 </td>
                                                 <td>
-                                                    <InstructorOptions
-                                                        instructor={s}
+                                                    <TeacherOptions
+                                                        teacher={s}
                                                         onDelete={() => setConfirm({ id: s.id, name: s.name })}
                                                     />
                                                 </td>
@@ -179,7 +179,7 @@ export default function InstructorIndex() {
 
             {confirm && (
                 <ConfirmDialog
-                    title="Remove instructor"
+                    title="Remove teacher"
                     message={`Are you sure you want to remove ${confirm.name}?`}
                     onCancel={() => setConfirm(null)}
                     onConfirm={() => handleDelete(confirm.id)}
@@ -192,7 +192,7 @@ export default function InstructorIndex() {
 // Kebab (three-dots) row menu — identical behaviour to AdminOptions in
 // Manage Admin: portal-positioned dropdown with Edit + Delete, closes on
 // outside click / Escape / scroll / resize.
-function InstructorOptions({ instructor, onDelete }) {
+function TeacherOptions({ teacher, onDelete }) {
     const [open, setOpen] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0 });
     const triggerRef = useRef(null);
@@ -263,7 +263,7 @@ function InstructorOptions({ instructor, onDelete }) {
                 >
                     <li>
                         <Link
-                            to={`/admin/instructors/edit/${instructor.id}`}
+                            to={`/admin/teachers/edit/${teacher.id}`}
                             className="block px-3 py-2 text-dark hover:bg-gray-50"
                             onClick={close}
                         >

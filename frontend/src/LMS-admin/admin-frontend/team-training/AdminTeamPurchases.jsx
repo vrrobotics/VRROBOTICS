@@ -109,7 +109,7 @@ export default function AdminTeamPurchases() {
                         </p>
                         <p>
                           <span>{translate('Author :')} </span>
-                          {formatCurrency(r.instructor_revenue)}
+                          {formatCurrency(r.teacher_revenue)}
                         </p>
                       </td>
                       <td className="px-3 py-3 text-center text-xs text-gray-600">

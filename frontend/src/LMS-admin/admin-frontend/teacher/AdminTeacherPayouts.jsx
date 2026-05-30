@@ -1,5 +1,5 @@
 /**
- * AdminInstructorPayouts — port of admin/instructor/payout.blade.php.
+ * AdminTeacherPayouts — port of admin/teacher/payout.blade.php.
  * Pending / Completed tabs with date-range filter and running total.
  */
 
@@ -22,7 +22,7 @@ function toDateInputValue(ts) {
   return `${y}-${m}-${day}`;
 }
 
-export default function AdminInstructorPayouts() {
+export default function AdminTeacherPayouts() {
   const { translate, getImage, formatCurrency } = useSettings();
   const { get, post } = useApi();
 
@@ -46,7 +46,7 @@ export default function AdminInstructorPayouts() {
     setLoading(true);
     try {
       const status = tab === 'pending' ? 0 : 1;
-      const res = await get(API.ADMIN_INSTRUCTOR_PAYOUTS, {
+      const res = await get(API.ADMIN_TEACHER_PAYOUTS, {
         params: { status, page, start_date: range.start, end_date: range.end },
       });
       setItems(res.data || []);
@@ -65,7 +65,7 @@ export default function AdminInstructorPayouts() {
   const handlePay = async (payout) => {
     setPaying(payout.id);
     try {
-      const res = await post(`${API.ADMIN_INSTRUCTOR_PAYOUTS}/${payout.id}/pay`, {
+      const res = await post(`${API.ADMIN_TEACHER_PAYOUTS}/${payout.id}/pay`, {
         user_id: payout.user_id,
         amount: payout.amount,
       });
@@ -96,7 +96,7 @@ export default function AdminInstructorPayouts() {
         <div className="flex items-center justify-between px-5 py-3 flex-wrap gap-3">
           <h4 className="text-base font-semibold text-gray-900 flex items-center gap-2">
             <i className="fi-rr-settings-sliders" />
-            {translate('Instructor Payout')}
+            {translate('Teacher Payout')}
           </h4>
         </div>
       </div>
@@ -211,7 +211,7 @@ export default function AdminInstructorPayouts() {
                         {tab === 'completed' && (
                           <td className="px-3 py-3 text-center">
                             <Link
-                              to={`/admin/instructor-payouts/${p.id}/invoice`}
+                              to={`/admin/teacher-payouts/${p.id}/invoice`}
                               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-300 text-gray-700 hover:bg-gray-50"
                             >
                               {translate('Invoice')}

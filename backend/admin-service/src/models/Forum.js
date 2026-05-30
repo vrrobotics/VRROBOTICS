@@ -9,7 +9,7 @@ const { DataTypes } = require('sequelize');
  *
  * Schema notes vs the reference:
  *   - `user_id` is BIGINT with NO FK. The Laravel migration FK-binds it to
- *     `users`, but in this project instructors/students live in the auth-DB
+ *     `users`, but in this project teachers/students live in the auth-DB
  *     (lucy_devdb.users) — not lms_admin.users. Same pattern live_classes
  *     uses for the same reason.
  *   - `parent_id` self-references: NULL = root question; set = reply to that

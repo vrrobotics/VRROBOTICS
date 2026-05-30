@@ -8,7 +8,7 @@
  * ============================================================================
  *
  * Each notification event has system + email toggles for each user type
- * (admin, instructor, student). Toggles call the API immediately on change.
+ * (admin, teacher, student). Toggles call the API immediately on change.
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -87,7 +87,7 @@ export default function NotificationSettings() {
               </h4>
 
               {settings.map((setting) => {
-                const userTypes = setting.user_types || ['admin', 'instructor', 'student'];
+                const userTypes = setting.user_types || ['admin', 'teacher', 'student'];
                 const systemNotif = setting.system_notification || {};
                 const emailNotif = setting.email_notification || {};
                 const isEditable = setting.is_editable !== 0;

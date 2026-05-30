@@ -128,7 +128,7 @@ export default function HomeEditSettings() {
                 <>
                   <h5 className="title mb-3 mt-2">
                     {identifier === 'cooking'
-                      ? translate('Become An Instructor')
+                      ? translate('Become An Teacher')
                       : translate('About Us')}
                   </h5>
                   <div className="mb-3">
@@ -259,10 +259,10 @@ export default function HomeEditSettings() {
                 </>
               )}
 
-              {/* Marketplace: instructor section + banner sliders */}
+              {/* Marketplace: teacher section + banner sliders */}
               {identifier === 'marketplace' && (
                 <>
-                  <h5 className="title mb-3 mt-2">{translate('Become An Instructor')}</h5>
+                  <h5 className="title mb-3 mt-2">{translate('Become An Teacher')}</h5>
                   <div className="mb-3">
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">{translate('Title')}</label>
                     <input

@@ -34,7 +34,7 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  CREATE TYPE lucy_devdb.role_enum AS ENUM ('student', 'instructor', 'admin', 'auditor');
+  CREATE TYPE lucy_devdb.role_enum AS ENUM ('student', 'teacher', 'admin', 'auditor');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN

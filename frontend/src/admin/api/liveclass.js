@@ -1,6 +1,6 @@
 import api from './client';
 
-export const listInstructors = () => api.get('/instructors').then((r) => r.data);
+export const listTeachers = () => api.get('/teachers').then((r) => r.data);
 
 export const listLiveClasses = (courseId) => api.get(`/course/${courseId}/live-classes`).then((r) => r.data);
 export const storeLiveClass = (courseId, data) => api.post(`/course/${courseId}/live-class`, data).then((r) => r.data);

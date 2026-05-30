@@ -2,7 +2,7 @@ const { z } = require('zod');
 
 /**
  * Enrollments, progress, watch history
- * TODO: add Zod schemas mirroring the FormRequest / validate() calls in Student/EnrollmentController, Instructor/EnrollmentController.
+ * TODO: add Zod schemas mirroring the FormRequest / validate() calls in Student/EnrollmentController, Teacher/EnrollmentController.
  */
 
 const list = z.object({

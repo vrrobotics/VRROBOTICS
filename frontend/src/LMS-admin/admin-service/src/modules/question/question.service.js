@@ -4,7 +4,7 @@ const AppError = require('../../shared/errors/AppError');
 
 /**
  * Quiz questions CRUD
- * TODO: implement business logic ported from Instructor/QuestionController.
+ * TODO: implement business logic ported from Teacher/QuestionController.
  */
 
 async function list(/* query */) {

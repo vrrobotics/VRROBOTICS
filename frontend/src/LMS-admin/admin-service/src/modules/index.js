@@ -9,16 +9,16 @@ const router = require('express').Router();
 // render without 404s. Remove each entry as the real endpoint ships.
 const empty = { data: [], meta: { current_page: 1, last_page: 1, total: 0 } };
 const stubs = [
-  ['get', '/dashboard/stats', { courses: 0, lessons: 0, enrollments: 0, students: 0, instructors: 0 }],
+  ['get', '/dashboard/stats', { courses: 0, lessons: 0, enrollments: 0, students: 0, teachers: 0 }],
   ['get', '/dashboard/revenue', { monthly_amount: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }],
   ['get', '/dashboard/course/status', { statuses: [0, 0, 0, 0, 0, 0] }],
   ['get', '/dashboard/payouts', { payouts: [] }],
   ['get', '/admins', empty],
-  ['get', '/instructors', empty],
+  ['get', '/teachers', empty],
   ['get', '/students', empty],
   ['get', '/courses', empty],
   ['get', '/course/categories', empty],
-  ['get', '/course/instructors', empty],
+  ['get', '/course/teachers', empty],
   ['get', '/categories', empty],
   ['get', '/blogs', empty],
   ['get', '/enrollments', empty],

@@ -4,7 +4,7 @@ const AppError = require('../../shared/errors/AppError');
 
 /**
  * Role-specific dashboard aggregations
- * TODO: implement business logic ported from DashboardController, Admin/DashboardController, Instructor/DashboardController, Student/DashboardController.
+ * TODO: implement business logic ported from DashboardController, Admin/DashboardController, Teacher/DashboardController, Student/DashboardController.
  */
 
 async function list(/* query */) {

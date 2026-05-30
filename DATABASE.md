@@ -16,7 +16,7 @@ YagnaTech is a multi-service Learning Management System built on **MySQL 8 (AWS 
 | `lucy_devdb` | `auth-service`, `course-service`, `assessment-service`, `college-service`, `organization-service`, `payment-service` | Identity, catalog, assessments, college org-tree |
 | `lms_admin` | `admin-service` | LMS content (Laravel-style: categories, lessons, sections, certificates, forums, progress) |
 
-Cross-schema referential integrity is **not enforced at the DB layer**; foreign keys spanning schemas are enforced at the application/service layer (a pattern explicitly documented in many model files). The `admin-service` opens a **second Sequelize handle** (`authDb`) to read/write `lucy_devdb` directly when cross-schema queries are needed (e.g. College Dashboard KPIs, instructor profile photos, program request workflows).
+Cross-schema referential integrity is **not enforced at the DB layer**; foreign keys spanning schemas are enforced at the application/service layer (a pattern explicitly documented in many model files). The `admin-service` opens a **second Sequelize handle** (`authDb`) to read/write `lucy_devdb` directly when cross-schema queries are needed (e.g. College Dashboard KPIs, teacher profile photos, program request workflows).
 
 There are **24 ORM-defined tables + 1 undeclared raw-SQL table** (`program_requests`), for a documented total of **25 tables** across the two schemas. Schema is propagated by `sequelize.sync()` on boot; explicit migration files exist only for backfills on already-deployed databases.
 
@@ -162,7 +162,7 @@ Every service reads `DB_HOST / DB_PORT / DB_USER / DB_PASS / DB_NAME` from its o
 
 `users`, `roles`, `colleges`, `branches`, `organisations`, `courses` (course-service flavor), `enrollments`, `assessments`, `questions` (assessment flavor), `questionsets`, `pre_assessment_registrations`, `program_requests` *(implicit)*
 
-> Additionally `users.instructorPhoto` and `users.studentPhoto` columns are added **at runtime** by `admin-service`'s boot hook via `ALTER TABLE`.
+> Additionally `users.teacherPhoto` and `users.studentPhoto` columns are added **at runtime** by `admin-service`'s boot hook via `ALTER TABLE`.
 
 #### Schema `lms_admin` (13 tables)
 
@@ -196,8 +196,8 @@ Every service reads `DB_HOST / DB_PORT / DB_USER / DB_PASS / DB_NAME` from its o
 
 #### 4.1.1 Table: `users` (auth-service)
 
-**Purpose:** Canonical identity table for the entire platform — students, instructors, admins, auditors. All cross-service user references key on `userId` (STRING).
-**Business logic:** Login, role lookup, profile data, pre/post assessment scores, instructor and student profile photo (added at runtime by admin-service), program assignment state, college mapping.
+**Purpose:** Canonical identity table for the entire platform — students, teachers, admins, auditors. All cross-service user references key on `userId` (STRING).
+**Business logic:** Login, role lookup, profile data, pre/post assessment scores, teacher and student profile photo (added at runtime by admin-service), program assignment state, college mapping.
 
 | Column | Type | Length | Nullable | Default | Constraints | Description |
 |---|---|---|---|---|---|---|
@@ -220,10 +220,10 @@ Every service reads `DB_HOST / DB_PORT / DB_USER / DB_PASS / DB_NAME` from its o
 | `orgId` | STRING | — | YES | — | logical FK → `organisations.orgId` | — |
 | `assessmentId` | STRING | — | YES | — | logical FK → `assessments.assessmentId` | — |
 | `programInterested` | STRING | — | YES | — | — | — |
-| `expertise` | STRING | 255 | YES | — | — | Instructor field |
-| `bio` | STRING | 1000 | YES | — | — | Instructor field |
-| `yearsOfExperience` | INTEGER | — | YES | — | — | Instructor field |
-| `linkedinUrl` | STRING | 255 | YES | — | — | Instructor field |
+| `expertise` | STRING | 255 | YES | — | — | Teacher field |
+| `bio` | STRING | 1000 | YES | — | — | Teacher field |
+| `yearsOfExperience` | INTEGER | — | YES | — | — | Teacher field |
+| `linkedinUrl` | STRING | 255 | YES | — | — | Teacher field |
 | `profileStatus` | ENUM | `active,inactive,pending` | YES | `pending` | — | — |
 | `location` | STRING | — | YES | — | — | — |
 | `address` | STRING | 255 | YES | — | — | — |
@@ -236,7 +236,7 @@ Every service reads `DB_HOST / DB_PORT / DB_USER / DB_PASS / DB_NAME` from its o
 | `assignedProgram` | STRING | — | YES | — | — | *(undeclared in model — written by raw SQL in StudentService)* |
 | `programResponseStatus` | STRING | — | YES | — | — | *(undeclared)* |
 | `programRespondedAt` | DATETIME | — | YES | — | — | *(undeclared)* |
-| `instructorPhoto` | VARCHAR(255) | — | YES | — | — | Added at admin-service boot |
+| `teacherPhoto` | VARCHAR(255) | — | YES | — | — | Added at admin-service boot |
 | `studentPhoto` | VARCHAR(255) | — | YES | — | — | Added at admin-service boot |
 | `createdAt` / `updatedAt` | DATE | — | NO | now | — | Sequelize timestamps |
 
@@ -257,12 +257,12 @@ Every service reads `DB_HOST / DB_PORT / DB_USER / DB_PASS / DB_NAME` from its o
 
 #### 4.1.2 Table: `roles`
 
-**Purpose:** Lookup of role names. Seeded automatically at auth-service boot for `student, instructor, admin, auditor`.
+**Purpose:** Lookup of role names. Seeded automatically at auth-service boot for `student, teacher, admin, auditor`.
 
 | Column | Type | Nullable | Default | Constraints |
 |---|---|---|---|---|
 | `roleId` | STRING | NO | — | **PK** |
-| `role` | ENUM(`student,instructor,admin,auditor`) | NO | — | — |
+| `role` | ENUM(`student,teacher,admin,auditor`) | NO | — | — |
 
 **Relationships:** `Role.hasMany(User)`.
 **Timestamps:** Disabled (`timestamps: false`).
@@ -324,7 +324,7 @@ Every service reads `DB_HOST / DB_PORT / DB_USER / DB_PASS / DB_NAME` from its o
 | `isPreAssessmentNeeded` | BOOLEAN | YES | `false` | — |
 | `modules` | JSON | YES | — | Array of module objects |
 | `clgIds` | JSON | NO | `[]` | Added by 20260515 migration |
-| `instructorId` | STRING | YES | — | logical FK → `users.userId`. Added by 20260516 migration |
+| `teacherId` | STRING | YES | — | logical FK → `users.userId`. Added by 20260516 migration |
 
 ---
 
@@ -513,7 +513,7 @@ Every service reads `DB_HOST / DB_PORT / DB_USER / DB_PASS / DB_NAME` from its o
 | `requirements` | TEXT | YES | — | — |
 | `outcomes` | TEXT | YES | — | — |
 | `faqs` | TEXT | YES | — | — |
-| `instructor_ids` | TEXT | YES | — | CSV / JSON-as-text |
+| `teacher_ids` | TEXT | YES | — | CSV / JSON-as-text |
 | `clg_ids` | JSON | YES | `[]` | Added by `run-clgIds-migration.js` |
 | `average_rating` | FLOAT | YES | `0` | — |
 | `expiry_period` | INTEGER | YES | — | days |
@@ -780,7 +780,7 @@ Key-value config store.
 | 2 | [20260421-add-academic-info-to-users.sql](backend/auth-service/src/db/migrations/20260421-add-academic-info-to-users.sql) | Raw SQL companion | auth-service |
 | 3 | [20260515-add-clgIds-to-courses.js](backend/course-service/src/db/migrations/20260515-add-clgIds-to-courses.js) | Sequelize migration | course-service |
 | 4 | [20260515-add-clgIds-to-courses.sql](backend/course-service/src/db/migrations/20260515-add-clgIds-to-courses.sql) | Raw SQL companion | course-service |
-| 5 | [20260516-add-instructorId-to-courses.js](backend/course-service/src/db/migrations/20260516-add-instructorId-to-courses.js) | Sequelize migration | course-service |
+| 5 | [20260516-add-teacherId-to-courses.js](backend/course-service/src/db/migrations/20260516-add-teacherId-to-courses.js) | Sequelize migration | course-service |
 | 6 | `course-service/scripts/run-clgIds-migration.js` | One-shot runner | course-service |
 | 7 | `admin-service/scripts/run-clgIds-migration.js` | One-shot runner | admin-service |
 | 8 | `admin-service/scripts/add-category-clgIds-column.js` | One-shot runner | admin-service |
@@ -792,11 +792,11 @@ Key-value config store.
 |---|---|---|---|---|
 | `20260421-add-academic-info-to-users.js/sql` | Add Academic Information columns to users | `ADD COLUMN educationLevel ENUM(...), branch, collegeName, graduationYear, collegeCode` — all nullable | `DROP COLUMN` each | `lucy_devdb.users` |
 | `20260515-add-clgIds-to-courses.js/sql` | Multi-college course offering support | `ADD COLUMN clgIds JSON NOT NULL DEFAULT JSON_ARRAY()` + backfill `UPDATE … WHERE IS NULL` | `DROP COLUMN clgIds` | `lucy_devdb.courses` |
-| `20260516-add-instructorId-to-courses.js` | Assign instructor to course | `ADD COLUMN instructorId STRING NULL` | `DROP COLUMN instructorId` | `lucy_devdb.courses` |
+| `20260516-add-teacherId-to-courses.js` | Assign teacher to course | `ADD COLUMN teacherId STRING NULL` | `DROP COLUMN teacherId` | `lucy_devdb.courses` |
 | `run-clgIds-migration.js` (course-service) | One-shot equivalent of #2 for fresh DBs | Raw `ALTER TABLE courses ADD COLUMN clgIds JSON NOT NULL DEFAULT (JSON_ARRAY())` | none | `lucy_devdb.courses` |
-| `run-clgIds-migration.js` (admin-service) | Mirror in `lms_admin` | Raw `ALTER TABLE courses ADD COLUMN clg_ids JSON NULL AFTER instructor_ids` | none | `lms_admin.courses` |
+| `run-clgIds-migration.js` (admin-service) | Mirror in `lms_admin` | Raw `ALTER TABLE courses ADD COLUMN clg_ids JSON NULL AFTER teacher_ids` | none | `lms_admin.courses` |
 | `add-category-clgIds-column.js` | Mirror clg_ids on categories | Raw `ALTER TABLE categories ADD COLUMN clg_ids JSON NULL AFTER category_logo` | none | `lms_admin.categories` |
-| **Boot-time ALTERs** in `admin-service/server.js` | Runtime schema patches | (1) `users.instructorPhoto VARCHAR(255)`, (2) `users.studentPhoto VARCHAR(255)` (in `lucy_devdb`); (3) widen `live_classes.user_id` INT→BIGINT | none | `lucy_devdb.users`, `lms_admin.live_classes` |
+| **Boot-time ALTERs** in `admin-service/server.js` | Runtime schema patches | (1) `users.teacherPhoto VARCHAR(255)`, (2) `users.studentPhoto VARCHAR(255)` (in `lucy_devdb`); (3) widen `live_classes.user_id` INT→BIGINT | none | `lucy_devdb.users`, `lms_admin.live_classes` |
 
 ### 5.3 Migration Execution Order
 
@@ -804,7 +804,7 @@ There is **no migration log table** (no `SequelizeMeta`). Order is implicit by d
 
 1. `20260421-add-academic-info-to-users` — auth
 2. `20260515-add-clgIds-to-courses` — course
-3. `20260516-add-instructorId-to-courses` — course
+3. `20260516-add-teacherId-to-courses` — course
 
 Auxiliary runners and boot-time ALTERs are **idempotent** (`describeTable` guard or `SHOW COLUMNS` guard) and safe to re-run.
 
@@ -825,7 +825,7 @@ All formal migrations expose `down()` removing the column. The auxiliary `script
 
 | Seed | Mechanism | File | Behaviour |
 |---|---|---|---|
-| Roles (`student/instructor/admin/auditor`) | `Role.findOrCreate` in `initDb()` | [auth-service/src/app.js:154-160](backend/auth-service/src/app.js#L154-L160) | Runs on every boot, idempotent |
+| Roles (`student/teacher/admin/auditor`) | `Role.findOrCreate` in `initDb()` | [auth-service/src/app.js:154-160](backend/auth-service/src/app.js#L154-L160) | Runs on every boot, idempotent |
 
 ### 6.2 Manual Seed Scripts
 
@@ -885,7 +885,7 @@ All formal migrations expose `down()` removing the column. The auxiliary `script
 │ ─────────────────│                          │  │  ┌─────────────┐
 │ courseId (PK)     │                          │  │  │ assessments │
 │ clgIds[] (JSON)   │                          │  │  │ ───────────│
-│ instructorId (FK) │◄─────────────────────────┘  │  │ assessmentId│
+│ teacherId (FK) │◄─────────────────────────┘  │  │ assessmentId│
 └─────────┬─────────┘                              │  │ setId (FK)  │
           │1                                       │  └──────┬──────┘
           │N                                       │         │N
@@ -916,7 +916,7 @@ All formal migrations expose `down()` removing the column. The auxiliary `script
 │ college_id       │      │ user_id (FK)         │
 └──────────────────┘      │ category_id (FK)     │
                           │ clg_ids[] (JSON)     │
-                  ┌──────►│ instructor_ids       │
+                  ┌──────►│ teacher_ids       │
                   │       └──┬──┬────────┬───────┘
 ┌─────────────────┴┐         │  │        │
 │   categories     │         │N │1       │1
@@ -980,7 +980,7 @@ All formal migrations expose `down()` removing the column. The auxiliary `script
 | **One-to-Many (DB FK)** | `roles → users`, `courses (course-service) → enrollments`, `questionsets → assessments`, `categories → courses (admin)`, `users (admin) → courses (admin)`, `courses (admin) → sections`, `courses (admin) → lessons`, `sections → lessons`, `forums → forum_reports`, `users (admin) → certificates`, `courses (admin) → certificates` |
 | **Many-to-Many (logical via JSON arrays)** | `colleges ↔ courses` via `courses.clgIds[]` / `courses.clg_ids[]`; `colleges ↔ categories` via `categories.clg_ids[]`; `questionsets ↔ questions` via `questionsets.questions[]`; `colleges ↔ branches` via `colleges.branchIds[]` |
 | **Self-referencing** | `categories.parent_id → categories.id`; `forums.parent_id → forums.id` |
-| **Cross-schema logical FKs** | `lms_admin.users.college_id → lucy_devdb.colleges.clgId`; `lms_admin.certificates.user_id → lucy_devdb.users.userId`; `lms_admin.user_progress.user_id → lucy_devdb.users.userId`; `lms_admin.forums.user_id → lucy_devdb.users.userId`; `lms_admin.live_classes.user_id → lucy_devdb.users.userId`; `lms_admin.pre_assessment_results.user_id → lucy_devdb.users.userId`; `lucy_devdb.courses.instructorId → lucy_devdb.users.userId`; `lucy_devdb.users.collegeId → lucy_devdb.colleges.clgId` |
+| **Cross-schema logical FKs** | `lms_admin.users.college_id → lucy_devdb.colleges.clgId`; `lms_admin.certificates.user_id → lucy_devdb.users.userId`; `lms_admin.user_progress.user_id → lucy_devdb.users.userId`; `lms_admin.forums.user_id → lucy_devdb.users.userId`; `lms_admin.live_classes.user_id → lucy_devdb.users.userId`; `lms_admin.pre_assessment_results.user_id → lucy_devdb.users.userId`; `lucy_devdb.courses.teacherId → lucy_devdb.users.userId`; `lucy_devdb.users.collegeId → lucy_devdb.colleges.clgId` |
 
 ### 7.3 Cascade Behaviour
 
@@ -1030,7 +1030,7 @@ React (frontend/) ──HTTP──► Bastion-server (gateway :8000)
 ### 8.4 File / Media Storage
 
 - Uploads served from `admin-service/uploads/` via `express.static('/uploads')` ([server.js:32](backend/admin-service/src/server.js#L32)).
-- DB columns store only relative paths/URLs: `courses.thumbnail/banner/preview`, `lessons.lesson_src/attachment/thumbnail`, `categories.thumbnail/category_logo`, `users.photo/instructorPhoto/studentPhoto`.
+- DB columns store only relative paths/URLs: `courses.thumbnail/banner/preview`, `lessons.lesson_src/attachment/thumbnail`, `categories.thumbnail/category_logo`, `users.photo/teacherPhoto/studentPhoto`.
 - `pre_assessment_registrations.uploadedCollegeProof` is JSON describing the file, not BLOB.
 
 ### 8.5 Transaction Flow
@@ -1062,7 +1062,7 @@ React (frontend/) ──HTTP──► Bastion-server (gateway :8000)
 - `lucy_devdb.users.roleId` — joined in every student dashboard query, no index.
 - `lms_admin.courses.slug` — used as lookup key by `publicCourseService.detailsBySlug`, no UNIQUE / index.
 - `lms_admin.courses.category_id` and `lms_admin.lessons.course_id`, `lessons.section_id`, `sections.course_id` — FK columns without explicit indexes (Sequelize auto-creates index on `references:` only when declared; these are declared via raw `foreignKey:` association without `references:` block).
-- `lucy_devdb.courses.instructorId` — used by instructor course list, no index.
+- `lucy_devdb.courses.teacherId` — used by teacher course list, no index.
 - `program_requests.user_id` — needs UNIQUE (implicit assumption of `ON DUPLICATE KEY UPDATE`) but no migration creates it.
 
 ### 9.2 Redundant / Duplicated Columns
@@ -1076,7 +1076,7 @@ React (frontend/) ──HTTP──► Bastion-server (gateway :8000)
 ### 9.3 Normalization Issues
 
 - `Forum.likes` / `dislikes` stored as JSON-in-TEXT — not queryable, race-prone on concurrent likes.
-- `Course.instructor_ids` (admin schema) as TEXT — opaque, can't FK or JOIN.
+- `Course.teacher_ids` (admin schema) as TEXT — opaque, can't FK or JOIN.
 - `Course.clgIds[]` / `clg_ids[]` JSON arrays — denormalised many-to-many; no junction table for `course_colleges` makes the inverse query (`all courses for college X`) require `JSON_CONTAINS`.
 
 ### 9.4 Denormalization (intentional)
@@ -1142,7 +1142,7 @@ React (frontend/) ──HTTP──► Bastion-server (gateway :8000)
 |---|---|
 | `lucy_devdb.users(roleId)` | every student-list JOIN |
 | `lucy_devdb.users(collegeId)` | every dashboard filter |
-| `lucy_devdb.courses(instructorId)` | instructor course listing |
+| `lucy_devdb.courses(teacherId)` | teacher course listing |
 | `lms_admin.courses(slug)` UNIQUE | the public detail-page lookup key |
 | `lms_admin.courses(category_id)`, `lessons(course_id)`, `lessons(section_id)`, `sections(course_id)` | declared associations but no index |
 | `lms_admin.certificates(user_id, course_id)` UNIQUE | enforce one cert per (user, course) |

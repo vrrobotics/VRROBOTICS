@@ -3,7 +3,7 @@ const asyncHandler = require('../../shared/utils/asyncHandler');
 
 /**
  * Course sections ordering + CRUD
- * TODO: mirror the CRUD/custom actions from Instructor/SectionController, CurriculumController.
+ * TODO: mirror the CRUD/custom actions from Teacher/SectionController, CurriculumController.
  */
 exports.index = asyncHandler(async (req, res) => {
   res.json(await service.list(req.query));

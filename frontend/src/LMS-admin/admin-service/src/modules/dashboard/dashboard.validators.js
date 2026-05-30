@@ -2,7 +2,7 @@ const { z } = require('zod');
 
 /**
  * Role-specific dashboard aggregations
- * TODO: add Zod schemas mirroring the FormRequest / validate() calls in DashboardController, Admin/DashboardController, Instructor/DashboardController, Student/DashboardController.
+ * TODO: add Zod schemas mirroring the FormRequest / validate() calls in DashboardController, Admin/DashboardController, Teacher/DashboardController, Student/DashboardController.
  */
 
 const list = z.object({

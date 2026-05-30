@@ -3,7 +3,7 @@ const c = require('./quiz.controller');
 
 /**
  * Quizzes, submissions, scoring
- * Laravel source: Instructor/QuizController, Student/QuizController, QuizSubmission
+ * Laravel source: Teacher/QuizController, Student/QuizController, QuizSubmission
  *
  * TODO: port Laravel route definitions from routes/web.php / routes/api.php.
  * Mount under /api/quiz from src/modules/index.js.

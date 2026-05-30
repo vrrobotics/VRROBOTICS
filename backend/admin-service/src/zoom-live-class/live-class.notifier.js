@@ -69,7 +69,7 @@ const buildHtml = ({ courseTitle, topic, when, note, hostName }) => `
           <td style="padding:6px 0;font-weight:600">${escapeHtml(topic)}</td></tr>
       <tr><td style="padding:6px 0;color:#6b7385">When</td>
           <td style="padding:6px 0;font-weight:600">${escapeHtml(when)}</td></tr>
-      ${hostName ? `<tr><td style="padding:6px 0;color:#6b7385">Instructor</td>
+      ${hostName ? `<tr><td style="padding:6px 0;color:#6b7385">Teacher</td>
           <td style="padding:6px 0;font-weight:600">${escapeHtml(hostName)}</td></tr>` : ''}
       ${note ? `<tr><td style="padding:6px 0;color:#6b7385">Note</td>
           <td style="padding:6px 0">${escapeHtml(note)}</td></tr>` : ''}
@@ -85,7 +85,7 @@ const buildHtml = ({ courseTitle, topic, when, note, hostName }) => `
  * await it only with its own try/catch — it never throws either way).
  *
  * @param {object} liveClassRow  the freshly-created LiveClass instance
- * @param {string} [hostName]    resolved instructor name, if available
+ * @param {string} [hostName]    resolved teacher name, if available
  */
 const notifyClassScheduled = async (liveClassRow, hostName) => {
     try {

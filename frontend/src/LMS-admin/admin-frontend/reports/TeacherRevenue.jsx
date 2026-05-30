@@ -1,8 +1,8 @@
 /**
- * InstructorRevenue - Instructor revenue report with date-range filter.
+ * TeacherRevenue - Teacher revenue report with date-range filter.
  *
  * ============================================================================
- * ORIGINAL BLADE: resources/views/admin/report/instructor_revenue.blade.php
+ * ORIGINAL BLADE: resources/views/admin/report/teacher_revenue.blade.php
  * ============================================================================
  */
 
@@ -16,7 +16,7 @@ import ConfirmModal from '@/components/common/ConfirmModal';
 import { useApi } from '@/hooks/useApi';
 import { useSettings } from '@/contexts/SettingsContext';
 
-export default function InstructorRevenue() {
+export default function TeacherRevenue() {
   const { translate, getCurrency } = useSettings();
   const { get, del } = useApi();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -24,7 +24,7 @@ export default function InstructorRevenue() {
   const [loading, setLoading] = useState(true);
   const [reports, setReports] = useState([]);
   const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
-  const [totals, setTotals] = useState({ amount: 0, instructor_revenue: 0 });
+  const [totals, setTotals] = useState({ amount: 0, teacher_revenue: 0 });
   const [confirm, setConfirm] = useState(null);
 
   const page = Number(searchParams.get('page') || 1);
@@ -42,7 +42,7 @@ export default function InstructorRevenue() {
       qs.set('page', page);
       if (dateFrom) qs.set('date_from', dateFrom);
       if (dateTo) qs.set('date_to', dateTo);
-      const res = await get(`/api/admin/reports/instructor-revenue?${qs}`);
+      const res = await get(`/api/admin/reports/teacher-revenue?${qs}`);
       const data = res.data || res;
       setReports(data.data || data.reports || []);
       setPagination({
@@ -52,7 +52,7 @@ export default function InstructorRevenue() {
       });
       setTotals({
         amount: data.total_amount || 0,
-        instructor_revenue: data.total_instructor_revenue || 0,
+        teacher_revenue: data.total_teacher_revenue || 0,
       });
     } catch {
       toast.error(translate('Failed to load'));
@@ -76,7 +76,7 @@ export default function InstructorRevenue() {
 
   const handleDelete = async (id) => {
     try {
-      await del(`/api/admin/reports/instructor-revenue/${id}`);
+      await del(`/api/admin/reports/teacher-revenue/${id}`);
       toast.success(translate('Deleted'));
       fetchReports();
     } catch {
@@ -92,7 +92,7 @@ export default function InstructorRevenue() {
         <div className="px-5 my-3 py-4">
           <h4 className="title text-base mb-0">
             <i className="fi-rr-settings-sliders mr-2" />
-            {translate('Instructor Revenue')}
+            {translate('Teacher Revenue')}
           </h4>
         </div>
       </div>
@@ -147,7 +147,7 @@ export default function InstructorRevenue() {
                       <th>#</th>
                       <th>{translate('Enrolled course')}</th>
                       <th>{translate('Total amount')}</th>
-                      <th>{translate('Instructor revenue')}</th>
+                      <th>{translate('Teacher revenue')}</th>
                       <th>{translate('Enrolled')}</th>
                       <th>{translate('Option')}</th>
                     </tr>
@@ -164,7 +164,7 @@ export default function InstructorRevenue() {
                           {r.coupon && <p>{translate('Coupon')}: {r.coupon}</p>}
                         </td>
                         <td>{currency(r.amount)}</td>
-                        <td>{currency(r.instructor_revenue)}</td>
+                        <td>{currency(r.teacher_revenue)}</td>
                         <td>{r.enrolled_date || r.created_at?.slice(0, 10)}</td>
                         <td>
                           <button
@@ -182,7 +182,7 @@ export default function InstructorRevenue() {
                       <th />
                       <th />
                       <th>{translate('Total')}: {currency(totals.amount)}</th>
-                      <th>{translate('Total')}: {currency(totals.instructor_revenue)}</th>
+                      <th>{translate('Total')}: {currency(totals.teacher_revenue)}</th>
                       <th />
                       <th />
                     </tr>

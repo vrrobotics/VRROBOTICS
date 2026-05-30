@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { API_BASE } from '../../api/client';
 import { listColleges } from '../../api/college';
 
-// Mirrors AdminForm / InstructorForm: tabbed sidebar (Basic / Login
+// Mirrors AdminForm / TeacherForm: tabbed sidebar (Basic / Login
 // Credentials), grid-cols-12 rows, same controls. Narrower than AdminForm —
 // students live in the auth-service users table, so only fields with a
 // matching column there are exposed (name/phone/email/password/collegeId).

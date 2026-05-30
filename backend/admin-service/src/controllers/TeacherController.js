@@ -1,4 +1,4 @@
-const svc = require('../services/InstructorService');
+const svc = require('../services/TeacherService');
 const { asyncHandler } = require('../middlewares/error');
 
 exports.index = asyncHandler(async (req, res) => {

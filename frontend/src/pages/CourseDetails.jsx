@@ -9,7 +9,7 @@ const TABS = [
     { key: 'overview', label: 'Overview' },
     { key: 'curriculum', label: 'Curriculum' },
     { key: 'details', label: 'Details' },
-    { key: 'instructor', label: 'Instructor' },
+    { key: 'teacher', label: 'Teacher' },
     { key: 'reviews', label: 'Reviews' },
 ];
 
@@ -200,7 +200,7 @@ export default function CourseDetails({ slug: slugProp } = {}) {
                     {tab === 'overview' && <Overview course={course} outcomes={outcomes} faqs={faqs} />}
                     {tab === 'curriculum' && <Curriculum course={course} />}
                     {tab === 'details' && <Details requirements={requirements} outcomes={outcomes} />}
-                    {tab === 'instructor' && <Instructor instructor={course.creator} />}
+                    {tab === 'teacher' && <Teacher teacher={course.creator} />}
                     {tab === 'reviews' && <Reviews course={course} reviews={reviews} stars={stars} />}
                 </div>
             </section>
@@ -497,12 +497,12 @@ function Details({ requirements, outcomes }) {
     );
 }
 
-function Instructor({ instructor }) {
-    if (!instructor) {
+function Teacher({ teacher }) {
+    if (!teacher) {
         return (
             <div className="bg-white border border-border rounded-2xl p-10 text-center max-w-4xl">
                 <i className="fa fa-user-slash text-muted text-[28px] mb-3" />
-                <p className="text-[14px] text-muted">Instructor info not available.</p>
+                <p className="text-[14px] text-muted">Teacher info not available.</p>
             </div>
         );
     }
@@ -511,43 +511,43 @@ function Instructor({ instructor }) {
     // Render chips only when the admin entered something comma-separated, so
     // a plain tagline like "AI educator" doesn't get repeated as a single
     // chip below the same line. Falls back to `skills` for legacy rows.
-    const expertiseRaw = (instructor.skills || instructor.about || '').trim();
+    const expertiseRaw = (teacher.skills || teacher.about || '').trim();
     const expertiseChips = expertiseRaw.includes(',')
         ? expertiseRaw.split(',').map((s) => s.trim()).filter(Boolean)
         : [];
 
-    const hasBody = instructor.biography || expertiseChips.length > 0;
+    const hasBody = teacher.biography || expertiseChips.length > 0;
 
     return (
         <div className="max-w-4xl">
-            <SectionHeading icon="fa-user-tie" title="About the instructor" />
+            <SectionHeading icon="fa-user-tie" title="About the teacher" />
             <div className="mt-5 bg-white border border-border rounded-2xl overflow-hidden">
                 <div className="bg-gradient-to-r from-lightgreen/40 to-white p-6 sm:p-8 flex flex-col sm:flex-row gap-6 items-center sm:items-start">
                     <img
-                        src={instructor.photo}
-                        alt={instructor.name || ''}
+                        src={teacher.photo}
+                        alt={teacher.name || ''}
                         className="w-28 h-28 rounded-full object-cover flex-shrink-0 ring-4 ring-white shadow-md"
                     />
                     <div className="text-center sm:text-left flex-1 min-w-0">
-                        <h3 className="text-[22px] font-bold text-dark m-0">{instructor.name}</h3>
-                        {instructor.about && (
+                        <h3 className="text-[22px] font-bold text-dark m-0">{teacher.name}</h3>
+                        {teacher.about && (
                             <p className="text-[14px] text-skin font-medium mt-1 m-0">
-                                {instructor.about}
+                                {teacher.about}
                             </p>
                         )}
                         <div className="mt-3 flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1.5 text-[12px] text-muted">
-                            {instructor.email && (
+                            {teacher.email && (
                                 <a
-                                    href={`mailto:${instructor.email}`}
+                                    href={`mailto:${teacher.email}`}
                                     className="inline-flex items-center gap-1.5 hover:text-skin transition-colors"
                                 >
                                     <i className="fa fa-envelope" />
-                                    {instructor.email}
+                                    {teacher.email}
                                 </a>
                             )}
-                            {instructor.linkedinUrl && (
+                            {teacher.linkedinUrl && (
                                 <a
-                                    href={instructor.linkedinUrl}
+                                    href={teacher.linkedinUrl}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="inline-flex items-center gap-1.5 hover:text-skin transition-colors"
@@ -561,10 +561,10 @@ function Instructor({ instructor }) {
                 </div>
                 {hasBody && (
                     <div className="p-6 sm:p-8 border-t border-border space-y-5">
-                        {instructor.biography ? (
+                        {teacher.biography ? (
                             <div
                                 className="text-[14px] text-dark leading-[1.75] prose-custom"
-                                dangerouslySetInnerHTML={{ __html: instructor.biography }}
+                                dangerouslySetInnerHTML={{ __html: teacher.biography }}
                             />
                         ) : (
                             <p className="text-[14px] text-muted italic m-0">
@@ -671,7 +671,7 @@ function CourseDetailsSkeleton() {
                     {/* Title (two lines) */}
                     <div className="h-7 w-11/12 rounded bg-gray-200 animate-pulse" />
                     <div className="h-7 w-2/3 rounded bg-gray-200 animate-pulse" />
-                    {/* Rating / instructor / meta strip */}
+                    {/* Rating / teacher / meta strip */}
                     <div className="flex items-center gap-3 pt-1">
                         <div className="h-4 w-24 rounded bg-gray-200 animate-pulse" />
                         <div className="h-4 w-32 rounded bg-gray-200 animate-pulse" />

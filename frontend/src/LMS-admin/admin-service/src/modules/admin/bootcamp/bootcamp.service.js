@@ -14,7 +14,7 @@ const { slug } = require('../../../shared/utils/slug');
 
 /**
  * Admin bootcamp service — 1:1 port of Admin/BootcampController.php.
- * Admin role bypasses the user_id scope; instructors only see their own bootcamps.
+ * Admin role bypasses the user_id scope; teachers only see their own bootcamps.
  * update() is tab-driven (basic/pricing/info/media/seo) to mirror the PHP controller.
  */
 
@@ -30,8 +30,8 @@ async function list({ user, query = {} }) {
   if (query.status && query.status !== 'all') {
     where.status = query.status === 'active' ? 1 : 0;
   }
-  if (query.instructor && query.instructor !== 'all') {
-    where.user_id = query.instructor;
+  if (query.teacher && query.teacher !== 'all') {
+    where.user_id = query.teacher;
   }
   if (query.price && query.price !== 'all') {
     if (query.price === 'free') where.is_paid = 0;

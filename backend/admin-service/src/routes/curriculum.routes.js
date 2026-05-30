@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const multer = require('multer');
 const ctrl = require('../controllers/CurriculumController');
-const { adminOrInstructor } = require('../middlewares/auth');
+const { adminOrTeacher } = require('../middlewares/auth');
 
 const upload = multer({ dest: 'tmp/' });
 
@@ -11,26 +11,26 @@ const lessonFiles = upload.fields([
     { name: 'system_video_file', maxCount: 1 },
 ]);
 
-// All curriculum endpoints are usable by both admins and instructors. The
-// service layer should additionally scope writes to courses the instructor
+// All curriculum endpoints are usable by both admins and teachers. The
+// service layer should additionally scope writes to courses the teacher
 // owns / is assigned to — same model the zoom-live-class module uses.
 
 // Sections
-router.get('/course/:course_id/curriculum', adminOrInstructor, ctrl.sections_by_course);
-router.post('/section', adminOrInstructor, ctrl.section_store);
-router.post('/section/update', adminOrInstructor, ctrl.section_update);
-router.get('/section/delete/:id', adminOrInstructor, ctrl.section_delete);
-router.post('/section/sort', adminOrInstructor, ctrl.section_sort);
+router.get('/course/:course_id/curriculum', adminOrTeacher, ctrl.sections_by_course);
+router.post('/section', adminOrTeacher, ctrl.section_store);
+router.post('/section/update', adminOrTeacher, ctrl.section_update);
+router.get('/section/delete/:id', adminOrTeacher, ctrl.section_delete);
+router.post('/section/sort', adminOrTeacher, ctrl.section_sort);
 
 // Lessons
-router.post('/lesson', adminOrInstructor, lessonFiles, ctrl.lesson_store);
-router.post('/lesson/edit', adminOrInstructor, lessonFiles, ctrl.lesson_update);
-router.get('/lesson/:id', adminOrInstructor, ctrl.lesson_show);
-router.get('/lesson/delete/:id', adminOrInstructor, ctrl.lesson_delete);
-router.post('/lesson/sort', adminOrInstructor, ctrl.lesson_sort);
+router.post('/lesson', adminOrTeacher, lessonFiles, ctrl.lesson_store);
+router.post('/lesson/edit', adminOrTeacher, lessonFiles, ctrl.lesson_update);
+router.get('/lesson/:id', adminOrTeacher, ctrl.lesson_show);
+router.get('/lesson/delete/:id', adminOrTeacher, ctrl.lesson_delete);
+router.post('/lesson/sort', adminOrTeacher, ctrl.lesson_sort);
 
 // Direct-to-Bunny video upload: mint a presigned TUS ticket, then poll status.
-router.post('/video/create-upload', adminOrInstructor, ctrl.video_create_upload);
-router.get('/video/:guid/status', adminOrInstructor, ctrl.video_status);
+router.post('/video/create-upload', adminOrTeacher, ctrl.video_create_upload);
+router.get('/video/:guid/status', adminOrTeacher, ctrl.video_status);
 
 module.exports = router;

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import InstructorForm from './InstructorForm';
-import { getInstructor, updateInstructor } from '../../api/instructor';
+import TeacherForm from './TeacherForm';
+import { getTeacher, updateTeacher } from '../../api/teacher';
 
-export default function InstructorEdit() {
+export default function TeacherEdit() {
     const { id } = useParams();
     const nav = useNavigate();
     const [instr, setInstr] = useState(null);
@@ -12,17 +12,17 @@ export default function InstructorEdit() {
 
     useEffect(() => {
         let alive = true;
-        getInstructor(id)
-            .then((r) => { if (alive) setInstr(r.instructor); })
+        getTeacher(id)
+            .then((r) => { if (alive) setInstr(r.teacher); })
             .catch((e) => { if (alive) setError(e.response?.data?.error || 'Failed to load'); });
         return () => { alive = false; };
     }, [id]);
 
     const onSubmit = async (body) => {
         try {
-            await updateInstructor(id, body);
-            toast.success('Instructor updated successfully');
-            nav('/admin/instructors');
+            await updateTeacher(id, body);
+            toast.success('Teacher updated successfully');
+            nav('/admin/teachers');
         } catch (e) {
             toast.error(e.response?.data?.error || 'Failed');
         }
@@ -37,18 +37,18 @@ export default function InstructorEdit() {
                 <div className="ol-card-body py-12px px-20px my-3">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                         <h4 className="text-[16px] font-semibold text-dark m-0 flex items-center gap-2">
-                            <i className="fi-rr-graduation-cap" /> Edit Instructor
+                            <i className="fi-rr-graduation-cap" /> Edit Teacher
                         </h4>
-                        <Link to="/admin/instructors" className="ol-btn-outline-secondary flex items-center gap-10px">
+                        <Link to="/admin/teachers" className="ol-btn-outline-secondary flex items-center gap-10px">
                             <span className="fi-rr-arrow-alt-left" /> <span>Back</span>
                         </Link>
                     </div>
                 </div>
             </div>
             <div className="ol-card p-4">
-                <h4 className="text-[16px] font-semibold text-dark mb-5">Instructor Info</h4>
+                <h4 className="text-[16px] font-semibold text-dark mb-5">Teacher Info</h4>
                 <div className="ol-card-body">
-                    <InstructorForm instructor={instr} submitLabel="Update Instructor" onSubmit={onSubmit} />
+                    <TeacherForm teacher={instr} submitLabel="Update Teacher" onSubmit={onSubmit} />
                 </div>
             </div>
         </div>

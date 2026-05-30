@@ -1,5 +1,5 @@
 // File upload adapter — facade preserved so existing call sites
-// (StudentService, InstructorService, CategoryService, CourseService, …)
+// (StudentService, TeacherService, CategoryService, CourseService, …)
 // don't need code changes when the storage backend swaps.
 //
 // Routing rule:

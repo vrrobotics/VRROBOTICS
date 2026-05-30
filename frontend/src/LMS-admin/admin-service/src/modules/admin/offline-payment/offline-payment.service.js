@@ -91,13 +91,13 @@ async function acceptPayment(id) {
 
       const role = await creatorRole(course.id);
       let adminRevenue;
-      let instructorRevenue = null;
+      let teacherRevenue = null;
       if (role === 'admin') {
         adminRevenue = finalAmount;
       } else {
-        const instructorPct = Number((await getSetting('instructor_revenue')) || 0);
-        instructorRevenue = finalAmount * (instructorPct / 100);
-        adminRevenue = finalAmount - instructorRevenue;
+        const teacherPct = Number((await getSetting('teacher_revenue')) || 0);
+        teacherRevenue = finalAmount * (teacherPct / 100);
+        adminRevenue = finalAmount - teacherRevenue;
       }
 
       await PaymentHistory.create({
@@ -109,7 +109,7 @@ async function acceptPayment(id) {
         amount: finalAmount,
         tax,
         admin_revenue: String(adminRevenue),
-        instructor_revenue: instructorRevenue == null ? null : String(instructorRevenue),
+        teacher_revenue: teacherRevenue == null ? null : String(teacherRevenue),
       });
 
       const expiryPeriod = Number(course.expiry_period || 0);
@@ -159,13 +159,13 @@ async function acceptPayment(id) {
       const tax = Number(row.tax || 0);
       const role = await tutorRole(s.tutor_id);
       let adminRevenue;
-      let instructorRevenue = null;
+      let teacherRevenue = null;
       if (role === 'admin') {
         adminRevenue = totalAmount - tax;
       } else {
-        const instructorPct = Number((await getSetting('instructor_revenue')) || 0);
-        instructorRevenue = totalAmount * (instructorPct / 100);
-        adminRevenue = totalAmount - instructorRevenue;
+        const teacherPct = Number((await getSetting('teacher_revenue')) || 0);
+        teacherRevenue = totalAmount * (teacherPct / 100);
+        adminRevenue = totalAmount - teacherRevenue;
       }
       await TutorBooking.create({
         invoice: `#${randomToken(10)}`,
@@ -175,7 +175,7 @@ async function acceptPayment(id) {
         tax,
         payment_method: 'offline',
         admin_revenue: adminRevenue,
-        instructor_revenue: instructorRevenue,
+        teacher_revenue: teacherRevenue,
         tutor_id: s.tutor_id,
         start_time: s.start_time,
         end_time: s.end_time,

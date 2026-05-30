@@ -8,7 +8,7 @@ const Role = sequelize.define('Role', {
     primaryKey: true
   },
   role: {
-    type: DataTypes.ENUM('student', 'instructor', 'admin', 'auditor'),
+    type: DataTypes.ENUM('student', 'teacher', 'admin', 'auditor'),
     allowNull: false,
   }
 }, {

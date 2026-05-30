@@ -9,13 +9,13 @@ const isTruthy = (v) => v === true || v === '1' || v === 'true' || v === 1;
 exports.register = asyncHandler(async (req, res) => {
   const user = await authService.register(req.body);
 
-  // Optional instructor-application (RegisteredUserController::store behaviour).
-  if (isTruthy(req.body.instructor)) {
+  // Optional teacher-application (RegisteredUserController::store behaviour).
+  if (isTruthy(req.body.teacher)) {
     const existing = await Application.findOne({ where: { user_id: user.id } });
     if (!existing) {
       await Application.create({
         user_id: user.id,
-        type: 'instructor',
+        type: 'teacher',
         payload: JSON.stringify({
           phone: req.body.phone || null,
           description: req.body.description || null,

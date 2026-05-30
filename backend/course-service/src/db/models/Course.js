@@ -34,13 +34,13 @@ const Course = sequelize.define('Course', {
     allowNull: false,
     defaultValue: [],
   },
-  // Instructor assigned to teach this course. Stores the auth-service userId
-  // (string) of a user whose role is 'instructor'. No DB-level FK because
-  // instructors live in lucy_devdb (auth-service), not this course DB —
+  // Teacher assigned to teach this course. Stores the auth-service userId
+  // (string) of a user whose role is 'teacher'. No DB-level FK because
+  // teachers live in lucy_devdb (auth-service), not this course DB —
   // validation is intentionally application-layer (the admin dropdown is
-  // sourced from /api/admin/manage/instructors). Nullable so legacy rows and
+  // sourced from /api/admin/manage/teachers). Nullable so legacy rows and
   // courses authored before this field existed keep working.
-  instructorId: {
+  teacherId: {
     type: DataTypes.STRING,
     allowNull: true,
   },

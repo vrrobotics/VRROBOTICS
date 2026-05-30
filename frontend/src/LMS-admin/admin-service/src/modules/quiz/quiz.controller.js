@@ -3,7 +3,7 @@ const asyncHandler = require('../../shared/utils/asyncHandler');
 
 /**
  * Quizzes, submissions, scoring
- * TODO: mirror the CRUD/custom actions from Instructor/QuizController, Student/QuizController, QuizSubmission.
+ * TODO: mirror the CRUD/custom actions from Teacher/QuizController, Student/QuizController, QuizSubmission.
  */
 exports.index = asyncHandler(async (req, res) => {
   res.json(await service.list(req.query));

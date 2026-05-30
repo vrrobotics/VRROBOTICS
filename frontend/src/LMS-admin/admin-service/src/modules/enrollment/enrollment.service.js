@@ -4,7 +4,7 @@ const AppError = require('../../shared/errors/AppError');
 
 /**
  * Enrollments, progress, watch history
- * TODO: implement business logic ported from Student/EnrollmentController, Instructor/EnrollmentController.
+ * TODO: implement business logic ported from Student/EnrollmentController, Teacher/EnrollmentController.
  */
 
 async function list(/* query */) {

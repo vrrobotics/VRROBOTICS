@@ -78,7 +78,7 @@ const create = async (body, file) => {
 
     if (file) {
         const ext = file.originalname.split('.').pop() || 'jpg';
-        const destPath = `uploads/users/instructor/${niceFileName(body.name, ext)}`;
+        const destPath = `uploads/users/teacher/${niceFileName(body.name, ext)}`;
         await upload(file, destPath, 200, 200);
         data.photo = destPath;
     }
@@ -124,7 +124,7 @@ const update = async (id, body, file) => {
     if (file) {
         if (admin.photo) removeFile(admin.photo);
         const ext = file.originalname.split('.').pop() || 'jpg';
-        const destPath = `uploads/users/instructor/${niceFileName(body.name, ext)}`;
+        const destPath = `uploads/users/teacher/${niceFileName(body.name, ext)}`;
         await upload(file, destPath, 200, 200);
         data.photo = destPath;
     }

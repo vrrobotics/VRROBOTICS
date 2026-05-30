@@ -8,7 +8,7 @@
  * @push('title', get_phrase('Dashboard'))
  * @section('content')
  *   <!-- Dashboard header card -->
- *   <!-- Stat cards row: courses, lessons, enrollments, students, instructors -->
+ *   <!-- Stat cards row: courses, lessons, enrollments, students, teachers -->
  *   <div class="row">
  *     <canvas id="myChart"></canvas>  <!-- Admin revenue line chart -->
  *   </div>
@@ -164,7 +164,7 @@ export default function AdminDashboard() {
     { value: stats?.lessons, label: translate('Number of Lessons') },
     { value: stats?.enrollments, label: translate('Number of Enrollment') },
     { value: stats?.students, label: translate('Number of Students') },
-    { value: stats?.instructors, label: translate('Number of Instructor') },
+    { value: stats?.teachers, label: translate('Number of Teacher') },
   ];
 
   return (
@@ -257,8 +257,8 @@ export default function AdminDashboard() {
             </h4>
             <Link
               className="text-xs text-emerald-600 hover:text-emerald-700 inline-flex items-center gap-1"
-              to={ROUTES.ADMIN_INSTRUCTOR_PAYOUT}
-              title={translate('Instructor Payout')}
+              to={ROUTES.ADMIN_TEACHER_PAYOUT}
+              title={translate('Teacher Payout')}
             >
               <span>{translate('View')}</span>
               <i className="fi-rr-arrow-alt-right text-[10px]" />

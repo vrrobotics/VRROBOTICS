@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 /**
- * VR Robotics Academy — Instructor (Mentor) Dashboard.
+ * VR Robotics Academy — Teacher (Mentor) Dashboard.
  * Standalone dashboard view (its own sidebar; rendered outside the marketing
  * Layout). New addition only — does not change any existing functionality.
  */
@@ -41,7 +41,7 @@ const navItems = [
 
 /**
  * TODO(backend): replace this static placeholder with live data.
- * Suggested API: GET /api/instructor/earnings?month=YYYY-MM  (auth: instructor)
+ * Suggested API: GET /api/teacher/earnings?month=YYYY-MM  (auth: teacher)
  * returning a payload shaped exactly like `DashboardData` below, so wiring is a
  * drop-in. See the commented useEffect in the component for the fetch scaffold.
  */
@@ -68,14 +68,14 @@ const Stat = ({ value, label }: { value: string; label: string }) => (
   </div>
 );
 
-const InstructorDashboard = () => {
+const TeacherDashboard = () => {
   const [active, setActive] = useState("Dashboard");
   const [data] = useState<DashboardData>(PLACEHOLDER_DATA);
 
-  // TODO(backend): connect to the instructor earnings API. Uncomment & adapt:
+  // TODO(backend): connect to the teacher earnings API. Uncomment & adapt:
   // useEffect(() => {
   //   axios
-  //     .get(`/api/instructor/earnings?month=2026-05`)
+  //     .get(`/api/teacher/earnings?month=2026-05`)
   //     .then((res) => setData(res.data))
   //     .catch(() => setData(PLACEHOLDER_DATA));
   // }, []);
@@ -258,4 +258,4 @@ const InstructorDashboard = () => {
   );
 };
 
-export default InstructorDashboard;
+export default TeacherDashboard;

@@ -10,7 +10,7 @@ module.exports = (sequelize) => {
       package_id: { type: DataTypes.INTEGER, allowNull: true },
       price: { type: DataTypes.DOUBLE, allowNull: true },
       admin_revenue: { type: DataTypes.DOUBLE, allowNull: true },
-      instructor_revenue: { type: DataTypes.DOUBLE, allowNull: true },
+      teacher_revenue: { type: DataTypes.DOUBLE, allowNull: true },
       tax: { type: DataTypes.DOUBLE, allowNull: true },
       payment_method: { type: DataTypes.STRING(255), allowNull: true },
       payment_details: { type: DataTypes.TEXT, allowNull: true },

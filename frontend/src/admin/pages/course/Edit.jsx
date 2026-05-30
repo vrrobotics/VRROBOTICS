@@ -42,18 +42,18 @@ export default function CourseEdit() {
     const { id } = useParams();
     const [course, setCourse] = useState(null);
 
-    // Instructors only get the Curriculum and Live Class tabs — the rest are
+    // Teachers only get the Curriculum and Live Class tabs — the rest are
     // admin-only. Read role once per mount; AdminLayout already enforced that
-    // an instructor can't reach this page without a valid token.
-    const isInstructor = useMemo(() => getStoredUser()?.role === 'instructor', []);
+    // an teacher can't reach this page without a valid token.
+    const isTeacher = useMemo(() => getStoredUser()?.role === 'teacher', []);
     const visibleTabs = useMemo(
-        () => (isInstructor
+        () => (isTeacher
             ? TABS.filter((t) => t.key === 'curriculum' || t.key === 'live-class')
             : TABS),
-        [isInstructor]
+        [isTeacher]
     );
 
-    const [tab, setTab] = useState(isInstructor ? 'curriculum' : 'basic');
+    const [tab, setTab] = useState(isTeacher ? 'curriculum' : 'basic');
 
     const load = async () => {
         const res = await getCourse(id);

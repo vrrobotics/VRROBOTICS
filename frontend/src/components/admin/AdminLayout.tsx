@@ -27,7 +27,7 @@ const navItems: NavItem[] = [
   { to: '/admin/courses', label: 'Courses', icon: BookOpen },
   { to: '/admin/categories', label: 'Categories', icon: FolderOpen },
   { to: '/admin/users', label: 'Admins', icon: Users },
-  { to: '/admin/instructors', label: 'Instructors', icon: Users },
+  { to: '/admin/teachers', label: 'Teachers', icon: Users },
   { to: '/admin/students', label: 'Students', icon: Users },
   { to: '/admin/enrollments', label: 'Enrollments', icon: GraduationCap },
   { to: '/admin/blogs', label: 'Blogs', icon: Newspaper },

@@ -1,13 +1,13 @@
-const instructors = [
+const teachers = [
     {
-        id: 1, name: 'Alex Johnson', email: 'alex@example.com', role: 'instructor',
+        id: 1, name: 'Alex Johnson', email: 'alex@example.com', role: 'teacher',
         photo: 'https://i.pravatar.cc/200?img=12',
         biography: '<p>Senior frontend engineer with 12 years of experience building production React applications.</p>',
         about: 'Frontend engineer & educator',
         skills: 'React, TypeScript, Node.js',
     },
     {
-        id: 2, name: 'Priya Sharma', email: 'priya@example.com', role: 'instructor',
+        id: 2, name: 'Priya Sharma', email: 'priya@example.com', role: 'teacher',
         photo: 'https://i.pravatar.cc/200?img=47',
         biography: '<p>Backend specialist focused on Node.js, PostgreSQL, and distributed systems.</p>',
         about: 'Backend & systems engineer',
@@ -193,9 +193,9 @@ const lessons = [
 ];
 
 const reviews = [
-    { id: 1, course_id: 101, user_id: 2, rating: 5, review: 'One of the best React courses I\'ve taken.', user: instructors[1] },
-    { id: 2, course_id: 101, user_id: 2, rating: 4, review: 'Great hands-on examples.', user: instructors[1] },
-    { id: 3, course_id: 102, user_id: 1, rating: 5, review: 'Concise and very practical.', user: instructors[0] },
+    { id: 1, course_id: 101, user_id: 2, rating: 5, review: 'One of the best React courses I\'ve taken.', user: teachers[1] },
+    { id: 2, course_id: 101, user_id: 2, rating: 4, review: 'Great hands-on examples.', user: teachers[1] },
+    { id: 3, course_id: 102, user_id: 1, rating: 5, review: 'Concise and very practical.', user: teachers[0] },
 ];
 
 const enrollments = [
@@ -223,7 +223,7 @@ const lessonsForCourse = (courseId) =>
     lessons.filter((l) => l.course_id === Number(courseId));
 
 const enrichCourse = (course) => {
-    const creator = instructors.find((i) => i.id === course.user_id) || null;
+    const creator = teachers.find((i) => i.id === course.user_id) || null;
     const category = categories.find((c) => c.id === course.category_id) || null;
     const courseLessons = lessonsForCourse(course.id);
     const courseSections = sectionsForCourse(course.id);
@@ -280,11 +280,11 @@ const getCourseDetails = (idOrSlug) => {
     if (!course) return null;
     const enriched = enrichCourse(course);
     const courseReviews = reviews.filter((r) => r.course_id === course.id);
-    const instructorReviews = []; // mirrors empty for now
+    const teacherReviews = []; // mirrors empty for now
     return {
         course: enriched,
         reviews: courseReviews,
-        instructor_reviews: instructorReviews,
+        teacher_reviews: teacherReviews,
     };
 };
 

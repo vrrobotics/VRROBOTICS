@@ -17,11 +17,11 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
     // Admins authenticate against admin-service and store an 'admin_token'.
-    // Instructors have no admin-service login — they reach the admin shell
+    // Teachers have no admin-service login — they reach the admin shell
     // (course management only) with their auth-service 'accessToken'. Both
     // services sign JWTs with the same JWT_SECRET, so admin-service's `auth`
     // middleware verifies either token. Fall back to accessToken so the
-    // instructor flow works regardless of which key holds the token.
+    // teacher flow works regardless of which key holds the token.
     const token = getToken() || localStorage.getItem('accessToken');
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
@@ -67,7 +67,7 @@ api.interceptors.response.use(
 
         // 403 = authenticated but not permitted for THIS endpoint. The token is
         // still valid — do NOT clear it or redirect. This is normal for an
-        // instructor whose restricted role can't reach an admin-only endpoint;
+        // teacher whose restricted role can't reach an admin-only endpoint;
         // the calling component decides how to handle it (e.g. empty dropdown).
         if (status === 403) {
             console.warn(`[admin api] 403 on ${url} — not permitted for this role (token kept)`);

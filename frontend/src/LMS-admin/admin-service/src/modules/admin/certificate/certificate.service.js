@@ -300,7 +300,7 @@ async function renderByIdentifier(identifier) {
 
   const studentName = user?.name || `User #${cert.user_id}`;
   const courseTitle = course?.title || `Course #${cert.course_id}`;
-  const instructorHtml = user?.name ? `<p>${user.name}</p>` : '';
+  const teacherHtml = user?.name ? `<p>${user.name}</p>` : '';
   const courseDuration = course?.total_duration || '—';
   const lessonCount = course?.lesson_count ?? 0;
   const courseLevel = course?.level
@@ -315,7 +315,7 @@ async function renderByIdentifier(identifier) {
   let html = builderRaw || '';
   html = html
     .replace(/\{course_duration\}/g, courseDuration)
-    .replace(/\{instructor_name\}/g, instructorHtml)
+    .replace(/\{teacher_name\}/g, teacherHtml)
     .replace(/\{student_name\}/g, studentName)
     .replace(/\{course_title\}/g, courseTitle)
     .replace(/\{number_of_lesson\}/g, String(lessonCount))

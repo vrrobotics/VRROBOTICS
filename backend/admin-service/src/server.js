@@ -6,7 +6,7 @@ const cors = require('cors');
 const env = require('./config/env');
 const { attachErrorHandler } = require('./observability');
 const { sequelize } = require('./models');
-const { adminOnly, auth, adminOrInstructor } = require('./middlewares/auth');
+const { adminOnly, auth, adminOrTeacher } = require('./middlewares/auth');
 const { errorHandler } = require('./middlewares/error');
 
 const authRoutes = require('./routes/auth.routes');
@@ -25,7 +25,7 @@ const collegeDashboardRoutes = require('./routes/collegeDashboard.routes');
 const batchRoutes = require('./routes/batch.routes');
 const collegeRoutes = require('./routes/college.routes');
 const studentRoutes = require('./routes/student.routes');
-const instructorRoutes = require('./routes/instructor.routes');
+const teacherRoutes = require('./routes/teacher.routes');
 const preAssessmentRoutes = require('./routes/preassessment.routes');
 const languageRoutes = require('./routes/language.routes');
 
@@ -45,7 +45,7 @@ if (env.uploadDir && fs.existsSync(path.join(__dirname, '..', env.uploadDir))) {
     app.use('/uploads', express.static(path.join(__dirname, '..', env.uploadDir)));
 }
 
-// Relative "uploads/..." asset paths (user/instructor/student photos, category
+// Relative "uploads/..." asset paths (user/teacher/student photos, category
 // thumbnails/logos, and legacy pre-migration rows) now live in Cloudflare R2.
 // Anything the static mount above didn't serve from local disk is redirected to
 // its R2 public URL. Course media, lesson attachments, and certificate images
@@ -373,7 +373,7 @@ app.get('/api/public/course-progress', async (req, res) => {
 app.use('/api/admin', authRoutes);
 
 // Course / curriculum / zoom-live-class routers apply per-route role gates
-// internally (adminOnly vs adminOrInstructor) so instructors can manage the
+// internally (adminOnly vs adminOrTeacher) so teachers can manage the
 // Curriculum + Live Class tabs of their own courses. JWT decoding still
 // happens at the mount point via `auth` so req.user is populated.
 //
@@ -382,7 +382,7 @@ app.use('/api/admin', authRoutes);
 // request matching the path prefix — even when that router has no matching
 // route. `adminOnly` short-circuits with a 403 for non-admins and never
 // calls next(), so if an adminOnly mount sits earlier in the chain it kills
-// an instructor's request before it can fall through to courseRoutes.
+// an teacher's request before it can fall through to courseRoutes.
 app.use('/api/admin', auth, categoryRoutes);
 app.use('/api/admin', auth, courseRoutes);
 app.use('/api/admin', auth, curriculumRoutes);
@@ -402,7 +402,7 @@ app.use('/api/admin', adminOnly, collegeDashboardRoutes);
 app.use('/api/admin', adminOnly, batchRoutes);
 app.use('/api/admin', adminOnly, collegeRoutes);
 app.use('/api/admin', adminOnly, studentRoutes);
-app.use('/api/admin', adminOnly, instructorRoutes);
+app.use('/api/admin', adminOnly, teacherRoutes);
 app.use('/api/admin', adminOnly, languageRoutes);
 
 // Public certificate routes — unauthenticated. Mirror the player flow which
@@ -588,7 +588,7 @@ sequelize.authenticate()
                     console.log(`🛠️  Added ${authSchema}.users.${column}`);
                 }
             };
-            await ensureCol('instructorPhoto', '"instructorPhoto" VARCHAR(255)');
+            await ensureCol('teacherPhoto', '"teacherPhoto" VARCHAR(255)');
             await ensureCol('studentPhoto', '"studentPhoto" VARCHAR(255)');
             await ensureCol('postScoreDuration', '"postScoreDuration" INTEGER');
         } catch (e) {

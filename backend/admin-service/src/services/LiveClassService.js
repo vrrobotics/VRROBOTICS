@@ -60,10 +60,10 @@ const listByCourse = async (course_id) => {
     return { live_classes: items };
 };
 
-const instructors = async () => {
-    // Instructors live in the auth-service DB (lucy_devdb.users joined to roles),
-    // not the admin-service's local users table. Mirror InstructorService.list
-    // so the Live Class form picker shows the same people as Manage → Instructors.
+const teachers = async () => {
+    // Teachers live in the auth-service DB (lucy_devdb.users joined to roles),
+    // not the admin-service's local users table. Mirror TeacherService.list
+    // so the Live Class form picker shows the same people as Manage → Teachers.
     try {
         const rows = await authDb.query(
             `SELECT u."userId" AS id, u.name, u.email
@@ -71,12 +71,12 @@ const instructors = async () => {
                JOIN roles r ON r."roleId" = u."roleId"
               WHERE r.role = :role
               ORDER BY u.name ASC`,
-            { replacements: { role: 'instructor' }, type: QueryTypes.SELECT }
+            { replacements: { role: 'teacher' }, type: QueryTypes.SELECT }
         );
-        return { instructors: rows };
+        return { teachers: rows };
     } catch (err) {
-        console.warn('[liveclass.instructors] auth DB query failed:', err.message);
-        return { instructors: [] };
+        console.warn('[liveclass.teachers] auth DB query failed:', err.message);
+        return { teachers: [] };
     }
 };
 
@@ -159,4 +159,4 @@ const start = async (id) => {
     return { live_class: lc, start_url: info?.start_url || null, join_url: info?.join_url || null };
 };
 
-module.exports = { listByCourse, instructors, create, update, remove, start };
+module.exports = { listByCourse, teachers, create, update, remove, start };

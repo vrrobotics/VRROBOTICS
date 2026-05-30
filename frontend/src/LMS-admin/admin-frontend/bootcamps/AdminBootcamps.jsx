@@ -6,7 +6,7 @@
  * ============================================================================
  *
  * Paginated table of bootcamps with filter panel (category, status,
- * instructor, price), search, and per-row actions (edit, duplicate,
+ * teacher, price), search, and per-row actions (edit, duplicate,
  * toggle status, delete). Mirrors the AdminCourses pattern.
  */
 
@@ -29,7 +29,7 @@ export default function AdminBootcamps() {
   const [bootcamps, setBootcamps] = useState([]);
   const [meta, setMeta] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [instructors, setInstructors] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [confirmModal, setConfirmModal] = useState({ open: false });
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
@@ -37,7 +37,7 @@ export default function AdminBootcamps() {
   const page = searchParams.get('page') || '1';
   const category = searchParams.get('category') || '';
   const status = searchParams.get('status') || '';
-  const instructor = searchParams.get('instructor') || '';
+  const teacher = searchParams.get('teacher') || '';
   const price = searchParams.get('price') || '';
   const search = searchParams.get('search') || '';
 
@@ -47,7 +47,7 @@ export default function AdminBootcamps() {
       const params = { page };
       if (category) params.category = category;
       if (status) params.status = status;
-      if (instructor) params.instructor = instructor;
+      if (teacher) params.teacher = teacher;
       if (price) params.price = price;
       if (search) params.search = search;
 
@@ -55,13 +55,13 @@ export default function AdminBootcamps() {
       setBootcamps(res.data || []);
       setMeta(res.meta || null);
       if (res.categories) setCategories(res.categories);
-      if (res.instructors) setInstructors(res.instructors);
+      if (res.teachers) setTeachers(res.teachers);
     } catch {
       toast.error(translate('Failed to load bootcamps'));
     } finally {
       setLoading(false);
     }
-  }, [get, page, category, status, instructor, price, search, translate]);
+  }, [get, page, category, status, teacher, price, search, translate]);
 
   useEffect(() => {
     fetchBootcamps();
@@ -239,7 +239,7 @@ export default function AdminBootcamps() {
                                     </Link>
                                   </h4>
                                   <p className="sub-title2 text-xs">
-                                    {translate('Instructor')}: {bootcamp.instructor_name}
+                                    {translate('Teacher')}: {bootcamp.teacher_name}
                                   </p>
                                 </div>
                               </div>

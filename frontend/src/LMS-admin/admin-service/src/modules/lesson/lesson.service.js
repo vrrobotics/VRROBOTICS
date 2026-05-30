@@ -4,7 +4,7 @@ const AppError = require('../../shared/errors/AppError');
 
 /**
  * Lessons within sections (video, text, attachment)
- * TODO: implement business logic ported from Instructor/LessonController, CurriculumController.
+ * TODO: implement business logic ported from Teacher/LessonController, CurriculumController.
  */
 
 async function list(/* query */) {

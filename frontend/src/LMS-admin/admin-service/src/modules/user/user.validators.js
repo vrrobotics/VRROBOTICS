@@ -2,7 +2,7 @@ const { z } = require('zod');
 
 /**
  * User CRUD + profile updates + role changes
- * TODO: add Zod schemas mirroring the FormRequest / validate() calls in UsersController, Instructor/ProfileController, Student/ProfileController.
+ * TODO: add Zod schemas mirroring the FormRequest / validate() calls in UsersController, Teacher/ProfileController, Student/ProfileController.
  */
 
 const list = z.object({

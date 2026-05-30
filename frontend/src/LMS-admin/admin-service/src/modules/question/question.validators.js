@@ -2,7 +2,7 @@ const { z } = require('zod');
 
 /**
  * Quiz questions CRUD
- * TODO: add Zod schemas mirroring the FormRequest / validate() calls in Instructor/QuestionController.
+ * TODO: add Zod schemas mirroring the FormRequest / validate() calls in Teacher/QuestionController.
  */
 
 const list = z.object({

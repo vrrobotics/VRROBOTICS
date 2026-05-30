@@ -1,7 +1,7 @@
 const { z } = require('zod');
 
 /**
- * Course/instructor/bootcamp reviews + like/dislike
+ * Course/teacher/bootcamp reviews + like/dislike
  * TODO: add Zod schemas mirroring the FormRequest / validate() calls in ReviewController.
  */
 

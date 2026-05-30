@@ -4,8 +4,8 @@
  *
  *   - HttpError (not AppError) from middlewares/error
  *   - Sequelize models from ../models
- *   - Instructor identity from auth-DB users (joined to roles), same as the
- *     existing LiveClassService.instructors() flow
+ *   - Teacher identity from auth-DB users (joined to roles), same as the
+ *     existing LiveClassService.teachers() flow
  *
  * Owns: CRUD, settings read/write, status derivation, join-decision logic.
  * Provider calls go through ./zoom.service so this stays persistence/permission
@@ -48,15 +48,15 @@ const parseAdditionalInfo = (raw) => {
     }
 };
 
-// Resolve all instructor user-ids for a course. Handles JSON array, CSV string,
-// or a single numeric id — matches PHP $course->instructors() and the same
-// instructor_ids column the rest of the admin-service already reads.
-const courseInstructorIds = (course) => {
+// Resolve all teacher user-ids for a course. Handles JSON array, CSV string,
+// or a single numeric id — matches PHP $course->teachers() and the same
+// teacher_ids column the rest of the admin-service already reads.
+const courseTeacherIds = (course) => {
     if (!course) return [];
     const ids = new Set();
     if (course.user_id != null) ids.add(Number(course.user_id));
 
-    const raw = course.instructor_ids;
+    const raw = course.teacher_ids;
     if (Array.isArray(raw)) {
         for (const v of raw) if (v) ids.add(Number(v));
     } else if (raw != null && raw !== '') {
@@ -93,8 +93,8 @@ const loadCourseOrFail = async (courseId) => {
 const assertCanManage = (course, user) => {
     if (!user) throw new HttpError(401, 'Unauthenticated');
     if (user.role === 'admin' || user.role === 'root') return;
-    const ids = courseInstructorIds(course);
-    if (user.role === 'instructor' && ids.includes(Number(user.id))) return;
+    const ids = courseTeacherIds(course);
+    if (user.role === 'teacher' && ids.includes(Number(user.id))) return;
     throw new HttpError(403, 'Forbidden');
 };
 
@@ -109,14 +109,14 @@ const deriveStatus = (row, durationMin = DEFAULT_DURATION_MIN) => {
     return 'completed';
 };
 
-// Fetch host profiles (instructors live in the auth DB, not the admin DB).
-// Same source used by the existing LiveClassService.instructors().
+// Fetch host profiles (teachers live in the auth DB, not the admin DB).
+// Same source used by the existing LiveClassService.teachers().
 const fetchHostsByIds = async (ids) => {
     const numericIds = [...new Set(ids.map((v) => String(v)).filter(Boolean))];
     if (!numericIds.length) return {};
     try {
         const rows = await authDb.query(
-            `SELECT u."userId" AS id, u.name, u.email, u."instructorPhoto" AS photo
+            `SELECT u."userId" AS id, u.name, u.email, u."teacherPhoto" AS photo
                FROM users u
               WHERE u."userId" IN (:ids)`,
             { replacements: { ids: numericIds }, type: QueryTypes.SELECT }
@@ -197,7 +197,7 @@ const create = async ({ courseId, body, user }) => {
         }
         data.additional_info = typeof meeting === 'string' ? meeting : JSON.stringify(meeting || {});
     } else if (provider === 'manual') {
-        // Manual provider — the instructor pasted a meeting URL. No Zoom API
+        // Manual provider — the teacher pasted a meeting URL. No Zoom API
         // call. Store the link as both join_url and start_url in
         // additional_info so resolveJoin/serialize treat it like any other
         // meeting (a manual class has no separate host/attendee link).
@@ -317,7 +317,7 @@ const writeSettings = async (body) => {
  *   - 'unavailable' → meeting expired / not configured
  *
  * Permissions:
- *   - host  (admin or one of the course instructors) gets `start_url`
+ *   - host  (admin or one of the course teachers) gets `start_url`
  *   - attendee (any other user, authed or not) gets `join_url`
  */
 const resolveJoin = async ({ id, user }) => {
@@ -330,14 +330,14 @@ const resolveJoin = async ({ id, user }) => {
         !!user &&
         (user.role === 'admin' ||
             user.role === 'root' ||
-            courseInstructorIds(course).includes(Number(user.id)));
+            courseTeacherIds(course).includes(Number(user.id)));
     const role = isHost ? HOST_ROLE : ATTENDEE_ROLE;
 
     if (status === 'completed') {
         return { mode: 'unavailable', reason: 'Live class has ended.', status, role };
     }
 
-    // Manual provider — the instructor pasted a meeting URL. There is no Zoom
+    // Manual provider — the teacher pasted a meeting URL. There is no Zoom
     // meeting object; just hand the player the link to open in a new tab.
     // Host and attendee both get the same URL.
     if (row.provider === 'manual') {
@@ -372,25 +372,25 @@ const resolveJoin = async ({ id, user }) => {
     };
 };
 
-const listInstructors = async (courseId) => {
+const listTeachers = async (courseId) => {
     const course = await loadCourseOrFail(courseId);
-    const ids = courseInstructorIds(course);
+    const ids = courseTeacherIds(course);
     if (!ids.length) {
-        // No specific instructors set on the course — fall back to the full
-        // instructor list (same data the existing LiveClassService.instructors
+        // No specific teachers set on the course — fall back to the full
+        // teacher list (same data the existing LiveClassService.teachers
         // returns), so admins always have someone to pick.
         try {
             const rows = await authDb.query(
                 `SELECT u."userId" AS id, u.name, u.email
                    FROM users u
                    JOIN roles r ON r."roleId" = u."roleId"
-                  WHERE r.role = 'instructor'
+                  WHERE r.role = 'teacher'
                   ORDER BY u.name ASC`,
                 { type: QueryTypes.SELECT }
             );
             return rows;
         } catch (err) {
-            console.warn('[zoom-live-class] instructor fallback failed:', err.message);
+            console.warn('[zoom-live-class] teacher fallback failed:', err.message);
             return [];
         }
     }
@@ -407,10 +407,10 @@ module.exports = {
     readSettings,
     writeSettings,
     resolveJoin,
-    listInstructors,
+    listTeachers,
     // Helpers exposed for zoom.live-class.js
     parseAdditionalInfo,
-    courseInstructorIds,
+    courseTeacherIds,
     deriveStatus,
     serialize,
     HOST_ROLE,

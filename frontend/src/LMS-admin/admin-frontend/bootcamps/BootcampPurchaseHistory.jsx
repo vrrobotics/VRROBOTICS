@@ -1,5 +1,5 @@
 /**
- * BootcampPurchaseHistory - Admin/instructor bootcamp purchase history list.
+ * BootcampPurchaseHistory - Admin/teacher bootcamp purchase history list.
  *
  * ============================================================================
  * ORIGINAL BLADE: resources/views/admin/bootcamp/purchase_history.blade.php
@@ -22,7 +22,7 @@ export default function BootcampPurchaseHistory({ role = 'admin' }) {
   const [purchases, setPurchases] = useState([]);
   const [pagination, setPagination] = useState(null);
 
-  const prefix = role === 'instructor' ? '/api/instructor' : '/api/admin';
+  const prefix = role === 'teacher' ? '/api/teacher' : '/api/admin';
 
   const load = useCallback(async (page = 1) => {
     setLoading(true);
@@ -111,7 +111,7 @@ export default function BootcampPurchaseHistory({ role = 'admin' }) {
                               <div className="sub-title2 text-xs min-w-150px">
                                 <p>{getCurrency(p.price)}</p>
                                 <p><span>{translate('Admin :')}</span> {getCurrency(p.admin_revenue)}</p>
-                                <p><span>{translate('Author :')}</span> {getCurrency(p.instructor_revenue)}</p>
+                                <p><span>{translate('Author :')}</span> {getCurrency(p.teacher_revenue)}</p>
                               </div>
                             </td>
                             <td>

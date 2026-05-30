@@ -1,8 +1,8 @@
 const liveService = require('../services/LiveClassService');
 const { asyncHandler } = require('../middlewares/error');
 
-exports.instructors = asyncHandler(async (_req, res) => {
-    res.json(await liveService.instructors());
+exports.teachers = asyncHandler(async (_req, res) => {
+    res.json(await liveService.teachers());
 });
 
 exports.live_classes_by_course = asyncHandler(async (req, res) => {

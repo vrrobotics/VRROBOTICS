@@ -1519,7 +1519,7 @@ function LiveClassTab({ liveClasses, onDelete, translate, getImage }) {
           <table className="eTable eTable-2 w-full">
             <thead>
               <tr>
-                <th>{translate('Instructor')}</th>
+                <th>{translate('Teacher')}</th>
                 <th>{translate('Class topic')}</th>
                 <th>{translate('Class Schedule')}</th>
                 <th>{translate('Action')}</th>

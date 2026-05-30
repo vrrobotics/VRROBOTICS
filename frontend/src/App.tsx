@@ -15,7 +15,7 @@ import SummerCamp from "./pages/SummerCamp";
 import Books from "./pages/Books";
 import Gallery from "./pages/Gallery";
 import Locations from "./pages/Locations";
-import InstructorDashboard from "./pages/InstructorDashboard";
+import TeacherDashboard from "./pages/TeacherDashboard";
 import Auth from "./pages/Auth";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
@@ -66,9 +66,9 @@ import CertificateDownloadPage from "./admin/pages/certificate/Download";
 import AdminStudentIndex from "./admin/pages/student/Index";
 import AdminStudentCreate from "./admin/pages/student/Create";
 import AdminStudentEdit from "./admin/pages/student/Edit";
-import AdminInstructorIndex from "./admin/pages/instructor/Index";
-import AdminInstructorCreate from "./admin/pages/instructor/Create";
-import AdminInstructorEdit from "./admin/pages/instructor/Edit";
+import AdminTeacherIndex from "./admin/pages/teacher/Index";
+import AdminTeacherCreate from "./admin/pages/teacher/Create";
+import AdminTeacherEdit from "./admin/pages/teacher/Edit";
 import AdminListIndex from "./admin/pages/admin/Index";
 import AdminCreate from "./admin/pages/admin/Create";
 import AdminEditPage from "./admin/pages/admin/Edit";
@@ -105,7 +105,7 @@ const App = () => (
             <Route path="/books" element={<Layout><Books /></Layout>} />
             <Route path="/gallery" element={<Layout><Gallery /></Layout>} />
             <Route path="/locations" element={<Layout><Locations /></Layout>} />
-            <Route path="/instructor" element={<InstructorDashboard />} />
+            <Route path="/teacher" element={<TeacherDashboard />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/contact" element={<Layout><Contact /></Layout>} />
             <Route path="/register" element={<Layout><Register /></Layout>} />
@@ -141,12 +141,12 @@ const App = () => (
               }
             />
             {/* Admin section — talks to admin-service (port 4000).
-                Instructors also use these pages with a restricted sidebar
+                Teachers also use these pages with a restricted sidebar
                 and per-page access controls enforced in AdminLayout. */}
             <Route
               path="/admin"
               element={
-                <ProtectedRoute requiredRole={["admin", "instructor"]}>
+                <ProtectedRoute requiredRole={["admin", "teacher"]}>
                   <AdminAppLayout />
                 </ProtectedRoute>
               }
@@ -167,9 +167,9 @@ const App = () => (
               <Route path="students" element={<AdminStudentIndex />} />
               <Route path="students/create" element={<AdminStudentCreate />} />
               <Route path="students/edit/:id" element={<AdminStudentEdit />} />
-              <Route path="instructors" element={<AdminInstructorIndex />} />
-              <Route path="instructors/create" element={<AdminInstructorCreate />} />
-              <Route path="instructors/edit/:id" element={<AdminInstructorEdit />} />
+              <Route path="teachers" element={<AdminTeacherIndex />} />
+              <Route path="teachers/create" element={<AdminTeacherCreate />} />
+              <Route path="teachers/edit/:id" element={<AdminTeacherEdit />} />
               <Route path="admins" element={<AdminListIndex />} />
               <Route path="admins/create" element={<AdminCreate />} />
               <Route path="admins/edit/:id" element={<AdminEditPage />} />

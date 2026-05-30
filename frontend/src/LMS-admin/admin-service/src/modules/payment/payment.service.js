@@ -3,7 +3,7 @@ const AppError = require('../../shared/errors/AppError');
 // Pull in the specific models this domain owns, e.g. { Course } = models.
 
 /**
- * Checkout, gateways, invoices, offline payments, instructor payouts
+ * Checkout, gateways, invoices, offline payments, teacher payouts
  * TODO: implement business logic ported from PaymentController, InvoiceController, PaymentGateway, OfflinePayment, Payout.
  */
 

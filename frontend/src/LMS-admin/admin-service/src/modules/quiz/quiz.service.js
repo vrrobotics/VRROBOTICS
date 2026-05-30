@@ -4,7 +4,7 @@ const AppError = require('../../shared/errors/AppError');
 
 /**
  * Quizzes, submissions, scoring
- * TODO: implement business logic ported from Instructor/QuizController, Student/QuizController, QuizSubmission.
+ * TODO: implement business logic ported from Teacher/QuizController, Student/QuizController, QuizSubmission.
  */
 
 async function list(/* query */) {

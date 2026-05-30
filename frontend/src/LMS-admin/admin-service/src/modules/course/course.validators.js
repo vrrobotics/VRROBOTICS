@@ -2,7 +2,7 @@ const { z } = require('zod');
 
 /**
  * Core course CRUD + curriculum, ratings, filters
- * TODO: add Zod schemas mirroring the FormRequest / validate() calls in CourseController, CurriculumController, Instructor/CourseController.
+ * TODO: add Zod schemas mirroring the FormRequest / validate() calls in CourseController, CurriculumController, Teacher/CourseController.
  */
 
 const list = z.object({

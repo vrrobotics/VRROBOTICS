@@ -4,7 +4,7 @@ const AppError = require('../../shared/errors/AppError');
 
 /**
  * Core course CRUD + curriculum, ratings, filters
- * TODO: implement business logic ported from CourseController, CurriculumController, Instructor/CourseController.
+ * TODO: implement business logic ported from CourseController, CurriculumController, Teacher/CourseController.
  */
 
 async function list(/* query */) {

@@ -38,7 +38,7 @@ export default function AdminCourses() {
   const [courses, setCourses] = useState([]);
   const [meta, setMeta] = useState(null);
   const [stats, setStats] = useState({ active: 0, pending: 0, upcoming: 0, free: 0, paid: 0 });
-  const [filterOptions, setFilterOptions] = useState({ categories: [], instructors: [] });
+  const [filterOptions, setFilterOptions] = useState({ categories: [], teachers: [] });
   const [loading, setLoading] = useState(true);
 
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
@@ -52,7 +52,7 @@ export default function AdminCourses() {
       search: searchParams.get('search') || '',
       category: searchParams.get('category') || '',
       status: searchParams.get('status') || '',
-      instructor: searchParams.get('instructor') || '',
+      teacher: searchParams.get('teacher') || '',
       price: searchParams.get('price') || '',
       page: searchParams.get('page') || '1',
     }),
@@ -80,13 +80,13 @@ export default function AdminCourses() {
 
   const fetchFilterOptions = useCallback(async () => {
     try {
-      const [cats, instructors] = await Promise.all([
+      const [cats, teachers] = await Promise.all([
         get(API.ADMIN_COURSE_CATEGORIES),
-        get(API.ADMIN_COURSE_INSTRUCTORS),
+        get(API.ADMIN_COURSE_TEACHERS),
       ]);
       setFilterOptions({
         categories: cats?.data || cats || [],
-        instructors: instructors?.data || instructors || [],
+        teachers: teachers?.data || teachers || [],
       });
     } catch {
       /* non-fatal */
@@ -259,14 +259,14 @@ export default function AdminCourses() {
                   </select>
                 </div>
                 <div>
-                  <label className={labelClass}>{translate('Instructor')}</label>
+                  <label className={labelClass}>{translate('Teacher')}</label>
                   <select
                     className={inputClass}
-                    value={filters.instructor}
-                    onChange={(e) => updateFilter({ instructor: e.target.value })}
+                    value={filters.teacher}
+                    onChange={(e) => updateFilter({ teacher: e.target.value })}
                   >
                     <option value="">{translate('All')}</option>
-                    {filterOptions.instructors.map((i) => (
+                    {filterOptions.teachers.map((i) => (
                       <option key={i.id} value={i.id}>{i.name}</option>
                     ))}
                   </select>
@@ -359,10 +359,10 @@ export default function AdminCourses() {
                             {row.title?.charAt(0).toUpperCase() + row.title?.slice(1)}
                           </Link>
                           <p className="text-xs text-gray-500 mt-0.5">
-                            {translate('Instructor')}: {row.instructor?.name}
+                            {translate('Teacher')}: {row.teacher?.name}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {translate('Email')}: {row.instructor?.email}
+                            {translate('Email')}: {row.teacher?.email}
                           </p>
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-700">

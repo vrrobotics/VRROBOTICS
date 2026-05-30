@@ -16,7 +16,7 @@ import { DEFAULT_BUILDER_CONTENT } from '../../utils/defaultCertificateTemplate'
  */
 
 const VARIABLES = [
-    '{course_duration}', '{instructor_name}', '{student_name}', '{course_title}',
+    '{course_duration}', '{teacher_name}', '{student_name}', '{course_title}',
     '{number_of_lesson}', '{qr_code}', '{course_completion_date}',
     '{certificate_download_date}', '{course_level}', '{course_language}',
 ];

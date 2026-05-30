@@ -26,7 +26,7 @@ The YagnaTech Learning Management System is a Node.js microservices platform com
 **Notable architectural patterns:**
 
 - **Dual-database, single-instance:** Both schemas live on the same RDS host. Cross-database joins work via three-part naming (`lms_admin.users`, `lucy_devdb.colleges`) but the codebase **never uses cross-database joins** — instead it does separate queries and joins in JavaScript.
-- **Two parallel `users` tables:** `lucy_devdb.users` (PK `userId VARCHAR`) and `lms_admin.users` (PK `id INTEGER`). These represent different populations (students/instructors vs. admins) with **no constraint** keeping them consistent.
+- **Two parallel `users` tables:** `lucy_devdb.users` (PK `userId VARCHAR`) and `lms_admin.users` (PK `id INTEGER`). These represent different populations (students/teachers vs. admins) with **no constraint** keeping them consistent.
 - **Schema duplication across services:** `College`, `Branch`, and `Organization` are defined three times (in `college-service`, `payment-service`, and admin-service's `assertOrgExists` raw SQL). All three definitions resolve to the same physical table — duplication is a maintenance hazard.
 - **Boot-time DDL:** `admin-service/server.js` runs 9 `DESCRIBE` + conditional `ALTER TABLE` blocks every startup. This is how schema changes have historically reached production without a migration runner. Schema diverges between dev and prod whenever an admin-service restart is skipped.
 
@@ -191,7 +191,7 @@ There is **no auto-seed on first boot**. Fresh deployments must be seeded by han
 ## 3.3 Categorization
 
 ### Authentication & Identity (3 tables)
-- `lucy_devdb.users` — students, instructors, auditors (PK = string `userId`)
+- `lucy_devdb.users` — students, teachers, auditors (PK = string `userId`)
 - `lucy_devdb.roles` — role lookup
 - `lms_admin.users` — admin user accounts (PK = INTEGER `id`)
 
@@ -241,7 +241,7 @@ There is **no auto-seed on first boot**. Fresh deployments must be seeded by han
 ### Mapping / Junction Tables (1 strict + 4 JSON-as-junction)
 - Strict junction: `lms_admin.batch_members`
 - JSON-as-junction (denormalized M:N stored in JSON arrays):
-  - `lms_admin.courses.clg_ids`, `lms_admin.courses.instructor_ids`
+  - `lms_admin.courses.clg_ids`, `lms_admin.courses.teacher_ids`
   - `lms_admin.categories.clg_ids`
   - `lms_admin.programs.clg_ids`, `programs.course_ids`
   - `lucy_devdb.assessments.clgIds`, `assessments.courseIds`
@@ -266,7 +266,7 @@ There is **no auto-seed on first boot**. Fresh deployments must be seeded by han
 
 ### 4.1.1 `users` (rows≈23)
 
-**Purpose:** Canonical identity table for **students, instructors, and (when seeded by `auth-service/seedCollegeAdmin.js`) admin** users. Issued and managed by `auth-service`. The PK is a 11-digit numeric string (`generateUserID()`), not an integer.
+**Purpose:** Canonical identity table for **students, teachers, and (when seeded by `auth-service/seedCollegeAdmin.js`) admin** users. Issued and managed by `auth-service`. The PK is a 11-digit numeric string (`generateUserID()`), not an integer.
 
 **Used by:** auth-service (owner), course-service (logical reference via `enrollments.userId`), admin-service (read-only via `authDb`), assessment-service (logical reference via `pre_assessment_registrations.userId`).
 
@@ -307,11 +307,11 @@ There is **no auto-seed on first boot**. Fresh deployments must be seeded by han
 | `programResponseStatus` | ENUM('pending','accepted','rejected') | YES | — | — | |
 | `programRespondedAt` | DATETIME | YES | — | — | |
 | `quizScores` | JSON | YES | — | — | Map of per-quiz scores |
-| `expertise` | VARCHAR(255) | YES | — | — | Instructor profile |
-| `bio` | VARCHAR(1000) | YES | — | — | Instructor profile |
-| `yearsOfExperience` | INT | YES | — | — | Instructor profile |
-| `linkedinUrl` | VARCHAR(255) | YES | — | — | Instructor profile |
-| `instructorPhoto` | VARCHAR(255) | YES | — | — | **Added by admin-service boot-time ALTER** |
+| `expertise` | VARCHAR(255) | YES | — | — | Teacher profile |
+| `bio` | VARCHAR(1000) | YES | — | — | Teacher profile |
+| `yearsOfExperience` | INT | YES | — | — | Teacher profile |
+| `linkedinUrl` | VARCHAR(255) | YES | — | — | Teacher profile |
+| `teacherPhoto` | VARCHAR(255) | YES | — | — | **Added by admin-service boot-time ALTER** |
 | `studentPhoto` | VARCHAR(255) | YES | — | — | **Added by admin-service boot-time ALTER** |
 | `createdAt` | DATETIME | NO | — | — | |
 | `updatedAt` | DATETIME | NO | — | — | |
@@ -341,7 +341,7 @@ There is **no auto-seed on first boot**. Fresh deployments must be seeded by han
 | Column | Type | Null | Default | Constraint |
 |---|---|---|---|---|
 | `roleId` | VARCHAR(255) | NO | — | PK |
-| `role` | ENUM('student','instructor','admin','auditor') | NO | — | |
+| `role` | ENUM('student','teacher','admin','auditor') | NO | — | |
 
 **Indexes:** PK only.
 **Relationships:** `hasMany` User.
@@ -434,7 +434,7 @@ There is **no auto-seed on first boot**. Fresh deployments must be seeded by han
 | `isPreAssessmentNeeded` | TINYINT(1) | YES | 0 | — |
 | `modules` | JSON | YES | — | Array of module objects |
 | `clgIds` | JSON | NO | `JSON_ARRAY()` | Backfill via migration 20260515 |
-| `instructorId` | VARCHAR(255) | YES | — | Logical FK → `users.userId`. Migration 20260516. |
+| `teacherId` | VARCHAR(255) | YES | — | Logical FK → `users.userId`. Migration 20260516. |
 | `createdAt` | DATETIME | NO | — | — |
 | `updatedAt` | DATETIME | NO | — | — |
 
@@ -615,7 +615,7 @@ Same as above. No model, no references, drop.
 | Column | Type | Null | Default | Constraint |
 |---|---|---|---|---|
 | `id` | INT | NO | — | PK, auto_increment |
-| `role` | VARCHAR(100) | NO | — | "admin", "instructor" |
+| `role` | VARCHAR(100) | NO | — | "admin", "teacher" |
 | `email` | VARCHAR(255) | NO | — | UNIQUE |
 | `status` | INT | YES | — | 1=active |
 | `name` | VARCHAR(255) | YES | — | — |
@@ -709,7 +709,7 @@ Same as above. No model, no references, drop.
 | `requirements` | TEXT | YES | — | — |
 | `outcomes` | TEXT | YES | — | — |
 | `faqs` | TEXT | YES | — | — |
-| `instructor_ids` | TEXT | YES | — | JSON-encoded array of user_ids |
+| `teacher_ids` | TEXT | YES | — | JSON-encoded array of user_ids |
 | `clg_ids` | JSON | YES | — | Array of clgIds (no DB FK, cross-DB) |
 | `average_rating` | FLOAT | YES | 0 | — |
 | `expiry_period` | INT | YES | — | — |
@@ -1119,7 +1119,7 @@ The repository contains **3 hand-written migration files**, none of which are ti
 |---|---|---|---|
 | `auth-service/src/db/migrations/20260421-add-academic-info-to-users.{js,sql}` | `lucy_devdb.users` | ADD 5 columns: `educationLevel` (ENUM), `branch`, `collegeName`, `graduationYear`, `collegeCode` | DROP same 5 columns |
 | `course-service/src/db/migrations/20260515-add-clgIds-to-courses.{js,sql}` | `lucy_devdb.courses` | ADD `clgIds` JSON NOT NULL DEFAULT (JSON_ARRAY()), with backfill UPDATE for NULLs | DROP column |
-| `course-service/src/db/migrations/20260516-add-instructorId-to-courses.js` | `lucy_devdb.courses` | ADD `instructorId` VARCHAR NULL | DROP column |
+| `course-service/src/db/migrations/20260516-add-teacherId-to-courses.js` | `lucy_devdb.courses` | ADD `teacherId` VARCHAR NULL | DROP column |
 
 All three are marked idempotent (use `queryInterface.describeTable` to skip if column exists) so they can be re-run safely. **However, no project script invokes them.** They were applied by hand against the live database.
 
@@ -1129,7 +1129,7 @@ The admin-service runs the following idempotent schema patches on every startup.
 
 | Block | Targets | Action | Trigger |
 |---|---|---|---|
-| 1 | `lucy_devdb.users.instructorPhoto` | ADD COLUMN VARCHAR(255) NULL | DESCRIBE check |
+| 1 | `lucy_devdb.users.teacherPhoto` | ADD COLUMN VARCHAR(255) NULL | DESCRIBE check |
 | 2 | `lucy_devdb.users.studentPhoto` | ADD COLUMN VARCHAR(255) NULL | DESCRIBE check |
 | 3 | `lucy_devdb.users.postScoreDuration` | ADD COLUMN INT NULL | DESCRIBE check |
 | 4 | `lms_admin.languages` | `Language.sync()` (CREATE TABLE IF NOT EXISTS) | unconditional |
@@ -1265,7 +1265,7 @@ These M:N relationships are denormalized into JSON arrays (no junction table). T
 |---|---|---|
 | `colleges.branchIds[]` | `branches.branchId` | Which departments a college offers |
 | `lms_admin.courses.clg_ids[]` | `colleges.clgId` | Colleges a course is offered at |
-| `lms_admin.courses.instructor_ids` | `lucy_devdb.users.userId[]` | Course instructors |
+| `lms_admin.courses.teacher_ids` | `lucy_devdb.users.userId[]` | Course teachers |
 | `lms_admin.categories.clg_ids[]` | `colleges.clgId` | Colleges a category applies to |
 | `lms_admin.programs.clg_ids[]` | `colleges.clgId` | College scoping |
 | `lms_admin.programs.course_ids[]` | `lms_admin.courses.id` | Courses bundled into program |
@@ -1309,7 +1309,7 @@ Organisation
             │   └── LiveClass
             ├── Program (via programs.clg_ids JSON)
             │   └── UserProgress → Course, Lesson
-            └── User (students/instructors via users.collegeId)
+            └── User (students/teachers via users.collegeId)
                 ├── PreAssessmentRegistration
                 ├── PreAssessmentResult
                 ├── Enrollment (course-service shape)
@@ -1576,7 +1576,7 @@ This split is intentional (two services with different conventions) but increase
 ### Migrations
 - `backend/auth-service/src/db/migrations/20260421-add-academic-info-to-users.{js,sql}`
 - `backend/course-service/src/db/migrations/20260515-add-clgIds-to-courses.{js,sql}`
-- `backend/course-service/src/db/migrations/20260516-add-instructorId-to-courses.js`
+- `backend/course-service/src/db/migrations/20260516-add-teacherId-to-courses.js`
 
 ### Seeders
 - `backend/auth-service/src/scripts/seedAdmin.js`
@@ -1596,7 +1596,7 @@ This split is intentional (two services with different conventions) but increase
 ### Services with raw SQL (76 occurrences across 21 files)
 Most concentrated in:
 - `admin-service/src/services/StudentService.js` (22 occurrences)
-- `admin-service/src/services/InstructorService.js` (9)
+- `admin-service/src/services/TeacherService.js` (9)
 - `admin-service/src/course-content/PublicCourseService.js` (4)
 - `admin-service/src/services/BatchService.js`, `CollegeDashboardService.js`, `CollegeService.js`, `CourseService.js`, `LiveClassService.js` (2-3 each)
 

@@ -47,19 +47,19 @@ export async function initDb() {
 
   // sequelize.sync() creates missing tables but does NOT add new columns
   // to existing ones, so columns added to a model after the table already
-  // exists in a dev DB (e.g. instructorId on courses) need an explicit
+  // exists in a dev DB (e.g. teacherId on courses) need an explicit
   // ALTER. We do it idempotently here so restarting the service is enough
   // — no separate migration step required in dev. The migrations folder
   // is still the source of truth for prod.
   try {
     const qi = sequelize.getQueryInterface();
     const courses = await qi.describeTable('courses');
-    if (!courses.instructorId) {
-      await qi.addColumn('courses', 'instructorId', {
+    if (!courses.teacherId) {
+      await qi.addColumn('courses', 'teacherId', {
         type: Sequelize.STRING,
         allowNull: true,
       });
-      console.log("🛠️  Added courses.instructorId column");
+      console.log("🛠️  Added courses.teacherId column");
     }
   } catch (err) {
     console.warn('[db] auto column-add check failed:', err.message);

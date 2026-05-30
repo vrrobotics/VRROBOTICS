@@ -1,11 +1,11 @@
 /**
- * AdminBlogSettings - Blog settings (instructor permission + homepage visibility).
+ * AdminBlogSettings - Blog settings (teacher permission + homepage visibility).
  *
  * ============================================================================
  * ORIGINAL BLADE: resources/views/admin/blog/setting.blade.php
  * ============================================================================
  *
- * Two dropdowns: instructor blog permission and blog visibility on homepage.
+ * Two dropdowns: teacher blog permission and blog visibility on homepage.
  */
 
 import { useEffect, useState } from 'react';
@@ -30,7 +30,7 @@ export default function AdminBlogSettings() {
         const res = await get(API.ADMIN_BLOG_SETTINGS);
         const data = res.data || res;
         reset({
-          instructors_blog_permission: String(data.instructors_blog_permission ?? '0'),
+          teachers_blog_permission: String(data.teachers_blog_permission ?? '0'),
           blog_visibility_on_the_home_page: String(data.blog_visibility_on_the_home_page ?? '1'),
         });
       } catch { /* use defaults */ }
@@ -70,9 +70,9 @@ export default function AdminBlogSettings() {
               <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="fpb-7 mb-3">
                   <label className="block text-sm font-medium text-gray-700 mb-1.5 block text-sm font-medium text-gray-700 mb-1.5">
-                    {translate('Instructor permission')}
+                    {translate('Teacher permission')}
                   </label>
-                  <select className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" {...register('instructors_blog_permission')}>
+                  <select className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" {...register('teachers_blog_permission')}>
                     <option value="1">{translate('Provide access')}</option>
                     <option value="0">{translate('Decline access')}</option>
                   </select>

@@ -3,7 +3,7 @@ const asyncHandler = require('../../shared/utils/asyncHandler');
 
 /**
  * Lessons within sections (video, text, attachment)
- * TODO: mirror the CRUD/custom actions from Instructor/LessonController, CurriculumController.
+ * TODO: mirror the CRUD/custom actions from Teacher/LessonController, CurriculumController.
  */
 exports.index = asyncHandler(async (req, res) => {
   res.json(await service.list(req.query));

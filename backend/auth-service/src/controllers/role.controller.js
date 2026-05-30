@@ -21,7 +21,7 @@ export const addRole = async (req, res) => {
     }
 
     // Check if role is valid
-    const validRoles = ['student', 'instructor', 'admin', 'auditor'];
+    const validRoles = ['student', 'teacher', 'admin', 'auditor'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ error: 'Invalid role' });
     }

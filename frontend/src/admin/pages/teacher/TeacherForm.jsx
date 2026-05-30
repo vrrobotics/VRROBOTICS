@@ -3,25 +3,25 @@ import { API_BASE } from '../../api/client';
 
 // Mirrors AdminForm's structure: tabbed sidebar (Basic / Login Credentials /
 // Social Links), grid-cols-12 rows, same controls and submit button — only
-// the field set differs (instructor-specific: expertise / experience).
+// the field set differs (teacher-specific: expertise / experience).
 const TABS = [
     { key: 'basic', label: 'Basic' },
     { key: 'login', label: 'Login Credentials' },
     { key: 'social', label: 'Social Links' },
 ];
 
-export default function InstructorForm({ instructor, onSubmit, submitLabel = 'Save' }) {
-    const [tab, setTab] = useState(instructor ? 'basic' : 'login');
+export default function TeacherForm({ teacher, onSubmit, submitLabel = 'Save' }) {
+    const [tab, setTab] = useState(teacher ? 'basic' : 'login');
     const [f, setF] = useState({
-        name: instructor?.name || '',
-        bio: instructor?.bio || '',
-        phone: instructor?.phone || '',
-        address: instructor?.address || '',
-        expertise: instructor?.expertise || '',
-        yearsOfExperience: instructor?.yearsOfExperience ?? '',
-        email: instructor?.email || '',
+        name: teacher?.name || '',
+        bio: teacher?.bio || '',
+        phone: teacher?.phone || '',
+        address: teacher?.address || '',
+        expertise: teacher?.expertise || '',
+        yearsOfExperience: teacher?.yearsOfExperience ?? '',
+        email: teacher?.email || '',
         password: '',
-        linkedinUrl: instructor?.linkedinUrl || '',
+        linkedinUrl: teacher?.linkedinUrl || '',
     });
     const [photo, setPhoto] = useState(null);
     const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
@@ -29,9 +29,9 @@ export default function InstructorForm({ instructor, onSubmit, submitLabel = 'Sa
     const submit = (e) => {
         e.preventDefault();
 
-        if (!instructor) {
+        if (!teacher) {
             if (!f.name || !f.email || !f.password) {
-                alert('Name, email and password are required for new instructors.');
+                alert('Name, email and password are required for new teachers.');
                 setTab('login');
                 return;
             }
@@ -123,17 +123,17 @@ export default function InstructorForm({ instructor, onSubmit, submitLabel = 'Sa
                                     {/* Existing image preview (edit flow). Backend returns
                                         a relative path under /uploads — prepend API_BASE the
                                         same way the rest of the admin app does. */}
-                                    {instructor?.photo && !photo && (
+                                    {teacher?.photo && !photo && (
                                         <div className="mb-2">
                                             <img
-                                                src={`${API_BASE}/${instructor.photo}`}
+                                                src={`${API_BASE}/${teacher.photo}`}
                                                 alt=""
                                                 className="w-[80px] h-[80px] rounded-full object-cover border border-ebordermuted"
                                             />
                                         </div>
                                     )}
                                     <input className="ol-form-control" type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files[0])} />
-                                    {instructor?.photo && (
+                                    {teacher?.photo && (
                                         <p className="text-[12px] text-gray mt-1">
                                             Leave empty to keep the current image.
                                         </p>
@@ -151,16 +151,16 @@ export default function InstructorForm({ instructor, onSubmit, submitLabel = 'Sa
                                 </div>
                             </div>
                             <div className="mb-3 grid grid-cols-12 gap-0">
-                                <label className="col-span-2 ol-form-label">Password{!instructor && <span className="text-danger ms-1">*</span>}</label>
+                                <label className="col-span-2 ol-form-label">Password{!teacher && <span className="text-danger ms-1">*</span>}</label>
                                 <div className="col-span-10">
                                     <input
                                         type="password"
                                         className="ol-form-control"
                                         value={f.password}
                                         onChange={(e) => set('password', e.target.value)}
-                                        placeholder={instructor ? 'Leave blank to keep current' : 'Minimum 8 characters'}
-                                        required={!instructor}
-                                        minLength={instructor ? undefined : 8}
+                                        placeholder={teacher ? 'Leave blank to keep current' : 'Minimum 8 characters'}
+                                        required={!teacher}
+                                        minLength={teacher ? undefined : 8}
                                     />
                                 </div>
                             </div>

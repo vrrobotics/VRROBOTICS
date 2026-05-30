@@ -1,7 +1,7 @@
 const { z } = require('zod');
 
 /**
- * Checkout, gateways, invoices, offline payments, instructor payouts
+ * Checkout, gateways, invoices, offline payments, teacher payouts
  * TODO: add Zod schemas mirroring the FormRequest / validate() calls in PaymentController, InvoiceController, PaymentGateway, OfflinePayment, Payout.
  */
 

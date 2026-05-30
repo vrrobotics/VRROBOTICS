@@ -1,6 +1,6 @@
 /**
- * AdminInstructorApplications — port of admin/instructor/application.blade.php
- * and admin/instructor/show_document.blade.php (details modal).
+ * AdminTeacherApplications — port of admin/teacher/application.blade.php
+ * and admin/teacher/show_document.blade.php (details modal).
  * Pending / Approved tabs, per-row details modal + document download,
  * dropdown for approve/delete on pending rows.
  */
@@ -16,7 +16,7 @@ import { useApi } from '@/hooks/useApi';
 import { useSettings } from '@/contexts/SettingsContext';
 import { API } from '@/config/routes';
 
-export default function AdminInstructorApplications() {
+export default function AdminTeacherApplications() {
   const { translate, getImage } = useSettings();
   const { get, post, del } = useApi();
 
@@ -43,7 +43,7 @@ export default function AdminInstructorApplications() {
     setLoading(true);
     try {
       const status = tab === 'pending' ? 0 : 1;
-      const res = await get(API.ADMIN_INSTRUCTOR_APPLICATIONS, { params: { status, page } });
+      const res = await get(API.ADMIN_TEACHER_APPLICATIONS, { params: { status, page } });
       const data = res.data ? res : { data: res };
       setItems(data.data || []);
       setMeta(data.meta || res.meta || null);
@@ -59,7 +59,7 @@ export default function AdminInstructorApplications() {
 
   const handleApprove = async (id) => {
     try {
-      await post(`${API.ADMIN_INSTRUCTOR_APPLICATIONS}/${id}/approve`, {});
+      await post(`${API.ADMIN_TEACHER_APPLICATIONS}/${id}/approve`, {});
       toast.success(translate('Application approved'));
       fetchItems();
     } catch {
@@ -71,7 +71,7 @@ export default function AdminInstructorApplications() {
 
   const handleDelete = async (id) => {
     try {
-      await del(`${API.ADMIN_INSTRUCTOR_APPLICATIONS}/${id}`);
+      await del(`${API.ADMIN_TEACHER_APPLICATIONS}/${id}`);
       toast.success(translate('Application deleted'));
       fetchItems();
     } catch {
@@ -81,7 +81,7 @@ export default function AdminInstructorApplications() {
     }
   };
 
-  const downloadUrl = (id) => `/admin/instructor-applications/${id}/download`;
+  const downloadUrl = (id) => `/admin/teacher-applications/${id}/download`;
 
   const renderTable = (rows, showActions) => (
     <div className="overflow-x-auto">
@@ -154,7 +154,7 @@ export default function AdminInstructorApplications() {
                             setConfirmState({
                               open: true,
                               title: translate('Approve application'),
-                              message: translate('Grant this user instructor access?'),
+                              message: translate('Grant this user teacher access?'),
                               onConfirm: () => handleApprove(app.id),
                             });
                           }}
@@ -196,7 +196,7 @@ export default function AdminInstructorApplications() {
         <div className="flex items-center justify-between px-5 py-3 flex-wrap gap-3">
           <h4 className="text-base font-semibold text-gray-900 flex items-center gap-2">
             <i className="fi-rr-settings-sliders" />
-            {translate('Instructor Applications')}
+            {translate('Teacher Applications')}
           </h4>
         </div>
       </div>

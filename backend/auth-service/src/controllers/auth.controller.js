@@ -39,7 +39,7 @@ const registerSchema = z.object({
   phone: z.string().min(10).max(15),
   dob: z.string().min(10).max(10),
   gender: z.enum(['male', 'female']),
-  role: z.enum(['student', 'instructor', 'admin', 'auditor']).optional(),
+  role: z.enum(['student', 'teacher', 'admin', 'auditor']).optional(),
   educationLevel: z.enum(['inter', 'bachelor', 'master', 'phd', 'other']).optional().or(z.literal('')),
   branch: z.string().optional(),
   collegeName: z.string().optional(),

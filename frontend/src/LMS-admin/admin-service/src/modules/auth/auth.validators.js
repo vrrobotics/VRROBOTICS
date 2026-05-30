@@ -11,8 +11,8 @@ const register = z.object({
   name: z.string().min(1).max(255),
   email: z.string().email().max(255),
   password: passwordRule,
-  // Optional instructor-application bundle (matches RegisteredUserController::store).
-  instructor: z.union([z.boolean(), z.literal('1'), z.literal('0'), z.literal('true'), z.literal('false')]).optional(),
+  // Optional teacher-application bundle (matches RegisteredUserController::store).
+  teacher: z.union([z.boolean(), z.literal('1'), z.literal('0'), z.literal('true'), z.literal('false')]).optional(),
   phone: z.string().max(50).optional(),
   description: z.string().max(2000).optional(),
 });

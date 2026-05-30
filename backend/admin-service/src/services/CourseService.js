@@ -153,36 +153,36 @@ const toBool = (v, fallback = false) => {
     return fallback;
 };
 
-// Build the Sequelize `where` fragment that scopes a query to an instructor's
-// own courses (they own the row OR appear in instructor_ids). Returns null for
-// admins / when no scoping applies. `instructor_ids` is a TEXT column (JSON
+// Build the Sequelize `where` fragment that scopes a query to an teacher's
+// own courses (they own the row OR appear in teacher_ids). Returns null for
+// admins / when no scoping applies. `teacher_ids` is a TEXT column (JSON
 // array, CSV, or single value) — delimiter-aware LIKE matchers avoid a short
 // id false-matching inside a longer one (123 inside 1234).
-const buildInstructorScope = (user) => {
-    if (user?.role !== 'instructor' || user.id == null) return null;
+const buildTeacherScope = (user) => {
+    if (user?.role !== 'teacher' || user.id == null) return null;
     const uid = String(user.id);
     return {
         [Op.or]: [
             { user_id: uid },
-            { instructor_ids: { [Op.like]: `%"${uid}"%` } }, // JSON array element
-            { instructor_ids: uid },                          // exact whole value
-            { instructor_ids: { [Op.like]: `${uid},%` } },    // CSV: first
-            { instructor_ids: { [Op.like]: `%,${uid},%` } },  // CSV: middle
-            { instructor_ids: { [Op.like]: `%,${uid}` } },    // CSV: last
+            { teacher_ids: { [Op.like]: `%"${uid}"%` } }, // JSON array element
+            { teacher_ids: uid },                          // exact whole value
+            { teacher_ids: { [Op.like]: `${uid},%` } },    // CSV: first
+            { teacher_ids: { [Op.like]: `%,${uid},%` } },  // CSV: middle
+            { teacher_ids: { [Op.like]: `%,${uid}` } },    // CSV: last
         ],
     };
 };
 
-// Merge a base `where` with the instructor scope so a count reflects only the
-// instructor's courses. For admins (scope null) the base `where` is returned
+// Merge a base `where` with the teacher scope so a count reflects only the
+// teacher's courses. For admins (scope null) the base `where` is returned
 // as-is.
 const scopedWhere = (base, scope) =>
     scope ? { ...base, [Op.and]: [...(base[Op.and] || []), scope] } : base;
 
-// Parse a course's `instructor_ids` (TEXT — JSON array, CSV, or single value)
-// into an array of id strings. Unlike zoom-live-class.courseInstructorIds this
-// does NOT fold in user_id — we want the *assigned* instructors only.
-const parseInstructorIds = (raw) => {
+// Parse a course's `teacher_ids` (TEXT — JSON array, CSV, or single value)
+// into an array of id strings. Unlike zoom-live-class.courseTeacherIds this
+// does NOT fold in user_id — we want the *assigned* teachers only.
+const parseTeacherIds = (raw) => {
     if (raw == null || raw === '') return [];
     if (Array.isArray(raw)) return raw.map((v) => String(v)).filter(Boolean);
     const s = String(raw).trim();
@@ -197,16 +197,16 @@ const parseInstructorIds = (raw) => {
     return [];
 };
 
-// Batch-resolve instructor profiles from the auth-service DB (lucy_devdb.users)
-// — instructors are auth-service users, not lms_admin.users. Returns a map
+// Batch-resolve teacher profiles from the auth-service DB (lucy_devdb.users)
+// — teachers are auth-service users, not lms_admin.users. Returns a map
 // keyed by userId string. Best-effort: a DB failure yields an empty map so the
 // course list still renders.
-const fetchInstructorsByIds = async (ids) => {
+const fetchTeachersByIds = async (ids) => {
     const unique = [...new Set(ids.map((v) => String(v)).filter(Boolean))];
     if (!unique.length) return {};
     try {
         const rows = await authDb.query(
-            `SELECT u.userId AS id, u.name, u.email, u.instructorPhoto AS photo
+            `SELECT u.userId AS id, u.name, u.email, u.teacherPhoto AS photo
                FROM users u
               WHERE u.userId IN (:ids)`,
             { replacements: { ids: unique }, type: QueryTypes.SELECT }
@@ -215,14 +215,14 @@ const fetchInstructorsByIds = async (ids) => {
         for (const r of rows) byId[String(r.id)] = r;
         return byId;
     } catch (err) {
-        console.warn('[courses] instructor lookup failed:', err.message);
+        console.warn('[courses] teacher lookup failed:', err.message);
         return {};
     }
 };
 
 const emptyResponse = (query = {}) => ({
     status: query.status || 'all',
-    instructor: query.instructor || 'all',
+    teacher: query.teacher || 'all',
     price: query.price || 'all',
     college: query.college || 'all',
     courses: { data: [], total: 0, per_page: 20, current_page: Number(query.page) || 1, last_page: 1 },
@@ -243,7 +243,7 @@ const list = async (query, user = null) => {
 };
 
 const dbList = async (query, user = null) => {
-    const { college, search, price, instructor, status, page = 1 } = query;
+    const { college, search, price, teacher, status, page = 1 } = query;
     const where = {};
     const parent = {};
 
@@ -261,19 +261,19 @@ const dbList = async (query, user = null) => {
     }
     if (search) where.title = { [Op.iLike]: `%${search}%` };
     if (price && price !== 'all') where.is_paid = price === 'paid' ? true : price === 'free' ? false : null;
-    if (instructor && instructor !== 'all') where.user_id = instructor;
+    if (teacher && teacher !== 'all') where.user_id = teacher;
     if (status && status !== 'all') where.status = status;
 
-    // Instructors only see their own courses — either they own the course
-    // (user_id matches) or they're listed in instructor_ids. Admins see all.
-    // `instructorScope` is reused below so the stat-card counts (active,
+    // Teachers only see their own courses — either they own the course
+    // (user_id matches) or they're listed in teacher_ids. Admins see all.
+    // `teacherScope` is reused below so the stat-card counts (active,
     // pending, upcoming, …) reflect the SAME scoped set as the course list,
     // not global totals.
-    const instructorScope = buildInstructorScope(user);
-    if (instructorScope) {
+    const teacherScope = buildTeacherScope(user);
+    if (teacherScope) {
         where[Op.and] = [
             ...(Array.isArray(where[Op.and]) ? where[Op.and] : []),
-            instructorScope,
+            teacherScope,
         ];
     }
 
@@ -321,26 +321,26 @@ const dbList = async (query, user = null) => {
     const sectionCountByCourse = Object.fromEntries(sectionCounts.map((r) => [r.course_id, Number(r.count) || 0]));
     const enrollmentCountByCourse = Object.fromEntries(enrollmentCounts.map((r) => [r.course_id, Number(r.count) || 0]));
 
-    // Resolve the *assigned* instructor for each course from `instructor_ids`
+    // Resolve the *assigned* teacher for each course from `teacher_ids`
     // (auth-service users). `creator` (the FK-bound user_id) is the admin who
-    // owns the row, not the teaching instructor — so the list must show the
-    // instructor_ids person. One batched auth-DB lookup for all rows.
-    const allInstructorIds = rows.flatMap((r) => parseInstructorIds(r.instructor_ids));
-    const instructorsById = await fetchInstructorsByIds(allInstructorIds);
+    // owns the row, not the teaching teacher — so the list must show the
+    // teacher_ids person. One batched auth-DB lookup for all rows.
+    const allTeacherIds = rows.flatMap((r) => parseTeacherIds(r.teacher_ids));
+    const teachersById = await fetchTeachersByIds(allTeacherIds);
 
     const enrichedRows = rows.map((row) => {
         const json = row.toJSON();
-        const assignedIds = parseInstructorIds(json.instructor_ids);
-        // First resolvable assigned instructor drives the list's Instructor
-        // cell. Fall back to `creator` only when no instructor is assigned.
+        const assignedIds = parseTeacherIds(json.teacher_ids);
+        // First resolvable assigned teacher drives the list's Teacher
+        // cell. Fall back to `creator` only when no teacher is assigned.
         const assigned = assignedIds
-            .map((id) => instructorsById[String(id)])
+            .map((id) => teachersById[String(id)])
             .find(Boolean);
         return {
             ...json,
-            instructor: assigned
+            teacher: assigned
                 ? { id: assigned.id, name: assigned.name, email: assigned.email, photo: assigned.photo }
-                : json.creator || null, // frontend reads c.instructor.name / .email
+                : json.creator || null, // frontend reads c.teacher.name / .email
             // category intentionally null — courses are no longer grouped by
             // category. Kept on the payload as null so legacy frontend code
             // (e.g. `c.category?.title`) doesn't throw.
@@ -351,21 +351,21 @@ const dbList = async (query, user = null) => {
         };
     });
 
-    // Stat-card counts. For an instructor these are scoped to their own
-    // courses (same instructorScope as the list) so the cards match the list
+    // Stat-card counts. For an teacher these are scoped to their own
+    // courses (same teacherScope as the list) so the cards match the list
     // below them. For admins the counts are global.
     const [pending_courses, active_courses, upcoming_courses, paid_courses, free_courses] = await Promise.all([
-        courseRepo.count(scopedWhere({ status: 'pending' }, instructorScope)),
-        courseRepo.count(scopedWhere({ status: 'active' }, instructorScope)),
-        courseRepo.count(scopedWhere({ status: 'upcoming' }, instructorScope)),
-        courseRepo.count(scopedWhere({ is_paid: 1 }, instructorScope)),
-        courseRepo.count(scopedWhere({ is_paid: 0 }, instructorScope)),
+        courseRepo.count(scopedWhere({ status: 'pending' }, teacherScope)),
+        courseRepo.count(scopedWhere({ status: 'active' }, teacherScope)),
+        courseRepo.count(scopedWhere({ status: 'upcoming' }, teacherScope)),
+        courseRepo.count(scopedWhere({ is_paid: 1 }, teacherScope)),
+        courseRepo.count(scopedWhere({ is_paid: 0 }, teacherScope)),
     ]);
 
     return {
         ...parent,
         status: status || 'all',
-        instructor: instructor || 'all',
+        teacher: teacher || 'all',
         price: price || 'all',
         college: college || 'all',
         courses: { data: enrichedRows, total: count, per_page: limit, current_page: Number(page), last_page: Math.ceil(count / limit) },
@@ -438,7 +438,7 @@ const create = async ({ body, files = {}, userId }) => {
         );
     }
 
-    data.instructor_ids = JSON.stringify(b.instructors || [finalUserId]);
+    data.teacher_ids = JSON.stringify(b.teachers || [finalUserId]);
 
     // Create the row first so we know course.id, then upload every media
     // asset under courses/<id>/... — this groups all of one course's files
@@ -479,15 +479,15 @@ const create = async ({ body, files = {}, userId }) => {
     return { success: 'Course added successfully', course_id: course.id };
 };
 
-// Predicate: instructor is allowed to act on this course only if they own it
-// (course.user_id) or they're listed in course.instructor_ids. Mirrors the
+// Predicate: teacher is allowed to act on this course only if they own it
+// (course.user_id) or they're listed in course.teacher_ids. Mirrors the
 // LIKE-match the list endpoint uses; tighter parsing happens for
-// zoom-live-class via that module's courseInstructorIds().
-const instructorCanTouch = (course, user) => {
+// zoom-live-class via that module's courseTeacherIds().
+const teacherCanTouch = (course, user) => {
     if (!course || !user) return false;
     const uid = String(user.id);
     if (String(course.user_id || '') === uid) return true;
-    const raw = course.instructor_ids;
+    const raw = course.teacher_ids;
     if (!raw) return false;
     return String(raw).includes(uid);
 };
@@ -495,7 +495,7 @@ const instructorCanTouch = (course, user) => {
 const edit = async (id, user = null) => {
     const course_details = await courseRepo.findById(id);
     if (!course_details) throw new HttpError(404, 'Not found');
-    if (user?.role === 'instructor' && !instructorCanTouch(course_details, user)) {
+    if (user?.role === 'teacher' && !teacherCanTouch(course_details, user)) {
         throw new HttpError(403, 'Forbidden');
     }
     const sections = await sectionRepo.findByCourse(id);
@@ -521,16 +521,16 @@ const update = async ({ id, body, files = {} }) => {
         data.level = b.level;
         data.language = String(b.language || '').toLowerCase();
         data.status = b.status;
-        // Only overwrite the instructor assignment when the form actually
+        // Only overwrite the teacher assignment when the form actually
         // sent one. Previously, partial Basic-tab saves submitted an empty
-        // `b.instructors`, which JSON-stringified to `'[]'` and wiped the
-        // real instructor — the page then fell back to the admin-creator,
-        // making it look like the instructor was hardcoded.
-        const incoming = Array.isArray(b.instructors)
-            ? b.instructors.filter((v) => v !== null && v !== undefined && String(v).trim() !== '')
-            : (b.instructors && String(b.instructors).trim() !== '' ? [b.instructors] : []);
+        // `b.teachers`, which JSON-stringified to `'[]'` and wiped the
+        // real teacher — the page then fell back to the admin-creator,
+        // making it look like the teacher was hardcoded.
+        const incoming = Array.isArray(b.teachers)
+            ? b.teachers.filter((v) => v !== null && v !== undefined && String(v).trim() !== '')
+            : (b.teachers && String(b.teachers).trim() !== '' ? [b.teachers] : []);
         if (incoming.length) {
-            data.instructor_ids = JSON.stringify(incoming.map(String));
+            data.teacher_ids = JSON.stringify(incoming.map(String));
         }
         // Only overwrite clg_ids if the edit form actually sent it — otherwise
         // a partial Basic-tab save would silently wipe the college mapping.

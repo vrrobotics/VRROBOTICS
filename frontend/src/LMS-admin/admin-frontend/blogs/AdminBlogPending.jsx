@@ -1,5 +1,5 @@
 /**
- * AdminBlogPending - List of pending (instructor-submitted) blog posts.
+ * AdminBlogPending - List of pending (teacher-submitted) blog posts.
  *
  * ============================================================================
  * ORIGINAL BLADE: resources/views/admin/blog/pending.blade.php

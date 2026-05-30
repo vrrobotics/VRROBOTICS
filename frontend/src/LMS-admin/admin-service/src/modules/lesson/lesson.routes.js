@@ -3,7 +3,7 @@ const c = require('./lesson.controller');
 
 /**
  * Lessons within sections (video, text, attachment)
- * Laravel source: Instructor/LessonController, CurriculumController
+ * Laravel source: Teacher/LessonController, CurriculumController
  *
  * TODO: port Laravel route definitions from routes/web.php / routes/api.php.
  * Mount under /api/lesson from src/modules/index.js.

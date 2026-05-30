@@ -359,7 +359,7 @@ export default function CourseLiveClasses({ course }) {
                     <table className="w-full text-[13px]">
                         <thead className="bg-gray-50 text-gray uppercase tracking-wide text-[11px]">
                             <tr>
-                                <th className="text-left py-3 px-4 font-semibold">Instructor</th>
+                                <th className="text-left py-3 px-4 font-semibold">Teacher</th>
                                 <th className="text-left py-3 px-4 font-semibold">Class topic</th>
                                 <th className="text-left py-3 px-4 font-semibold">Class schedule</th>
                                 <th className="text-left py-3 px-4 font-semibold">Status</th>

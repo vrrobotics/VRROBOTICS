@@ -134,7 +134,7 @@ export default function LiveClassPane({ course }) {
             {items.length === 0 ? (
                 <p className="text-gray-500">
                     No upcoming live classes are scheduled. Live sessions hosted by the
-                    instructor will appear here.
+                    teacher will appear here.
                 </p>
             ) : (
                 <div className="overflow-x-auto">

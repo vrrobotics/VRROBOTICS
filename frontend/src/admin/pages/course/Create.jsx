@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { storeCourse } from '../../api/course';
-import { listInstructors } from '../../api/instructor';
+import { listTeachers } from '../../api/teacher';
 import { listLanguages } from '../../api/language';
 import CollegeMultiSelect from '../../components/CollegeMultiSelect';
 import BatchMultiSelect from '../../components/BatchMultiSelect';
@@ -54,10 +54,10 @@ export default function CourseCreate() {
         // it doesn't. Drives the "Certificate" badge on the public course
         // details page. Defaults to '1' to preserve the prior always-on UX.
         has_certificate: '1',
-        // Auth-service userId of the instructor selected from the dropdown.
-        // Sent as instructors[] on submit so the backend stores it in
-        // course.instructor_ids (CourseService.create line 181).
-        instructor_id: '',
+        // Auth-service userId of the teacher selected from the dropdown.
+        // Sent as teachers[] on submit so the backend stores it in
+        // course.teacher_ids (CourseService.create line 181).
+        teacher_id: '',
     });
     const [thumbnail, setThumbnail] = useState(null);
     const [submitting, setSubmitting] = useState(false);
@@ -69,31 +69,31 @@ export default function CourseCreate() {
     // entries when colleges change, so we don't have to here.
     const [selectedBatchIds, setSelectedBatchIds] = useState([]);
 
-    // Instructor dropdown source — admin instructors API
-    // (GET /api/admin/manage/instructors). Loaded once on mount; small list,
+    // Teacher dropdown source — admin teachers API
+    // (GET /api/admin/manage/teachers). Loaded once on mount; small list,
     // so we pull everything in a single request.
-    const [instructors, setInstructors] = useState([]);
-    const [instructorsLoading, setInstructorsLoading] = useState(true);
-    const [instructorsError, setInstructorsError] = useState(null);
+    const [teachers, setTeachers] = useState([]);
+    const [teachersLoading, setTeachersLoading] = useState(true);
+    const [teachersError, setTeachersError] = useState(null);
 
     const [languages, setLanguages] = useState([]);
     const [languagesLoading, setLanguagesLoading] = useState(true);
 
-    const loadInstructors = () => {
-        setInstructorsLoading(true);
-        setInstructorsError(null);
-        listInstructors({ per_page: 1000 })
-            .then((r) => setInstructors(r?.instructors || []))
+    const loadTeachers = () => {
+        setTeachersLoading(true);
+        setTeachersError(null);
+        listTeachers({ per_page: 1000 })
+            .then((r) => setTeachers(r?.teachers || []))
             .catch((e) =>
-                setInstructorsError(
-                    e?.response?.data?.error || e?.message || 'Failed to load instructors'
+                setTeachersError(
+                    e?.response?.data?.error || e?.message || 'Failed to load teachers'
                 )
             )
-            .finally(() => setInstructorsLoading(false));
+            .finally(() => setTeachersLoading(false));
     };
 
     useEffect(() => {
-        loadInstructors();
+        loadTeachers();
         setLanguagesLoading(true);
         listLanguages()
             .then((r) => setLanguages(r?.languages || []))
@@ -105,8 +105,8 @@ export default function CourseCreate() {
 
     const submit = async (e) => {
         e.preventDefault();
-        if (!form.instructor_id) {
-            toast.error('Please select an instructor');
+        if (!form.teacher_id) {
+            toast.error('Please select an teacher');
             return;
         }
         if (selectedClgIds.length === 0) {
@@ -115,15 +115,15 @@ export default function CourseCreate() {
         }
         setSubmitting(true);
         const fd = new FormData();
-        // instructor_id is the form-state key; we send it on the wire as
-        // instructors[] (CourseService expects body.instructors as an array
-        // and JSON-stringifies it into course.instructor_ids).
+        // teacher_id is the form-state key; we send it on the wire as
+        // teachers[] (CourseService expects body.teachers as an array
+        // and JSON-stringifies it into course.teacher_ids).
         Object.entries(form).forEach(([k, v]) => {
-            if (k === 'instructor_id') return;
+            if (k === 'teacher_id') return;
             fd.append(k, v);
         });
         fd.append('course_type', 'general');
-        fd.append('instructors[]', form.instructor_id);
+        fd.append('teachers[]', form.teacher_id);
         selectedClgIds.forEach((id) => fd.append('clgIds[]', id));
         selectedBatchIds.forEach((id) => fd.append('batchIds[]', id));
         if (thumbnail) fd.append('thumbnail', thumbnail);
@@ -268,34 +268,34 @@ export default function CourseCreate() {
                                 </select>
                             </div>
 
-                            {/* Instructor — sourced from the admin instructor API
-                                (auth-service users with role='instructor'). Required:
-                                a course must have an assigned instructor. Disabled
+                            {/* Teacher — sourced from the admin teacher API
+                                (auth-service users with role='teacher'). Required:
+                                a course must have an assigned teacher. Disabled
                                 while loading / on fetch error so the form can't be
                                 submitted with an invalid value. */}
                             <div className="mb-3">
-                                <label className="ol-form-label" htmlFor="instructor_id">
-                                    Instructor<span className="text-danger ml-1">*</span>
+                                <label className="ol-form-label" htmlFor="teacher_id">
+                                    Teacher<span className="text-danger ml-1">*</span>
                                 </label>
                                 <select
-                                    id="instructor_id"
+                                    id="teacher_id"
                                     className="ol-form-control"
-                                    name="instructor_id"
+                                    name="teacher_id"
                                     required
-                                    disabled={instructorsLoading || !!instructorsError}
-                                    value={form.instructor_id}
-                                    onChange={(e) => set('instructor_id', e.target.value)}
+                                    disabled={teachersLoading || !!teachersError}
+                                    value={form.teacher_id}
+                                    onChange={(e) => set('teacher_id', e.target.value)}
                                 >
                                     <option value="">
-                                        {instructorsLoading
-                                            ? 'Loading instructors…'
-                                            : instructorsError
-                                                ? 'Failed to load instructors'
-                                                : instructors.length === 0
-                                                    ? 'No instructors available — add one first'
-                                                    : 'Select an instructor'}
+                                        {teachersLoading
+                                            ? 'Loading teachers…'
+                                            : teachersError
+                                                ? 'Failed to load teachers'
+                                                : teachers.length === 0
+                                                    ? 'No teachers available — add one first'
+                                                    : 'Select an teacher'}
                                     </option>
-                                    {instructors.map((ins) => {
+                                    {teachers.map((ins) => {
                                         const label = ins.name || ins.email || ins.id;
                                         const sub = ins.expertise ? ` — ${ins.expertise}` : '';
                                         return (
@@ -305,12 +305,12 @@ export default function CourseCreate() {
                                         );
                                     })}
                                 </select>
-                                {instructorsError && (
+                                {teachersError && (
                                     <div className="text-[13px] text-danger mt-1">
-                                        {instructorsError}{' '}
+                                        {teachersError}{' '}
                                         <button
                                             type="button"
-                                            onClick={loadInstructors}
+                                            onClick={loadTeachers}
                                             className="text-skin underline ml-1"
                                         >
                                             Retry

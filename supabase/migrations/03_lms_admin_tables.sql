@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS lms_admin.courses (
   requirements          TEXT,
   outcomes              TEXT,
   faqs                  TEXT,
-  instructor_ids        TEXT,           -- CSV / JSON-as-text in source
+  teacher_ids        TEXT,           -- CSV / JSON-as-text in source
   clg_ids               JSONB DEFAULT '[]'::jsonb,
   average_rating        REAL DEFAULT 0,
   expiry_period         INTEGER,

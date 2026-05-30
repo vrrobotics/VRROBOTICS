@@ -152,7 +152,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/roles', roleRoutes);
 app.get('/api/v1/health', (req, res) => res.json({ status: 'ok', service: process.env.SERVICE_NAME }));
 
-const ROLES = ['student', 'instructor', 'admin', 'auditor'];
+const ROLES = ['student', 'teacher', 'admin', 'auditor'];
 
 export async function initDb() {
   await sequelize.authenticate();

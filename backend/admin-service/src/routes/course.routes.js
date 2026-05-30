@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/CourseController');
 const upload = require('../middlewares/multer');
-const { adminOnly, adminOrInstructor } = require('../middlewares/auth');
+const { adminOnly, adminOrTeacher } = require('../middlewares/auth');
 
 const mediaFields = upload.fields([
     { name: 'thumbnail', maxCount: 1 },
@@ -12,16 +12,16 @@ const mediaFields = upload.fields([
 
 // Mounted via `app.use('/api/admin', auth, courseRoutes)` in server.js — the
 // `auth` middleware decodes the JWT, then each route applies its own role gate:
-//   - read endpoints (list, edit-meta)          → admin OR instructor
-//     (CourseService.list/edit scope to the instructor's own courses)
+//   - read endpoints (list, edit-meta)          → admin OR teacher
+//     (CourseService.list/edit scope to the teacher's own courses)
 //   - everything else (create, update, delete,
 //     duplicate, status, approval)              → admin only
 
-router.get('/courses', adminOrInstructor, ctrl.index);
+router.get('/courses', adminOrTeacher, ctrl.index);
 router.get('/course/create', adminOnly, ctrl.create);
 router.post('/course/store', adminOnly, mediaFields, ctrl.store);
-router.get('/course/edit/:id', adminOrInstructor, ctrl.edit);
-// `update` handles the per-tab admin form (Basic, Pricing, etc). Instructors
+router.get('/course/edit/:id', adminOrTeacher, ctrl.edit);
+// `update` handles the per-tab admin form (Basic, Pricing, etc). Teachers
 // don't see those tabs (Edit.jsx filters them) and have no need to call this —
 // keep it admin-only.
 router.post('/course/update/:id', adminOnly, mediaFields, ctrl.update);

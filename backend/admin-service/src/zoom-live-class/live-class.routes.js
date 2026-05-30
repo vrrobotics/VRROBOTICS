@@ -14,7 +14,7 @@
  *     GET    /api/admin/zoom-live-class/settings
  *     POST   /api/admin/zoom-live-class/settings
  *     GET    /api/admin/zoom-live-class/course/:course_id
- *     GET    /api/admin/zoom-live-class/course/:course_id/instructors
+ *     GET    /api/admin/zoom-live-class/course/:course_id/teachers
  *     POST   /api/admin/zoom-live-class/course/:course_id
  *     POST   /api/admin/zoom-live-class/:id
  *     DELETE /api/admin/zoom-live-class/:id
@@ -36,7 +36,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const env = require('../config/env');
 const c = require('./live-class.controller');
-const { adminOnly, adminOrInstructor } = require('../middlewares/auth');
+const { adminOnly, adminOrTeacher } = require('../middlewares/auth');
 
 // Optional-auth: decode the token if present so req.user is populated for
 // host-detection, but do NOT 401 when absent. Mirrors the reference's
@@ -56,24 +56,24 @@ const optionalAuth = (req, _res, next) => {
 /* ============================== Admin router ============================== */
 // Mounted under /api/admin with `auth` applied at the mount point (server.js).
 // Each route picks its own gate:
-//   - settings              → admin only (instructors don't manage Zoom creds)
-//   - per-course CRUD/join  → admin OR instructor (the service further scopes
-//                             writes to courses the instructor is assigned to)
+//   - settings              → admin only (teachers don't manage Zoom creds)
+//   - per-course CRUD/join  → admin OR teacher (the service further scopes
+//                             writes to courses the teacher is assigned to)
 const adminRouter = express.Router();
 
 adminRouter.get('/zoom-live-class/settings', adminOnly, c.read_settings);
 adminRouter.post('/zoom-live-class/settings', adminOnly, c.write_settings);
 
-adminRouter.get('/zoom-live-class/course/:course_id', adminOrInstructor, c.list_by_course);
-adminRouter.get('/zoom-live-class/course/:course_id/instructors', adminOrInstructor, c.instructors_for_course);
-adminRouter.post('/zoom-live-class/course/:course_id', adminOrInstructor, c.store);
+adminRouter.get('/zoom-live-class/course/:course_id', adminOrTeacher, c.list_by_course);
+adminRouter.get('/zoom-live-class/course/:course_id/teachers', adminOrTeacher, c.teachers_for_course);
+adminRouter.post('/zoom-live-class/course/:course_id', adminOrTeacher, c.store);
 
-adminRouter.post('/zoom-live-class/:id', adminOrInstructor, c.update);
-adminRouter.delete('/zoom-live-class/:id', adminOrInstructor, c.destroy);
+adminRouter.post('/zoom-live-class/:id', adminOrTeacher, c.update);
+adminRouter.delete('/zoom-live-class/:id', adminOrTeacher, c.destroy);
 
-adminRouter.get('/zoom-live-class/:id/join', adminOrInstructor, c.resolve_join);
-adminRouter.post('/zoom-live-class/:id/sdk-signature', adminOrInstructor, c.sdk_signature);
-adminRouter.get('/zoom-live-class/:id/status', adminOrInstructor, c.sync_status);
+adminRouter.get('/zoom-live-class/:id/join', adminOrTeacher, c.resolve_join);
+adminRouter.post('/zoom-live-class/:id/sdk-signature', adminOrTeacher, c.sdk_signature);
+adminRouter.get('/zoom-live-class/:id/status', adminOrTeacher, c.sync_status);
 
 /* ============================== Public router ============================== */
 // Mounted under /api/public — no global auth, optionalAuth on the join/sdk

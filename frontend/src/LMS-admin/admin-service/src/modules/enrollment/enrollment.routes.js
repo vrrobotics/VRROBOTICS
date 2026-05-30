@@ -3,7 +3,7 @@ const c = require('./enrollment.controller');
 
 /**
  * Enrollments, progress, watch history
- * Laravel source: Student/EnrollmentController, Instructor/EnrollmentController
+ * Laravel source: Student/EnrollmentController, Teacher/EnrollmentController
  *
  * TODO: port Laravel route definitions from routes/web.php / routes/api.php.
  * Mount under /api/enrollment from src/modules/index.js.

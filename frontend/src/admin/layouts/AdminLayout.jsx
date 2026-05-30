@@ -115,11 +115,11 @@ const MENU = [
                 ],
             },
             {
-                key: 'instructor',
-                label: 'Instructor',
+                key: 'teacher',
+                label: 'Teacher',
                 children: [
-                    { label: 'Manage Instructors', to: '/admin/instructors' },
-                    { label: 'Add New Instructor', to: '/admin/instructors/create' },
+                    { label: 'Manage Teachers', to: '/admin/teachers' },
+                    { label: 'Add New Teacher', to: '/admin/teachers/create' },
                 ],
             },
         ],
@@ -192,19 +192,19 @@ export default function AdminLayout() {
     // college admin and sees only the College Dashboard tab. (The dashboard
     // endpoint itself 403s if the JWT lacks a college_id, which surfaces a
     // clear "missing college" error rather than silently showing zeros.)
-    const isInstructor = adminUser?.role === 'instructor';
-    const isRootAdmin = !isInstructor && adminUser?.is_root_admin === true;
-    const isCollegeAdmin = !isInstructor && !isRootAdmin;
+    const isTeacher = adminUser?.role === 'teacher';
+    const isRootAdmin = !isTeacher && adminUser?.is_root_admin === true;
+    const isCollegeAdmin = !isTeacher && !isRootAdmin;
 
     // Three cohorts, three sidebars:
-    //   - Instructor: only the Course group (Manage Courses), and only the
+    //   - Teacher: only the Course group (Manage Courses), and only the
     //     Curriculum + Live Class tabs inside Edit Course (see Edit.jsx).
     //   - College admin: only College Dashboard.
     //   - Root admin: full menu.
     let visibleMenu;
-    if (isInstructor) {
+    if (isTeacher) {
         // Only the Course group, and within it only "Manage Courses" —
-        // instructors manage the courses they're assigned to but can't
+        // teachers manage the courses they're assigned to but can't
         // create new courses or touch coupons.
         visibleMenu = MENU
             .filter((item) => item.key === 'course' && !item.collegeOnly)
@@ -218,10 +218,10 @@ export default function AdminLayout() {
         visibleMenu = MENU.filter((item) => item.collegeOnly !== true);
     }
 
-    // Hard-stop direct URL access to routes outside an instructor's surface.
-    // Instructors are allowed on the course list and the course-edit page.
+    // Hard-stop direct URL access to routes outside an teacher's surface.
+    // Teachers are allowed on the course list and the course-edit page.
     // Edit Course tabs are filtered inside Edit.jsx.
-    const isInstructorPathAllowed = (p) =>
+    const isTeacherPathAllowed = (p) =>
         p === '/admin' ||
         p === '/admin/' ||
         p === '/admin/courses' ||
@@ -229,8 +229,8 @@ export default function AdminLayout() {
         /^\/admin\/course\/edit\/\d+/.test(p);
 
     useEffect(() => {
-        if (isInstructor) {
-            if (!isInstructorPathAllowed(pathname)) {
+        if (isTeacher) {
+            if (!isTeacherPathAllowed(pathname)) {
                 navigate('/admin/courses', { replace: true });
             }
             return;
@@ -239,7 +239,7 @@ export default function AdminLayout() {
         if (pathname.startsWith('/admin/college')) return;
         // Avoid redundant navigate() calls — only redirect when actually off-route.
         navigate('/admin/college', { replace: true });
-    }, [isInstructor, isCollegeAdmin, pathname, navigate]);
+    }, [isTeacher, isCollegeAdmin, pathname, navigate]);
 
     const handleLogout = async () => {
         await adminLogout();

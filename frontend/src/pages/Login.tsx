@@ -79,14 +79,14 @@ const Login = () => {
     if (winner?.kind === 'auth') {
       const loggedInUser = winner.user;
 
-      // Instructors land on the admin shell with a restricted sidebar
+      // Teachers land on the admin shell with a restricted sidebar
       // (course management only). They have no admin-service login — their
       // auth-service accessToken doubles as the admin_token (both services
       // sign JWTs with the same JWT_SECRET, so admin-service's `auth`
       // middleware verifies the token fine). The admin axios client reads
       // from localStorage 'admin_token' — copy the accessToken there, and
       // populate 'admin_user' so AdminLayout's role-gating works.
-      if (loggedInUser.role === "instructor") {
+      if (loggedInUser.role === "teacher") {
         const accessToken = localStorage.getItem("accessToken");
         if (accessToken) localStorage.setItem("admin_token", accessToken);
         localStorage.setItem(
@@ -96,7 +96,7 @@ const Login = () => {
             userId: loggedInUser.userId,
             email: loggedInUser.email,
             name: loggedInUser.name,
-            role: "instructor",
+            role: "teacher",
             is_root_admin: false,
           })
         );

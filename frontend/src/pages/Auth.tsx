@@ -9,7 +9,7 @@ import { GraduationCap, Users, Eye, EyeOff, Loader2 } from "lucide-react";
 /**
  * VR Robotics Academy — basic authentication UI (Login + Sign Up).
  * Self-contained page wired to the existing auth hook/backend. Supports a
- * Student / Teacher role on sign up (Teacher registers as `instructor`, which
+ * Student / Teacher role on sign up (Teacher registers as `teacher`, which
  * the auth-service /register endpoint already accepts).
  *
  * Query params:
@@ -25,8 +25,8 @@ const Auth = () => {
   const [mode, setMode] = useState<"login" | "signup">(
     initialTeacher || params.get("mode") === "signup" ? "signup" : "login",
   );
-  const [role, setRole] = useState<"student" | "instructor">(
-    initialTeacher ? "instructor" : "student",
+  const [role, setRole] = useState<"student" | "teacher">(
+    initialTeacher ? "teacher" : "student",
   );
 
   const [name, setName] = useState("");
@@ -70,16 +70,16 @@ const Auth = () => {
           dob: "2000-01-01",
           gender: "male",
         });
-        navigate(role === "instructor" ? "/instructor" : "/", { replace: true });
+        navigate(role === "teacher" ? "/teacher" : "/", { replace: true });
       } else {
         const profile = await loginUser({ email: email.trim(), password });
-        // Route by role: admins → admin dashboard, instructors → their
+        // Route by role: admins → admin dashboard, teachers → their
         // dashboard, everyone else → home.
         const r = profile?.role;
         if (r === "admin" || r === "root" || r === "manager" || r === "editor") {
           navigate("/admin/dashboard", { replace: true });
-        } else if (r === "instructor") {
-          navigate("/instructor", { replace: true });
+        } else if (r === "teacher") {
+          navigate("/teacher", { replace: true });
         } else {
           navigate("/", { replace: true });
         }
@@ -157,7 +157,7 @@ const Auth = () => {
                 <div className="grid grid-cols-2 gap-3">
                   {([
                     { val: "student", label: "Student", icon: Users },
-                    { val: "instructor", label: "Teacher", icon: GraduationCap },
+                    { val: "teacher", label: "Teacher", icon: GraduationCap },
                   ] as const).map((r) => (
                     <button
                       type="button"

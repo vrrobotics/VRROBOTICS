@@ -11,8 +11,8 @@ import api from '@/admin/api/client';
 export const listLiveClasses = (courseId) =>
     api.get(`/zoom-live-class/course/${courseId}`).then((r) => r.data);
 
-export const listInstructors = (courseId) =>
-    api.get(`/zoom-live-class/course/${courseId}/instructors`).then((r) => r.data);
+export const listTeachers = (courseId) =>
+    api.get(`/zoom-live-class/course/${courseId}/teachers`).then((r) => r.data);
 
 export const storeLiveClass = (courseId, body) =>
     api.post(`/zoom-live-class/course/${courseId}`, body).then((r) => r.data);

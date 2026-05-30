@@ -13,9 +13,9 @@ CREATE INDEX IF NOT EXISTS idx_users_org_id     ON lucy_devdb.users ("orgId");
 CREATE INDEX IF NOT EXISTS idx_users_branch_id  ON lucy_devdb.users ("branchId");
 
 -- -----------------------------------------------------------------------------
--- lucy_devdb.courses — instructor list, college filter
+-- lucy_devdb.courses — teacher list, college filter
 -- -----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_courses_instructor_id ON lucy_devdb.courses ("instructorId");
+CREATE INDEX IF NOT EXISTS idx_courses_teacher_id ON lucy_devdb.courses ("teacherId");
 CREATE INDEX IF NOT EXISTS idx_courses_clg_ids_gin   ON lucy_devdb.courses USING GIN ("clgIds");
 
 -- -----------------------------------------------------------------------------

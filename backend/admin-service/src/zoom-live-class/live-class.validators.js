@@ -12,7 +12,7 @@ const { HttpError } = require('../middlewares/error');
 
 // Supported providers:
 //   - 'zoom'   : meeting is created via the Zoom API (existing flow)
-//   - 'manual' : instructor pastes any meeting URL (Zoom/Meet/Teams/etc)
+//   - 'manual' : teacher pastes any meeting URL (Zoom/Meet/Teams/etc)
 const PROVIDERS = ['zoom', 'manual'];
 
 const isNonEmptyString = (v) => typeof v === 'string' && v.trim().length > 0;
@@ -39,7 +39,7 @@ const baseChecks = (body, errors) => {
     if (!isNonEmptyString(body.class_topic)) errors.class_topic = 'Class topic is required';
     else if (body.class_topic.length > 255) errors.class_topic = 'Class topic must be at most 255 characters';
     if (!isParseableDate(body.class_date_and_time)) errors.class_date_and_time = 'Class date and time is required';
-    if (!body.user_id || !Number(body.user_id)) errors.user_id = 'Instructor is required';
+    if (!body.user_id || !Number(body.user_id)) errors.user_id = 'Teacher is required';
 };
 
 const validateStore = (body) => {

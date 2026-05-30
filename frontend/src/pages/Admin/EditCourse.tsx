@@ -9,7 +9,7 @@ const EditCourse: React.FC<EditCourseProps> = ({ onClose }) => {
     name: "AI Frontier",
     category: "Artificial Intelligence",
     duration: "6",
-    instructor: "John Doe",
+    teacher: "John Doe",
     description: "An advanced course on AI.",
     startDate: "2023-09-01",
     endDate: "2023-12-01",
@@ -74,11 +74,11 @@ const EditCourse: React.FC<EditCourseProps> = ({ onClose }) => {
               />
             </div>
             <div>
-              <label className="block mb-1 font-medium text-gray-700">Instructor</label>
+              <label className="block mb-1 font-medium text-gray-700">Teacher</label>
               <input
                 type="text"
-                name="instructor"
-                value={form.instructor}
+                name="teacher"
+                value={form.teacher}
                 onChange={handleChange}
                 className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
                 required

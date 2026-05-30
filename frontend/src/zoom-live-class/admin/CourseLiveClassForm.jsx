@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { storeLiveClass, updateLiveClass } from './liveClassApi';
-// Use the same instructor source the admin Manage → Instructors page uses,
-// so the dropdown lists every user with role='instructor' from the auth DB.
-import { listInstructors } from '@/admin/api/instructor';
+// Use the same teacher source the admin Manage → Teachers page uses,
+// so the dropdown lists every user with role='teacher' from the auth DB.
+import { listTeachers } from '@/admin/api/teacher';
 import { getStoredUser } from '@/admin/api/auth';
 
 /**
@@ -15,7 +15,7 @@ import { getStoredUser } from '@/admin/api/auth';
  *
  * Two providers:
  *   - zoom   : meeting is auto-created via the Zoom API
- *   - manual : the instructor pastes any Zoom/Meet/Teams link — no API call;
+ *   - manual : the teacher pastes any Zoom/Meet/Teams link — no API call;
  *              the student opens that link from the course player
  */
 
@@ -30,20 +30,20 @@ const formatLocal = (iso) => {
 export default function CourseLiveClassForm({ course, liveClass, onDone, onCancel }) {
     const editing = !!liveClass;
 
-    // When an instructor adds a live class, they host it — the Instructor
+    // When an teacher adds a live class, they host it — the Teacher
     // field is auto-filled with themselves and locked. Admins still pick from
-    // the full instructor list.
+    // the full teacher list.
     const currentUser = useMemo(() => getStoredUser(), []);
-    const isInstructor = currentUser?.role === 'instructor';
+    const isTeacher = currentUser?.role === 'teacher';
     const selfId = currentUser?.id ?? currentUser?.userId ?? '';
 
     const [topic, setTopic] = useState(liveClass?.class_topic || '');
     const [userId, setUserId] = useState(
-        liveClass?.user_id || liveClass?.host?.id || (isInstructor ? String(selfId) : '')
+        liveClass?.user_id || liveClass?.host?.id || (isTeacher ? String(selfId) : '')
     );
     const [dateTime, setDateTime] = useState(formatLocal(liveClass?.class_date_and_time));
     const [note, setNote] = useState(liveClass?.note || '');
-    const [instructors, setInstructors] = useState([]);
+    const [teachers, setTeachers] = useState([]);
     const [saving, setSaving] = useState(false);
 
     // Provider — fixed once created, so when editing we keep the existing one.
@@ -56,11 +56,11 @@ export default function CourseLiveClassForm({ course, liveClass, onDone, onCance
     const isManual = provider === 'manual';
 
     useEffect(() => {
-        // An instructor can't read the admin-only /manage/instructors endpoint
+        // An teacher can't read the admin-only /manage/teachers endpoint
         // and doesn't need to — they host their own live classes. Seed the
         // dropdown with just themselves.
-        if (isInstructor) {
-            setInstructors([
+        if (isTeacher) {
+            setTeachers([
                 {
                     id: selfId,
                     name: currentUser?.name || currentUser?.email || 'Me',
@@ -69,17 +69,17 @@ export default function CourseLiveClassForm({ course, liveClass, onDone, onCance
             ]);
             return;
         }
-        // Admin: pull every instructor — same shape Manage → Instructors uses
-        // ({ instructors: [{ id, name, email, ... }], total, page, per_page }).
-        listInstructors({ per_page: 1000 })
+        // Admin: pull every teacher — same shape Manage → Teachers uses
+        // ({ teachers: [{ id, name, email, ... }], total, page, per_page }).
+        listTeachers({ per_page: 1000 })
             .then((r) => {
-                const list = r.instructors || [];
-                setInstructors(list);
+                const list = r.teachers || [];
+                setTeachers(list);
                 if (!editing && !userId && list.length) setUserId(list[0].id);
             })
             .catch(() => { /* silent — fall back to empty select */ });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editing, isInstructor]);
+    }, [editing, isTeacher]);
 
     const submit = async (e) => {
         e.preventDefault();
@@ -124,23 +124,23 @@ export default function CourseLiveClassForm({ course, liveClass, onDone, onCance
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                 <div>
                     <label className="ol-form-label">
-                        Instructor <span className="text-danger">*</span>
+                        Teacher <span className="text-danger">*</span>
                     </label>
                     <select
                         className="ol-form-control"
                         value={userId}
                         onChange={(e) => setUserId(e.target.value)}
                         required
-                        disabled={isInstructor}
+                        disabled={isTeacher}
                     >
-                        {!isInstructor && <option value="">Select an option</option>}
-                        {instructors.map((u) => (
+                        {!isTeacher && <option value="">Select an option</option>}
+                        {teachers.map((u) => (
                             <option key={u.id} value={u.id}>
                                 {u.name} {u.email ? `(${u.email})` : ''}
                             </option>
                         ))}
                     </select>
-                    {isInstructor && (
+                    {isTeacher && (
                         <p className="text-[12px] text-gray mt-1">
                             You are the host of this live class.
                         </p>

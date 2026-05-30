@@ -2,7 +2,7 @@ const router = require('express').Router();
 const c = require('./payment.controller');
 
 /**
- * Checkout, gateways, invoices, offline payments, instructor payouts
+ * Checkout, gateways, invoices, offline payments, teacher payouts
  * Laravel source: PaymentController, InvoiceController, PaymentGateway, OfflinePayment, Payout
  *
  * TODO: port Laravel route definitions from routes/web.php / routes/api.php.

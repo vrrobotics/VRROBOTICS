@@ -44,9 +44,9 @@ const create = (data) => User.create(data);
 
 const courseCountFor = (userId) => Course.count({ where: { user_id: userId } });
 
-const findInstructors = () =>
+const findTeachers = () =>
     User.findAll({
-        where: { role: 'instructor' },
+        where: { role: 'teacher' },
         attributes: ['id', 'name', 'email'],
         order: [['name', 'ASC']],
     });
@@ -65,6 +65,6 @@ module.exports = {
     isEmailTaken,
     create,
     courseCountFor,
-    findInstructors,
+    findTeachers,
     findUsersByIds,
 };

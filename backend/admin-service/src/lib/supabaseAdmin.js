@@ -5,8 +5,8 @@ const env = require('../config/env');
 // so this client is for admin-service operations only — NEVER expose
 // either the client or the key to the browser.
 //
-// Used today by StudentService / InstructorService to create login-able
-// auth users for admin-added students and instructors.
+// Used today by StudentService / TeacherService to create login-able
+// auth users for admin-added students and teachers.
 
 if (!env.supabase.url || !env.supabase.serviceRoleKey) {
     console.warn(

@@ -73,14 +73,14 @@ export function validateAddCourse(body) {
     value.clgIds = clgIds;
   }
 
-  // instructorId is optional at the schema level (legacy callers may omit
+  // teacherId is optional at the schema level (legacy callers may omit
   // it) but if present must be a non-empty string — it's the auth userId
-  // of an instructor, sourced from the admin instructor dropdown.
-  if (body.instructorId !== undefined && body.instructorId !== null && body.instructorId !== '') {
-    if (!isNonEmptyString(body.instructorId)) {
-      errors.instructorId = 'instructorId must be a non-empty string';
+  // of an teacher, sourced from the admin teacher dropdown.
+  if (body.teacherId !== undefined && body.teacherId !== null && body.teacherId !== '') {
+    if (!isNonEmptyString(body.teacherId)) {
+      errors.teacherId = 'teacherId must be a non-empty string';
     } else {
-      value.instructorId = body.instructorId.trim();
+      value.teacherId = body.teacherId.trim();
     }
   }
 
@@ -135,14 +135,14 @@ export function validateUpdateCourse(body) {
       value.clgIds = clgIds;
     }
   }
-  if (body.instructorId !== undefined) {
-    // Allow clearing the instructor by sending null or "".
-    if (body.instructorId === null || body.instructorId === '') {
-      value.instructorId = null;
-    } else if (!isNonEmptyString(body.instructorId)) {
-      errors.instructorId = 'instructorId must be a non-empty string';
+  if (body.teacherId !== undefined) {
+    // Allow clearing the teacher by sending null or "".
+    if (body.teacherId === null || body.teacherId === '') {
+      value.teacherId = null;
+    } else if (!isNonEmptyString(body.teacherId)) {
+      errors.teacherId = 'teacherId must be a non-empty string';
     } else {
-      value.instructorId = body.instructorId.trim();
+      value.teacherId = body.teacherId.trim();
     }
   }
 

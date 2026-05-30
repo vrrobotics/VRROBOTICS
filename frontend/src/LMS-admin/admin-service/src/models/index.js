@@ -44,7 +44,7 @@ const definePaymentHistory = require('./PaymentHistory');
 const defineOfflinePayment = require('./OfflinePayment');
 const definePayout = require('./Payout');
 const defineReview = require('./Review');
-const defineInstructorReview = require('./InstructorReview');
+const defineTeacherReview = require('./TeacherReview');
 const defineUserReview = require('./UserReview');
 const defineTutorReview = require('./TutorReview');
 const defineLikeDislikeReview = require('./LikeDislikeReview');
@@ -114,7 +114,7 @@ const PaymentHistory = definePaymentHistory(sequelize);
 const OfflinePayment = defineOfflinePayment(sequelize);
 const Payout = definePayout(sequelize);
 const Review = defineReview(sequelize);
-const InstructorReview = defineInstructorReview(sequelize);
+const TeacherReview = defineTeacherReview(sequelize);
 const UserReview = defineUserReview(sequelize);
 const TutorReview = defineTutorReview(sequelize);
 const LikeDislikeReview = defineLikeDislikeReview(sequelize);
@@ -146,7 +146,7 @@ Category.hasMany(Category, { as: 'children', foreignKey: 'parent_id' });
 Category.belongsTo(Category, { as: 'parent', foreignKey: 'parent_id' });
 
 // Course ↔ User/Category
-Course.belongsTo(User, { as: 'instructor', foreignKey: 'user_id' });
+Course.belongsTo(User, { as: 'teacher', foreignKey: 'user_id' });
 User.hasMany(Course, { as: 'courses', foreignKey: 'user_id' });
 Course.belongsTo(Category, { as: 'category', foreignKey: 'category_id' });
 
@@ -186,7 +186,7 @@ BlogLike.belongsTo(Blog, { foreignKey: 'blog_id' });
 
 // Bootcamp
 Bootcamp.belongsTo(BootcampCategory, { as: 'category', foreignKey: 'category_id' });
-Bootcamp.belongsTo(User, { as: 'instructor', foreignKey: 'user_id' });
+Bootcamp.belongsTo(User, { as: 'teacher', foreignKey: 'user_id' });
 Bootcamp.hasMany(BootcampModule, { as: 'modules', foreignKey: 'bootcamp_id' });
 BootcampModule.belongsTo(Bootcamp, { foreignKey: 'bootcamp_id' });
 BootcampModule.hasMany(BootcampResource, { as: 'resources', foreignKey: 'module_id' });
@@ -231,8 +231,8 @@ Review.belongsTo(Course, { foreignKey: 'course_id' });
 Review.belongsTo(Bootcamp, { foreignKey: 'bootcamp_id' });
 LikeDislikeReview.belongsTo(Review, { foreignKey: 'review_id' });
 Review.hasMany(LikeDislikeReview, { as: 'reactions', foreignKey: 'review_id' });
-InstructorReview.belongsTo(User, { as: 'reviewer', foreignKey: 'user_id' });
-InstructorReview.belongsTo(User, { as: 'instructor', foreignKey: 'instructor_id' });
+TeacherReview.belongsTo(User, { as: 'reviewer', foreignKey: 'user_id' });
+TeacherReview.belongsTo(User, { as: 'teacher', foreignKey: 'teacher_id' });
 TutorReview.belongsTo(User, { as: 'reviewer', foreignKey: 'user_id' });
 TutorReview.belongsTo(User, { as: 'tutor', foreignKey: 'tutor_id' });
 UserReview.belongsTo(User, { as: 'reviewer', foreignKey: 'user_id' });
@@ -334,7 +334,7 @@ module.exports = {
   OfflinePayment,
   Payout,
   Review,
-  InstructorReview,
+  TeacherReview,
   UserReview,
   TutorReview,
   LikeDislikeReview,

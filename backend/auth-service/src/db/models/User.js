@@ -71,7 +71,7 @@ const User = sequelize.define('User', {
   programInterested: {
     type: DataTypes.STRING
   },
-  // === Instructor-specific profile fields (all optional, null for non-instructors)
+  // === Teacher-specific profile fields (all optional, null for non-teachers)
   expertise: {
     type: DataTypes.STRING(255),
     allowNull: true

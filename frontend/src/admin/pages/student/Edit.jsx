@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import StudentForm from './StudentForm';
 import { getStudent, updateStudent } from '../../api/student';
 
-// Mirrors InstructorEdit — load the student by id, hand the record to the
+// Mirrors TeacherEdit — load the student by id, hand the record to the
 // shared StudentForm, POST the FormData on submit. The kebab "Edit" action
 // in the Manage Students list links here; before this file existed, clicking
 // it landed on a blank page because the route wasn't registered.

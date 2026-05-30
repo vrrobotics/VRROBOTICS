@@ -3,7 +3,7 @@ const c = require('./user.controller');
 
 /**
  * User CRUD + profile updates + role changes
- * Laravel source: UsersController, Instructor/ProfileController, Student/ProfileController
+ * Laravel source: UsersController, Teacher/ProfileController, Student/ProfileController
  *
  * TODO: port Laravel route definitions from routes/web.php / routes/api.php.
  * Mount under /api/user from src/modules/index.js.

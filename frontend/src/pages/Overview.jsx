@@ -384,7 +384,7 @@ export default Overview;
 //   const activeProgram = {
 //     title: "Web Development Fundamentals",
 //     progress: 75,
-//     instructor: "Sarah Johnson",
+//     teacher: "Sarah Johnson",
 //     nextClass: "2024-01-15 10:00 AM"
 //   };
   

@@ -82,10 +82,10 @@ const buildSteps = [
 
 const admissionSteps = [
   { title: "Online Application", icon: ClipboardList, desc: "Fill out our quick online form with basic information about your child — their interests, age, and goals. It takes just 5 minutes!" },
-  { title: "Demo Session", icon: CalendarCheck, desc: "Schedule a 30-minute demo where your child can experience our VR robotics platform, meet our instructors, and ask questions." },
+  { title: "Demo Session", icon: CalendarCheck, desc: "Schedule a 30-minute demo where your child can experience our VR robotics platform, meet our teachers, and ask questions." },
   { title: "Assessment & Feedback", icon: MessageSquare, desc: "After the demo, we provide personalized feedback and recommend the best learning path for your child based on their skill level." },
   { title: "Choose Your Program", icon: ListChecks, desc: "Select from our flexible plans — beginner, intermediate, or advanced. Start immediately in the next batch or your preferred schedule." },
-  { title: "Get Started", icon: KeyRound, desc: "Get access to our platform, instructors, learning materials, and community. Your child begins their journey to becoming a tech innovator!" },
+  { title: "Get Started", icon: KeyRound, desc: "Get access to our platform, teachers, learning materials, and community. Your child begins their journey to becoming a tech innovator!" },
 ];
 
 const certificates = [
@@ -354,7 +354,7 @@ const Home = () => {
             </h2>
             <p className="text-white/90 max-w-2xl mx-auto">
               Book a 30-minute demo session — your child can experience our VR
-              robotics platform, meet our instructors, and ask questions.
+              robotics platform, meet our teachers, and ask questions.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" variant="secondary" className="text-lg px-8" onClick={() => setDemoOpen(true)}>

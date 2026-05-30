@@ -10,7 +10,7 @@
  * Schema discriminator (same as the reference): `title === 'reply'` means a
  * reply row; otherwise it's a root question.
  *
- * Permissions: enrolled student / course instructor / admin / root may post.
+ * Permissions: enrolled student / course teacher / admin / root may post.
  * The frontend already passes the JWT, so req.user.id and role are available.
  */
 
@@ -36,9 +36,9 @@ const parseVotes = (raw) => {
 
 const serializeVotes = (arr) => (arr.length ? JSON.stringify(arr.map(String)) : null);
 
-// Parse a course's `instructor_ids` field — same shape the rest of the project
+// Parse a course's `teacher_ids` field — same shape the rest of the project
 // uses (JSON array string / CSV / single value).
-const parseInstructorIds = (raw) => {
+const parseTeacherIds = (raw) => {
     if (raw == null || raw === '') return [];
     if (Array.isArray(raw)) return raw.map(String).filter(Boolean);
     const s = String(raw).trim();
@@ -61,7 +61,7 @@ const fetchUsersByIds = async (ids) => {
     try {
         const rows = await authDb.query(
             `SELECT u."userId" AS id, u.name, u.email,
-                    COALESCE(u."instructorPhoto", u."studentPhoto") AS photo
+                    COALESCE(u."teacherPhoto", u."studentPhoto") AS photo
                FROM users u
               WHERE u."userId" IN (:ids)`,
             { replacements: { ids: unique }, type: QueryTypes.SELECT }
@@ -81,7 +81,7 @@ const loadCourseOrFail = async (courseId) => {
     return course;
 };
 
-// Permission gate. Admins / course instructor / enrolled students may post.
+// Permission gate. Admins / course teacher / enrolled students may post.
 // Throws on failure; resolves silently when allowed.
 const assertCanParticipate = async (course, user) => {
     if (!user || !user.id) throw new HttpError(401, 'Authentication required');
@@ -89,10 +89,10 @@ const assertCanParticipate = async (course, user) => {
     if (role === 'admin' || role === 'root') return;
 
     const uid = String(user.id);
-    if (role === 'instructor') {
-        if (parseInstructorIds(course.instructor_ids).includes(uid)) return;
-        // Instructors may also be assigned via course.user_id (creator), but
-        // for instructor-created courses user_id is the root admin — so this
+    if (role === 'teacher') {
+        if (parseTeacherIds(course.teacher_ids).includes(uid)) return;
+        // Teachers may also be assigned via course.user_id (creator), but
+        // for teacher-created courses user_id is the root admin — so this
         // is just a belt-and-braces check.
         if (String(course.user_id || '') === uid) return;
         throw new HttpError(403, 'You are not assigned to this course');
@@ -116,13 +116,13 @@ const assertCanParticipate = async (course, user) => {
     }
 };
 
-// Edit/delete authority: the row's owner OR a course instructor/admin.
+// Edit/delete authority: the row's owner OR a course teacher/admin.
 const assertCanModerate = async (row, course, user) => {
     if (!user || !user.id) throw new HttpError(401, 'Authentication required');
     const uid = String(user.id);
     if (String(row.user_id) === uid) return;
     if (user.role === 'admin' || user.role === 'root') return;
-    if (user.role === 'instructor' && parseInstructorIds(course.instructor_ids).includes(uid)) return;
+    if (user.role === 'teacher' && parseTeacherIds(course.teacher_ids).includes(uid)) return;
     throw new HttpError(403, 'You can only edit or delete your own post');
 };
 

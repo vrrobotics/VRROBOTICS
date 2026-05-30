@@ -2,7 +2,7 @@ const { z } = require('zod');
 
 /**
  * Lessons within sections (video, text, attachment)
- * TODO: add Zod schemas mirroring the FormRequest / validate() calls in Instructor/LessonController, CurriculumController.
+ * TODO: add Zod schemas mirroring the FormRequest / validate() calls in Teacher/LessonController, CurriculumController.
  */
 
 const list = z.object({

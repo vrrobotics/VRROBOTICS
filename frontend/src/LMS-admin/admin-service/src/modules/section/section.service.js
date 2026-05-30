@@ -4,7 +4,7 @@ const AppError = require('../../shared/errors/AppError');
 
 /**
  * Course sections ordering + CRUD
- * TODO: implement business logic ported from Instructor/SectionController, CurriculumController.
+ * TODO: implement business logic ported from Teacher/SectionController, CurriculumController.
  */
 
 async function list(/* query */) {

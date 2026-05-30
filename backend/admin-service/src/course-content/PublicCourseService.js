@@ -61,7 +61,7 @@ const sumLessonSeconds = (lessons) =>
 
 // Look up a single auth-service user by userId and shape it for the course
 // detail page. No role filter — the assigned id was set by the admin via the
-// instructor dropdown, so we trust it; filtering by `role='instructor'` here
+// teacher dropdown, so we trust it; filtering by `role='teacher'` here
 // caused legitimate assignments to silently fall through when the role
 // column's casing didn't match. Returns null when the id doesn't resolve.
 const fetchAuthUser = async (userId) => {
@@ -69,7 +69,7 @@ const fetchAuthUser = async (userId) => {
     try {
         const rows = await authDb.query(
             `SELECT u."userId" AS id, u.name, u.email,
-                    u.expertise, u.bio, u."linkedinUrl", u."instructorPhoto"
+                    u.expertise, u.bio, u."linkedinUrl", u."teacherPhoto"
                FROM users u
               WHERE u."userId" = :id
               LIMIT 1`,
@@ -77,8 +77,8 @@ const fetchAuthUser = async (userId) => {
         );
         if (!rows.length) return null;
         const u = rows[0];
-        const photo = u.instructorPhoto
-            ? absoluteUpload(u.instructorPhoto)
+        const photo = u.teacherPhoto
+            ? absoluteUpload(u.teacherPhoto)
             : `https://i.pravatar.cc/200?u=${u.id}`;
         return {
             id: u.id,
@@ -96,13 +96,13 @@ const fetchAuthUser = async (userId) => {
     }
 };
 
-// Resolve the instructor the admin assigned to a course. Walks every id in
-// course.instructor_ids (not just [0]) so a stale/deleted first id doesn't
+// Resolve the teacher the admin assigned to a course. Walks every id in
+// course.teacher_ids (not just [0]) so a stale/deleted first id doesn't
 // block a valid later one. Only falls back to the admin-creator (course.user_id)
 // as an absolute last resort, and logs the fact so it's obvious in dev when a
-// course has no real instructor attached.
-const resolveInstructor = async (course) => {
-    const raw = safeJSON(course.instructor_ids, []);
+// course has no real teacher attached.
+const resolveTeacher = async (course) => {
+    const raw = safeJSON(course.teacher_ids, []);
     const ids = (Array.isArray(raw) ? raw : [raw])
         .map((v) => (v == null ? '' : String(v).trim()))
         .filter(Boolean);
@@ -117,12 +117,12 @@ const resolveInstructor = async (course) => {
     // real teacher — log so it's visible in dev.
     if (course.user_id) {
         console.warn(
-            `[course] no assignable instructor on course ${course.id} ` +
-            `(instructor_ids=${JSON.stringify(course.instructor_ids)}); ` +
+            `[course] no assignable teacher on course ${course.id} ` +
+            `(teacher_ids=${JSON.stringify(course.teacher_ids)}); ` +
             `falling back to creator user_id=${course.user_id}`
         );
         // Try the auth DB first (handles the case where the creator IS an
-        // instructor account); fall back to the local admin User only when
+        // teacher account); fall back to the local admin User only when
         // that also misses.
         const fromAuth = await fetchAuthUser(course.user_id);
         if (fromAuth && fromAuth.name) return fromAuth;
@@ -202,8 +202,8 @@ const sanitizeCourse = (course, sections = [], lessons = [], creator = null) => 
         lesson_count: lessons.length,
         total_duration_secs: sumLessonSeconds(lessons),
         sections: sectionPayload,
-        // creator is the already-shaped object returned by resolveInstructor
-        // (assigned-instructor first, legacy course.user_id fallback). It
+        // creator is the already-shaped object returned by resolveTeacher
+        // (assigned-teacher first, legacy course.user_id fallback). It
         // matches the {id,name,email,photo,about,biography,skills} shape the
         // student CourseDetails page expects, so we pass it through.
         creator: creator || null,
@@ -356,7 +356,7 @@ const detailsBySlug = async (slug, clgId = null) => {
     const sections = await sectionRepo.findByCourse(course.id);
     const sectionIds = sections.map((s) => s.id);
     const lessons = await lessonRepo.findBySectionIds(sectionIds);
-    const creator = await resolveInstructor(course);
+    const creator = await resolveTeacher(course);
 
     return {
         course: sanitizeCourse(course, sections, lessons, creator),
@@ -379,7 +379,7 @@ const playerData = async (slug, lessonIdRaw, userIdRaw) => {
     const sections = await sectionRepo.findByCourse(course.id);
     const sectionIds = sections.map((s) => s.id);
     const lessons = await lessonRepo.findBySectionIds(sectionIds);
-    const creator = await resolveInstructor(course);
+    const creator = await resolveTeacher(course);
     const sanitized = sanitizeCourse(course, sections, lessons, creator);
 
     const flatLessons = sanitized.sections.flatMap((s) => s.lessons);

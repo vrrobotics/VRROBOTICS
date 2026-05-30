@@ -3,7 +3,7 @@
  * the existing errorHandler middleware (same pattern as LiveClassController.js).
  *
  * Response shape mirrors the existing admin-service convention:
- *   - list endpoints:    { live_classes: [...] }, { instructors: [...] }
+ *   - list endpoints:    { live_classes: [...] }, { teachers: [...] }
  *   - mutations:         { message, live_class }
  *   - join/sync/sdk:     raw decision object (no wrapping)
  *   - settings:          { settings } / { settings, message }
@@ -18,9 +18,9 @@ exports.list_by_course = asyncHandler(async (req, res) => {
     res.json({ live_classes });
 });
 
-exports.instructors_for_course = asyncHandler(async (req, res) => {
-    const instructors = await service.listInstructors(req.params.course_id);
-    res.json({ instructors });
+exports.teachers_for_course = asyncHandler(async (req, res) => {
+    const teachers = await service.listTeachers(req.params.course_id);
+    res.json({ teachers });
 });
 
 exports.store = asyncHandler(async (req, res) => {

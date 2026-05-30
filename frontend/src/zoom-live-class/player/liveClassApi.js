@@ -17,7 +17,7 @@ api.interceptors.request.use((config) => {
     const id = localStorage.getItem('userId');
     if (id) config.headers.set('x-user-id', String(id));
     const token = localStorage.getItem('admin_token');
-    // Forward an admin/instructor token if present so the server can upgrade
+    // Forward an admin/teacher token if present so the server can upgrade
     // the role to host. Students without a token are anonymous attendees.
     if (token) config.headers.set('Authorization', `Bearer ${token}`);
     return config;

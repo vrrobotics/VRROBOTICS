@@ -1,6 +1,6 @@
 /**
- * AdminInstructorPayoutInvoice — port of admin/instructor/instructor_invoice.blade.php.
- * Printable payout invoice for a single instructor withdrawal.
+ * AdminTeacherPayoutInvoice — port of admin/teacher/teacher_invoice.blade.php.
+ * Printable payout invoice for a single teacher withdrawal.
  */
 
 import { useEffect, useState } from 'react';
@@ -18,7 +18,7 @@ function formatDate(value) {
   return d.toLocaleDateString(undefined, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function AdminInstructorPayoutInvoice() {
+export default function AdminTeacherPayoutInvoice() {
   const { id } = useParams();
   const { translate, formatCurrency, getSetting } = useSettings();
   const { get } = useApi();
@@ -29,7 +29,7 @@ export default function AdminInstructorPayoutInvoice() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await get(API.ADMIN_INSTRUCTOR_PAYOUT_INVOICE(id));
+        const res = await get(API.ADMIN_TEACHER_PAYOUT_INVOICE(id));
         setInvoice(res.data || res);
       } catch {
         toast.error(translate('Failed to load invoice'));
@@ -60,7 +60,7 @@ export default function AdminInstructorPayoutInvoice() {
           </h4>
           <div className="flex items-center gap-2">
             <Link
-              to="/admin/instructor-payouts"
+              to="/admin/teacher-payouts"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50"
             >
               <span className="fi-rr-arrow-alt-left" />

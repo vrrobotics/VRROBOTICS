@@ -26,7 +26,7 @@ const baseOptions = {
         ssl: { require: true, rejectUnauthorized: false },
     },
     // `schema` above only scopes Sequelize MODEL queries. The raw SQL in
-    // InstructorService / StudentService / dashboard aggregates uses
+    // TeacherService / StudentService / dashboard aggregates uses
     // unqualified table names (`users`, `roles`, …), which resolve via the
     // connection search_path — default `public`, where these tables don't
     // exist ("relation \"users\" does not exist"). Pin search_path on every

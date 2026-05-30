@@ -15,7 +15,7 @@ const CORS_ORIGIN = (process.env.CORS_ORIGIN || "http://localhost:8080")
   .split(",")
   .map((s) => s.trim());
 
-const PUBLIC_ROLES = ["student", "instructor"];
+const PUBLIC_ROLES = ["student", "teacher"];
 
 const app = express();
 // The frontend base URL can include a trailing slash → "//api/v1/...". Collapse.

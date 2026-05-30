@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { storeLiveClass, updateLiveClass, listInstructors } from '../../../api/liveclass';
+import { storeLiveClass, updateLiveClass, listTeachers } from '../../../api/liveclass';
 
 const formatLocal = (iso) => {
     if (!iso) return '';
@@ -17,13 +17,13 @@ export default function LiveClassForm({ course, liveClass, onDone }) {
     const [userId, setUserId] = useState(liveClass?.user_id || '');
     const [dateTime, setDateTime] = useState(formatLocal(liveClass?.class_date_and_time));
     const [note, setNote] = useState(liveClass?.note || '');
-    const [instructors, setInstructors] = useState([]);
+    const [teachers, setTeachers] = useState([]);
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        listInstructors().then((r) => {
-            setInstructors(r.instructors);
-            if (!editing && !userId && r.instructors.length) setUserId(r.instructors[0].id);
+        listTeachers().then((r) => {
+            setTeachers(r.teachers);
+            if (!editing && !userId && r.teachers.length) setUserId(r.teachers[0].id);
         });
     }, []);
 
@@ -49,9 +49,9 @@ export default function LiveClassForm({ course, liveClass, onDone }) {
                 <input className="ol-form-control" value={topic} onChange={(e) => setTopic(e.target.value)} maxLength={255} required autoFocus />
             </div>
             <div className="mb-3">
-                <label className="ol-form-label">Instructor</label>
+                <label className="ol-form-label">Teacher</label>
                 <select className="ol-form-control" value={userId} onChange={(e) => setUserId(e.target.value)} required>
-                    {instructors.map((u) => <option key={u.id} value={u.id}>{u.name} ({u.email})</option>)}
+                    {teachers.map((u) => <option key={u.id} value={u.id}>{u.name} ({u.email})</option>)}
                 </select>
             </div>
             <div className="mb-3">

@@ -10,7 +10,7 @@ REST API under `http://localhost:8000/api/v1` (the URL the frontend already uses
 
 | Method | Endpoint               | Purpose                                  | Auth |
 |--------|------------------------|------------------------------------------|------|
-| POST   | `/auth/register`       | Create account (student or instructor)   | —    |
+| POST   | `/auth/register`       | Create account (student or teacher)   | —    |
 | POST   | `/auth/login`          | Log in, returns tokens + user            | —    |
 | GET    | `/auth/profile`        | Current user                             | Bearer |
 | POST   | `/auth/refresh`        | New access/refresh tokens                | cookie/body |
@@ -29,7 +29,7 @@ sent both as a `Bearer` token and httpOnly cookies.
 - Engine: **SQLite** via `better-sqlite3` (a single file, created automatically).
 - Location: `./data/auth.db` (override with `DB_FILE`).
 - Schema (`users` table): `userId, name, email (unique), passwordHash, phone, dob,
-  gender, role ('student' | 'instructor'), createdAt`.
+  gender, role ('student' | 'teacher'), createdAt`.
 
 ## Run it
 
@@ -65,7 +65,7 @@ log in returns a token and loads your profile.
 
 ```powershell
 # register
-curl -X POST http://localhost:8000/api/v1/auth/register -H "Content-Type: application/json" -d "{\"name\":\"Test\",\"email\":\"t@t.com\",\"password\":\"password123\",\"role\":\"instructor\"}"
+curl -X POST http://localhost:8000/api/v1/auth/register -H "Content-Type: application/json" -d "{\"name\":\"Test\",\"email\":\"t@t.com\",\"password\":\"password123\",\"role\":\"teacher\"}"
 
 # login
 curl -X POST http://localhost:8000/api/v1/auth/login -H "Content-Type: application/json" -d "{\"email\":\"t@t.com\",\"password\":\"password123\"}"
