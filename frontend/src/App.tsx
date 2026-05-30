@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthProvider";
 import { CollegeProvider } from "./context/CollegeProvider";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -18,8 +18,6 @@ import Locations from "./pages/Locations";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import Auth from "./pages/Auth";
 import Contact from "./pages/Contact";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
 import Register from "./pages/RegisterForm";
 import FAQs from "./pages/FAQs";
@@ -115,10 +113,12 @@ const App = () => (
             <Route path="/colleges" element={<Layout><Colleges /></Layout>} />
             <Route path="/companies" element={<Layout><Companies /></Layout>} />
 
-            {/* Authentication Pages */}
-            <Route path="/login" element={<Login />} />
+            {/* Authentication Pages — the old /login and /signup screens are
+                retired in favour of the single unified /auth page. Redirect
+                both (and keep ?role=teacher etc.) so existing links still work. */}
+            <Route path="/login" element={<Navigate to="/auth" replace />} />
+            <Route path="/signup" element={<Navigate to="/auth?mode=signup" replace />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/signup" element={<Signup />} />
 
             {/* Protected Routes */}
             <Route

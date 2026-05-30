@@ -77,7 +77,11 @@ const Auth = () => {
         // dashboard, everyone else → home.
         const r = profile?.role;
         if (r === "admin" || r === "root" || r === "manager" || r === "editor") {
-          navigate("/admin/dashboard", { replace: true });
+          // Hard navigation (full reload) so the admin shell mounts cleanly with
+          // admin_token / admin_user already persisted in localStorage. A SPA
+          // navigate() here can race ProtectedRoute's checkAuth() and bounce
+          // the freshly-logged-in admin back out before the user state commits.
+          window.location.assign("/admin/dashboard");
         } else if (r === "teacher") {
           navigate("/teacher", { replace: true });
         } else {

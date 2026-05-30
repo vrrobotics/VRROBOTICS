@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Play, ImageIcon } from "lucide-react";
+import { ImageIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 /**
@@ -23,15 +23,9 @@ interface GalleryItem {
   event_date: string | null;
 }
 
-const Placeholder = ({ showPlay = false, className = "" }: { showPlay?: boolean; className?: string }) => (
+const Placeholder = ({ className = "" }: { className?: string }) => (
   <div className={`relative flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900 text-white ${className}`}>
-    {showPlay ? (
-      <span className="w-16 h-16 rounded-full bg-black/40 flex items-center justify-center">
-        <Play className="w-7 h-7 fill-white ml-1" />
-      </span>
-    ) : (
-      <ImageIcon className="w-8 h-8 opacity-80" />
-    )}
+    <ImageIcon className="w-8 h-8 opacity-80" />
   </div>
 );
 
@@ -68,13 +62,12 @@ const Gallery = () => {
             <p className="text-muted-foreground">Moments from our events, competitions, and classrooms.</p>
           </div>
 
-          {/* Feature video */}
-          {feature?.media_url ? (
+          {/* Feature video — only shown when an actual video has been uploaded
+              in the admin panel. No placeholder otherwise. */}
+          {feature?.media_url && (
             <div className="rounded-3xl overflow-hidden aspect-video mb-12 shadow-card">
               <iframe title={feature.title} src={feature.media_url} className="w-full h-full" allowFullScreen />
             </div>
-          ) : (
-            <Placeholder showPlay className="rounded-3xl aspect-video mb-12" />
           )}
 
           {loading ? (
