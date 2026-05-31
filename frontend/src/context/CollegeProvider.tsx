@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState, ReactNode } from "react";
+import axios from "axios";
 import axiosInstance from "../api/axiosInstance";
 import { CollegeContext, CollegeContextType, College, Branch } from "./CollegeContext";
+
+// Public colleges/branches are served by admin-service (port 5000), not the
+// auth-service that currently answers on the Bastion port (8000). Hitting
+// admin-service's /api/public/colleges directly avoids the 404s that the
+// old Bastion-style paths produced in local dev.
+const ADMIN_BASE =
+  (import.meta.env.VITE_ADMIN_API_URL as string) || "http://localhost:5000";
 
 /**
  * Lazy, resilient colleges/branches loader.
@@ -42,7 +50,7 @@ export const CollegeProvider = ({ children }: { children: ReactNode }) => {
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
-        const collegesRes = await axiosInstance.get<College[]>("/admin/public/colleges");
+        const collegesRes = await axios.get<College[]>(`${ADMIN_BASE}/api/public/colleges`, { timeout: 30000 });
         setColleges(Array.isArray(collegesRes.data) ? collegesRes.data : []);
         lastCollegeErr = null;
         break;
@@ -52,15 +60,9 @@ export const CollegeProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    // Branches are fetched independently — a downed college-service won't
-    // block the colleges dropdown from populating.
-    try {
-      const branchesRes = await axiosInstance.get<Branch[]>("/college/branch/all");
-      setBranches(Array.isArray(branchesRes.data) ? branchesRes.data : []);
-    } catch {
-      // branches failure is non-fatal; colleges dropdown still works
-      setBranches([]);
-    }
+    // Branches have no public endpoint yet; keep this non-fatal so the colleges
+    // dropdown still populates. (Empty list is fine for current screens.)
+    setBranches([]);
 
     if (lastCollegeErr !== null) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
