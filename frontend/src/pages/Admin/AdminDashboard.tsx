@@ -35,7 +35,7 @@ const AdminDashboard = () => {
 
   const tabs = [
     { value: "dashboard", label: "Dashboard", icon: Home },
-    { value: "colleges", label: "Colleges", icon: Building2 },
+    { value: "colleges", label: "Schools", icon: Building2 },
     { value: "companies", label: "Companies", icon: BriefcaseBusiness },
     { value: "courses", label: "Courses", icon: BookOpen },
     { value: "students", label: "Students", icon: GraduationCapIcon },
@@ -177,7 +177,7 @@ const AdminDashboard = () => {
             <Companies />
           </TabsContent>
           <TabsContent value="colleges">
-            <SectionHeader title="Colleges" admin={adminData} />
+            <SectionHeader title="Schools" admin={adminData} />
             <Colleges />
           </TabsContent>
           <TabsContent value="courses">

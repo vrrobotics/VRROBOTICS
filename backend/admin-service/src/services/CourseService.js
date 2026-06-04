@@ -153,6 +153,15 @@ const toBool = (v, fallback = false) => {
     return fallback;
 };
 
+// Parse a class-access value into an integer 1–12, or null when blank/invalid.
+// Multipart sends '' for "no selection", which must persist as NULL (= the
+// course is open to all classes) rather than 0.
+const toClassNum = (v) => {
+    if (v === undefined || v === null || v === '') return null;
+    const n = Number(v);
+    return Number.isInteger(n) && n >= 1 && n <= 18 ? n : null;
+};
+
 // Build the Sequelize `where` fragment that scopes a query to an teacher's
 // own courses (they own the row OR appear in teacher_ids). Returns null for
 // admins / when no scoping applies. `teacher_ids` is a TEXT column (JSON
@@ -205,10 +214,13 @@ const fetchTeachersByIds = async (ids) => {
     const unique = [...new Set(ids.map((v) => String(v)).filter(Boolean))];
     if (!unique.length) return {};
     try {
+        // lucy_devdb uses camelCase columns — MUST be double-quoted on Postgres
+        // (unquoted identifiers fold to lowercase: u.userId → u.userid, which
+        // doesn't exist, so the lookup silently returned no teachers).
         const rows = await authDb.query(
-            `SELECT u.userId AS id, u.name, u.email, u.teacherPhoto AS photo
+            `SELECT u."userId" AS id, u.name, u.email, u."teacherPhoto" AS photo
                FROM users u
-              WHERE u.userId IN (:ids)`,
+              WHERE u."userId" IN (:ids)`,
             { replacements: { ids: unique }, type: QueryTypes.SELECT }
         );
         const byId = {};
@@ -358,8 +370,8 @@ const dbList = async (query, user = null) => {
         courseRepo.count(scopedWhere({ status: 'pending' }, teacherScope)),
         courseRepo.count(scopedWhere({ status: 'active' }, teacherScope)),
         courseRepo.count(scopedWhere({ status: 'upcoming' }, teacherScope)),
-        courseRepo.count(scopedWhere({ is_paid: 1 }, teacherScope)),
-        courseRepo.count(scopedWhere({ is_paid: 0 }, teacherScope)),
+        courseRepo.count(scopedWhere({ is_paid: true }, teacherScope)),
+        courseRepo.count(scopedWhere({ is_paid: false }, teacherScope)),
     ]);
 
     return {
@@ -395,6 +407,9 @@ const create = async ({ body, files = {}, userId }) => {
         status: b.status,
         level: b.level,
         language: String(b.language || '').toLowerCase(),
+        // Class-access range (Class 1–12). NULL = open to all classes.
+        class_from: toClassNum(b.class_from),
+        class_to: toClassNum(b.class_to),
         is_paid: b.is_paid,
         price: b.price || 0,
         discount_flag: b.discount_flag || 0,
@@ -520,6 +535,10 @@ const update = async ({ id, body, files = {} }) => {
         // `create`). College grouping comes from clg_ids below.
         data.level = b.level;
         data.language = String(b.language || '').toLowerCase();
+        // Class-access range — only touch when the Basic-tab form sent the
+        // fields, so other partial saves don't wipe an existing range.
+        if (b.class_from !== undefined) data.class_from = toClassNum(b.class_from);
+        if (b.class_to !== undefined) data.class_to = toClassNum(b.class_to);
         data.status = b.status;
         // Only overwrite the teacher assignment when the form actually
         // sent one. Previously, partial Basic-tab saves submitted an empty

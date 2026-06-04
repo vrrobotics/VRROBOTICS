@@ -10,8 +10,10 @@ const stats = async () => {
     const [course_count, lesson_count, enrollment_count, student_count] = await Promise.all([
         dashRepo.safeCount('courses'),
         dashRepo.safeCount('lessons'),
-        dashRepo.safeCount('user_progress', 'enrolled = 1'),
-        dashRepo.safeCount('users', "role = 'student'"),
+        // enrolled is BOOLEAN on Postgres — compare to true, not 1.
+        dashRepo.safeCount('user_progress', 'enrolled = true'),
+        // Students live in the auth DB, not lms_admin.users.
+        dashRepo.countStudents(),
     ]);
 
     const status_counts = { active: 0, upcoming: 0, pending: 0, private: 0, draft: 0, inactive: 0 };

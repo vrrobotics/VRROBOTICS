@@ -6,7 +6,7 @@ const authDb = require('../config/authDatabase');
 const userRepo = require('../repositories/UserRepository');
 const { HttpError } = require('../middlewares/error');
 
-// Block login when the admin's college has been revoked from Manage Colleges
+// Block login when the admin's college has been revoked from Manage Schools
 // → Options → Revoke Access. Raw SELECT into the shared auth DB (colleges
 // lives there). Root admin has no college_id so this is a no-op for them.
 // Best-effort on DB hiccups — column missing or query failure falls through.
@@ -19,7 +19,7 @@ async function assertCollegeActive(collegeId) {
         );
         // isActive is BOOLEAN in Postgres — treat false (or legacy 0) as revoked.
         if (rows.length && (rows[0].isActive === false || Number(rows[0].isActive) === 0)) {
-            throw new HttpError(403, 'Your college access has been revoked. Please contact your administrator.');
+            throw new HttpError(403, 'Your school access has been revoked. Please contact your administrator.');
         }
     } catch (e) {
         if (e instanceof HttpError) throw e;
@@ -79,7 +79,9 @@ const login = async ({ email, password }) => {
     if (!ok) throw new HttpError(401, 'Invalid credentials');
 
     const rootId = await getRootId();
-    const isRootAdmin = user.id === rootId;
+    // Root = the original seeded root (lowest id) OR anyone granted access via
+    // the stored is_root_admin flag ("Give Access").
+    const isRootAdmin = user.id === rootId || user.is_root_admin === true;
     // Root admin keeps access regardless of college state — they need to be
     // able to log in and toggle access back on. Everyone else (college-admin
     // role) gets the gate.
@@ -96,7 +98,7 @@ const me = async (userId) => {
     const user = await userRepo.findById(userId);
     if (!user) throw new HttpError(404, 'User not found');
     const rootId = await getRootId();
-    return { ...sanitize(user), is_root_admin: user.id === rootId };
+    return { ...sanitize(user), is_root_admin: user.id === rootId || user.is_root_admin === true };
 };
 
 module.exports = { login, me };

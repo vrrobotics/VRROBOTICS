@@ -226,8 +226,6 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BRAND } from "@/branding";
 const Logo = BRAND.logo; // VR Robotics Academy logo (hosted)
 import Overview from "./Overview";
-import Assessment from "./Assesments";
-import Certificate from "./Certificate";
 import ProfilePage from "./ProfilePage";
 import SectionHeader from "./SectionHeader";
 import ProgramsPage from "./Programspage";
@@ -236,8 +234,6 @@ import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 
 import {
   BookOpen,
-  Trophy,
-  Clock,
   User,
   GraduationCap,
   CreditCard,
@@ -250,10 +246,7 @@ import {
 
 const tabs = [
   { value: "overview", label: "Overview", icon: BookOpen },
-  { value: "assessments", label: "Assessments", icon: Clock },
   { value: "courses", label: "My Courses", icon: GraduationCap },
-
-  { value: "certificates", label: "Certificates", icon: Trophy },
   { value: "profile", label: "Profile", icon: User },
   // { value: "payments", label: "Payments", icon: CreditCard },
 ];
@@ -267,7 +260,7 @@ interface StudentDashboardProps {
   contentOverride?: { title: string; node: React.ReactNode };
 }
 
-const VALID_TABS = ["overview", "assessments", "courses", "certificates", "notifications", "profile"] as const;
+const VALID_TABS = ["overview", "courses", "notifications", "profile"] as const;
 
 const StudentDashboard = ({ contentOverride }: StudentDashboardProps = {}) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -498,16 +491,6 @@ const StudentDashboard = ({ contentOverride }: StudentDashboardProps = {}) => {
           <TabsContent value="courses">
             <SectionHeader title="My Courses" student={studentData} />
             <ProgramsPage />
-          </TabsContent>
-
-          <TabsContent value="assessments">
-            <SectionHeader title="Assessments" student={studentData} />
-            <Assessment />
-          </TabsContent>
-
-          <TabsContent value="certificates">
-            <SectionHeader title="Certificates" student={studentData} />
-            <Certificate />
           </TabsContent>
 
           <TabsContent value="notifications">

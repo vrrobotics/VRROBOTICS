@@ -25,7 +25,14 @@ const list = async ({ page = 1, per_page = 10, search = '' }) => {
         const admins = await Promise.all(
             rows.map(async (r) => {
                 const course_count = await userRepo.courseCountFor(r.id);
-                return { ...sanitize(r), course_count, is_root_admin: r.id === rootId };
+                return {
+                    ...sanitize(r),
+                    course_count,
+                    // Root access = original seeded root OR granted via flag.
+                    is_root_admin: r.id === rootId || r.is_root_admin === true,
+                    // The seeded root can't be revoked (would lock everyone out).
+                    is_primary_root: r.id === rootId,
+                };
             })
         );
         return { admins, total: count, page: Number(page), per_page: limit, root_admin_id: rootId };
@@ -39,7 +46,34 @@ const get = async (id) => {
     const admin = await userRepo.findByIdAndRole(id, 'admin');
     if (!admin) throw new HttpError(404, 'Admin not found');
     const rootId = await userRepo.findRootAdminId();
-    return { admin: { ...sanitize(admin), is_root_admin: admin.id === rootId } };
+    return {
+        admin: {
+            ...sanitize(admin),
+            is_root_admin: admin.id === rootId || admin.is_root_admin === true,
+            is_primary_root: admin.id === rootId,
+        },
+    };
+};
+
+// Grant another admin the full root dashboard. Sets the stored is_root_admin
+// flag so their next login resolves as root (AuthService merges this flag).
+const grantAccess = async (id) => {
+    const admin = await userRepo.findByIdAndRole(id, 'admin');
+    if (!admin) throw new HttpError(404, 'Admin not found');
+    await admin.update({ is_root_admin: true });
+    return { message: 'Root access granted. The user will see the root dashboard on next login.' };
+};
+
+// Revoke previously-granted root access. The original seeded root (lowest id)
+// can never be revoked — that would lock everyone out of root functions.
+const revokeAccess = async (id) => {
+    const numericId = Number(id);
+    const rootId = await userRepo.findRootAdminId();
+    if (numericId === rootId) throw new HttpError(403, 'Cannot revoke the primary root admin');
+    const admin = await userRepo.findByIdAndRole(numericId, 'admin');
+    if (!admin) throw new HttpError(404, 'Admin not found');
+    await admin.update({ is_root_admin: false });
+    return { message: 'Root access revoked.' };
 };
 
 const create = async (body, file) => {
@@ -53,8 +87,8 @@ const create = async (body, file) => {
         throw new HttpError(422, 'Email already in use');
     }
 
-    // college_id (when set) flips the admin into "college admin" mode — they
-    // can only see the College Dashboard tab and the JWT carries college_id so
+    // college_id (when set) flips the admin into "school admin" mode — they
+    // can only see the School Dashboard tab and the JWT carries college_id so
     // /api/admin/college-dashboard/stats can scope to their college.
     const collegeId = body.college_id ? String(body.college_id).trim() : null;
 
@@ -146,4 +180,4 @@ const remove = async (id) => {
     return { message: 'Admin delete successfully' };
 };
 
-module.exports = { list, get, create, update, remove };
+module.exports = { list, get, create, update, remove, grantAccess, revokeAccess };

@@ -9,7 +9,7 @@ import { useCollege } from '@/hooks/useCollege';
 //   value    — array of selected clgId strings
 //   onChange — receives the next array
 //   required — when true, shows the red asterisk (validation is the caller's)
-export default function CollegeMultiSelect({ value = [], onChange, required = false, label = 'Colleges', hideLabel = false }) {
+export default function CollegeMultiSelect({ value = [], onChange, required = false, label = 'Schools', hideLabel = false }) {
     const { colleges, loading, error, refresh } = useCollege();
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -49,7 +49,7 @@ export default function CollegeMultiSelect({ value = [], onChange, required = fa
             )}
 
             {loading ? (
-                <div className="text-[13px] text-gray">Loading colleges…</div>
+                <div className="text-[13px] text-gray">Loading schools…</div>
             ) : error ? (
                 <div className="text-[13px] text-danger">
                     {error}{' '}
@@ -61,7 +61,7 @@ export default function CollegeMultiSelect({ value = [], onChange, required = fa
                 </div>
             ) : colleges.length === 0 ? (
                 <div className="text-[13px] text-gray">
-                    No colleges available. Add a college first.
+                    No schools available. Add a school first.
                 </div>
             ) : (
                 <div className="relative" ref={boxRef}>
@@ -80,7 +80,7 @@ export default function CollegeMultiSelect({ value = [], onChange, required = fa
                         aria-expanded={open}
                     >
                         {value.length === 0 ? (
-                            <span className="text-[14px] text-gray">Select colleges…</span>
+                            <span className="text-[14px] text-gray">Select schools…</span>
                         ) : (
                             value.map((id) => {
                                 const match = colleges.find((c) => c.clgId === id);

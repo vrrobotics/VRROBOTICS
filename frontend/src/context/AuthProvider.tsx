@@ -14,8 +14,8 @@ const extractUserId = (profile: any): string | number | null =>
 // /auth/login on some paths returns the user fields at the top level. Accept
 // either shape so the College Admin's college_id flows into AuthContext (and
 // from there into ProtectedRoute / AdminLayout) regardless of which call
-// hydrated the profile. Without this unwrap, college admins created by root
-// were getting collegeId: null and never landing on the College Dashboard.
+// hydrated the profile. Without this unwrap, school admins created by root
+// were getting collegeId: null and never landing on the School Dashboard.
 const normalizeAdminProfile = (raw: any) => {
   const data = raw?.user ?? raw ?? {};
   return {
@@ -86,19 +86,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Hydrate from cookie or saved admin token on app load.
+  // Hydrate from a saved token on app load.
   useEffect(() => {
     let cancelled = false;
+
+    const hasAuthToken =
+      typeof window !== "undefined" && Boolean(localStorage.getItem("accessToken"));
+    const hasAdminToken = Boolean(getAdminToken());
+
+    // Logged-out visitors have no tokens — skip the profile probe entirely.
+    // Otherwise we'd fire a guaranteed-401 GET /auth/profile on every public
+    // page load, which the browser logs as a (harmless but noisy) console
+    // error. With no token there's nothing to hydrate: render the public site.
+    if (!hasAuthToken && !hasAdminToken) return;
+
     setLoading(true);
     (async () => {
       try {
-        const res = await getProfile();
-        if (cancelled) return;
-        setUser(res.data);
-        const idForStorage = extractUserId(res.data);
-        if (idForStorage) localStorage.setItem("userId", String(idForStorage));
-        return;
-      } catch {
+        // Only probe auth-service when we actually hold an auth-service token.
+        // When only an admin token exists, fall straight through to adminMe()
+        // instead of provoking a 401 from /auth/profile.
+        try {
+          if (hasAuthToken) {
+            const res = await getProfile();
+            if (cancelled) return;
+            setUser(res.data);
+            const idForStorage = extractUserId(res.data);
+            if (idForStorage) localStorage.setItem("userId", String(idForStorage));
+            return;
+          }
+        } catch {
+          /* auth-service token invalid/expired — try the admin path below */
+        }
+
         if (!getAdminToken()) return;
         try {
           const res = await adminMe();
@@ -194,6 +214,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const loginUser = async (credentials: LoginCredentials) => {
     try {
       setLoading(true);
+
+      // Admin accounts take PRECEDENCE. Try admin-service login first so a set
+      // of admin credentials always resolves to the admin UI — even when a
+      // student/teacher account happens to share the same email in
+      // auth-service (which, since auth-service was tried first, used to hijack
+      // the admin to the student/teacher dashboard). admin-service returns 401
+      // for any email that isn't an admin, so non-admins fall straight through
+      // to the normal auth-service login below.
+      try {
+        const bridge = await adminLogin(credentials.email, credentials.password);
+        const profile = normalizeAdminProfile(bridge.user);
+        // Clear any stale auth-service (student/teacher) tokens so that after a
+        // full reload into /admin, hydration skips the auth-service profile
+        // probe and hydrates the admin via adminMe() using admin_token. Without
+        // this, a leftover accessToken could resolve to a non-admin user and the
+        // /admin guard would bounce the admin out to /dashboard.
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        setUser(profile);
+        const idForStorage = extractUserId(profile);
+        if (idForStorage) localStorage.setItem("userId", String(idForStorage));
+        return profile;
+      } catch {
+        // Not an admin account — proceed with the normal student/teacher login.
+      }
+
       const loginRes = await login(credentials);
 
       // Persist the access token so axiosInstance's request interceptor can
@@ -215,25 +261,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (idForStorage) localStorage.setItem("userId", String(idForStorage));
       return profile;
     } catch (err: unknown) {
-      // If auth-service login fails, try admin-service login for root-created admins.
-      try {
-        const bridge = await adminLogin(credentials.email, credentials.password);
-        const profile = normalizeAdminProfile(bridge.user);
-        // Clear any stale auth-service (student/teacher) tokens so that after a
-        // full reload into /admin, checkAuth() skips the auth-service profile
-        // probe and hydrates the admin via adminMe() using admin_token. Without
-        // this, a leftover accessToken could resolve to a non-admin user and the
-        // /admin guard would bounce the admin out to /dashboard.
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        setUser(profile);
-        const idForStorage = extractUserId(profile);
-        if (idForStorage) localStorage.setItem("userId", String(idForStorage));
-        return profile;
-      } catch (adminErr) {
-        setUser(null);
-        throw err;
-      }
+      setUser(null);
+      throw err;
     } finally {
       setLoading(false);
     }

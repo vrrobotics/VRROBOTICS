@@ -6,7 +6,7 @@ import axios from 'axios';
  * so backend optionalAuth can detect the current student).
  */
 
-const BASE = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:4000';
+const BASE = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:5000';
 
 const api = axios.create({
     baseURL: `${BASE}/api/public`,

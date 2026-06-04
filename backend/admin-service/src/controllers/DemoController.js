@@ -1,0 +1,12 @@
+const demoService = require('../services/DemoService');
+const { asyncHandler } = require('../middlewares/error');
+
+exports.index = asyncHandler(async (req, res) => {
+    const { page, search } = req.query;
+    res.json(await demoService.list({ page, search }));
+});
+exports.show = asyncHandler(async (req, res) => res.json(await demoService.get(req.params.id)));
+exports.store = asyncHandler(async (req, res) => res.json(await demoService.create({ body: req.body })));
+exports.update = asyncHandler(async (req, res) => res.json(await demoService.update({ id: req.params.id, body: req.body })));
+exports.delete = asyncHandler(async (req, res) => res.json(await demoService.remove(req.params.id)));
+exports.status = asyncHandler(async (req, res) => res.json(await demoService.toggleStatus(req.params.id)));

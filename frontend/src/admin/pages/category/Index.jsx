@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaPen, FaTrash } from 'react-icons/fa';
 import Modal from '../../components/Modal';
@@ -7,7 +8,7 @@ import CategoryForm from './CategoryForm';
 import { listCategories, storeCategory, updateCategory, deleteCategory } from '../../api/category';
 import { useCollege } from '@/hooks/useCollege';
 
-const API = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:4000';
+const API = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:5000';
 
 // Max chips to show inline before collapsing the rest into a "+N more" pill.
 const MAX_VISIBLE_COLLEGES = 2;
@@ -18,7 +19,7 @@ const MAX_VISIBLE_COLLEGES = 2;
 function CollegeChips({ clgIds, nameById }) {
     const ids = Array.isArray(clgIds) ? clgIds.filter(Boolean) : [];
     if (ids.length === 0) {
-        return <span className="text-[11px] text-muted">No colleges assigned</span>;
+        return <span className="text-[11px] text-muted">No schools assigned</span>;
     }
     const visible = ids.slice(0, MAX_VISIBLE_COLLEGES);
     const hiddenCount = ids.length - visible.length;
@@ -55,6 +56,7 @@ export default function CategoryIndex() {
     const [modal, setModal] = useState(null);
     const [confirm, setConfirm] = useState(null);
     const { colleges } = useCollege();
+    const [params, setParams] = useSearchParams();
 
     const collegeNameById = useMemo(() => {
         const map = {};
@@ -70,6 +72,18 @@ export default function CategoryIndex() {
     };
 
     useEffect(() => { load(); }, []);
+
+    // Deep-link from the "Add Category" sidebar item (?action=add) opens the
+    // create modal once, then strips the param so a refresh doesn't reopen it.
+    useEffect(() => {
+        if (params.get('action') === 'add') {
+            setModal({ type: 'create', parentId: null });
+            const next = new URLSearchParams(params);
+            next.delete('action');
+            setParams(next, { replace: true });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Filter categories by the colleges assigned to them. We match against
     // both the resolved college name and the raw clgId so the admin can
@@ -120,9 +134,9 @@ export default function CategoryIndex() {
                                     type="text"
                                     value={collegeQuery}
                                     onChange={(e) => setCollegeQuery(e.target.value)}
-                                    placeholder="Filter by college…"
+                                    placeholder="Filter by school…"
                                     className="ol-form-control pr-7 min-w-[220px]"
-                                    aria-label="Filter categories by assigned college"
+                                    aria-label="Filter categories by assigned school"
                                 />
                                 {collegeQuery && (
                                     <button
@@ -130,7 +144,7 @@ export default function CategoryIndex() {
                                         onClick={() => setCollegeQuery('')}
                                         className="absolute right-2 top-1/2 -translate-y-1/2 text-gray hover:text-danger text-[14px] leading-none"
                                         title="Clear"
-                                        aria-label="Clear college filter"
+                                        aria-label="Clear school filter"
                                     >
                                         ×
                                     </button>

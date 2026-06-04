@@ -6,7 +6,7 @@ import { createBatch, listEligibleStudents } from '../../api/batch';
 // (title/description plus a multi-select for membership) but the picker is
 // inline rather than reusing CollegeMultiSelect — students aren't a global
 // pool, they're the caller's college roster.
-export default function BatchForm({ onCreated }) {
+export default function BatchForm({ onCreated, clgId }) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [startDate, setStartDate] = useState('');
@@ -23,14 +23,16 @@ export default function BatchForm({ onCreated }) {
 
     useEffect(() => {
         let alive = true;
-        listEligibleStudents()
+        setStudentsLoading(true);
+        setStudentsError(null);
+        listEligibleStudents(clgId)
             .then((r) => { if (alive) setStudents(Array.isArray(r?.students) ? r.students : []); })
             .catch((e) => {
                 if (alive) setStudentsError(e?.response?.data?.error || 'Failed to load students');
             })
             .finally(() => { if (alive) setStudentsLoading(false); });
         return () => { alive = false; };
-    }, []);
+    }, [clgId]);
 
     const filtered = useMemo(() => {
         const q = search.trim().toLowerCase();
@@ -75,7 +77,7 @@ export default function BatchForm({ onCreated }) {
                 end_date: endDate || null,
                 is_active: isActive,
                 userIds: selectedIds,
-            });
+            }, clgId);
             toast.success('Batch created');
             reset();
             onCreated?.();
@@ -202,7 +204,7 @@ export default function BatchForm({ onCreated }) {
                             {!studentsLoading && !studentsError && filtered.length === 0 && (
                                 <p className="px-4 py-6 text-center text-[12px] text-gray m-0">
                                     {students.length === 0
-                                        ? 'No students at your college yet.'
+                                        ? 'No students at your school yet.'
                                         : 'No students match your search.'}
                                 </p>
                             )}

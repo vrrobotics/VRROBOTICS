@@ -37,7 +37,7 @@ export default function CollegeForm({ college, onSubmit, submitLabel = 'Save' })
     return (
         <form onSubmit={submit} className="grid grid-cols-12 gap-4">
             <div className="col-span-12 md:col-span-6">
-                <label className="ol-form-label">College Name<span className="text-danger"> *</span></label>
+                <label className="ol-form-label">School Name<span className="text-danger"> *</span></label>
                 <input
                     className="ol-form-control w-full"
                     name="clgName"
@@ -47,7 +47,7 @@ export default function CollegeForm({ college, onSubmit, submitLabel = 'Save' })
                 />
             </div>
             <div className="col-span-12 md:col-span-6">
-                <label className="ol-form-label">College ID</label>
+                <label className="ol-form-label">School ID</label>
                 <input
                     className="ol-form-control w-full"
                     name="clgId"
@@ -57,7 +57,7 @@ export default function CollegeForm({ college, onSubmit, submitLabel = 'Save' })
                     placeholder={isEdit ? '' : 'Leave blank to auto-generate'}
                 />
                 {isEdit && (
-                    <p className="text-[12px] text-gray mt-1">College ID is fixed once created.</p>
+                    <p className="text-[12px] text-gray mt-1">School ID is fixed once created.</p>
                 )}
             </div>
             <div className="col-span-12">

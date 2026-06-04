@@ -11,7 +11,7 @@ import cors from 'cors';
 
 import rateLimiter from './middlewares/rateLimiter.js';
 import routes from './routes/index.js';
-import { bastionAllowedOrigins } from './utils/cors.js';
+import { isAllowedOrigin } from './utils/cors.js';
 import { attachErrorHandler } from './observability.js';
 
 const app = express();
@@ -23,10 +23,7 @@ app.use(helmet());
 
 // Middlewares
 app.use(cors({
-  origin: (origin, cb) => {
-    if (!origin) return cb(null, true);
-    return cb(null, bastionAllowedOrigins.includes(origin));
-  },
+  origin: (origin, cb) => cb(null, isAllowedOrigin(origin)),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

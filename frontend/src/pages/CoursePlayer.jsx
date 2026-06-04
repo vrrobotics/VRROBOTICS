@@ -6,6 +6,7 @@ import Navbar from '@/components/layout/Navbar';
 import PlayerSidebar from '@/components/course/player/PlayerSidebar';
 import PlayerLesson from '@/components/course/player/PlayerLesson';
 import PlayerTabs from '@/components/course/player/PlayerTabs';
+import MyLearnings from '@/components/course/player/MyLearnings';
 
 const PLAY_BASE = '/courses/programs/course-details/play';
 
@@ -208,6 +209,10 @@ export default function CoursePlayer() {
                                         : marking ? 'Saving…' : 'Mark as complete'}
                                 </button>
                             </div>
+                        )}
+
+                        {lesson && !isCurrentLocked && (
+                            <MyLearnings courseId={course.id} lessonId={lesson.id} />
                         )}
 
                         <PlayerTabs

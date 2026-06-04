@@ -257,18 +257,31 @@ export async function updateProfile(req, res) {
     const user = await User.findOne({ where: { userId: req.user.id } });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const { name, email, phone, dob } = req.body;
+    // Capture the email BEFORE mutating so the Supabase-sync check below can
+    // tell whether it actually changed. (Previously this compared against the
+    // already-updated value, so the sync never ran.)
+    const oldEmail = user.email;
+
+    const { name, email, phone, dob, bio, expertise, yearsOfExperience, linkedinUrl, address, location } = req.body;
     user.name = name || user.name;
     user.email = email || user.email;
     user.phone = phone || user.phone;
     user.dob = dob || user.dob;
+    // Teacher-profile fields — only overwrite when explicitly provided so a
+    // partial save (e.g. just contact) can't wipe the bio/expertise.
+    if (bio !== undefined) user.bio = bio;
+    if (expertise !== undefined) user.expertise = expertise;
+    if (yearsOfExperience !== undefined) user.yearsOfExperience = yearsOfExperience;
+    if (linkedinUrl !== undefined) user.linkedinUrl = linkedinUrl;
+    if (address !== undefined) user.address = address;
+    if (location !== undefined) user.location = location;
 
     await user.save();
 
     // Keep Supabase Auth in sync when the email changes — auth.users.email is
     // the source of truth for sign-in. Best-effort: a Supabase update failure
     // leaves the profile updated but logs the drift.
-    if (email && email !== user.email) {
+    if (email && email !== oldEmail) {
       const supabaseUid = String(user.passwordHash || '').replace(/^supabase:/, '');
       if (supabaseUid) {
         await supabaseAdmin.auth.admin

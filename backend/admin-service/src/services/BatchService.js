@@ -103,8 +103,8 @@ const applyCollegePrefix = (rawName, prefix) => {
     return `${prefix} - ${name}`;
 };
 
-// Confirm the given user ids actually belong to this college's students,
-// so a college admin can't pull users from another college into a batch.
+// Confirm the given user ids actually belong to this school's students,
+// so a school admin can't pull users from another school into a batch.
 // Returns the subset of ids that are valid.
 const filterValidStudents = async ({ clgId, userIds }) => {
     if (userIds.length === 0) return [];
@@ -123,7 +123,7 @@ const filterValidStudents = async ({ clgId, userIds }) => {
 // Batches across one-or-more colleges, lightweight payload for dropdowns.
 // Unlike list(), this is intended for any admin (root + college) — root needs
 // it on Add Course to scope a course to specific batches. We don't enforce a
-// clgId at the controller; if a college admin calls it, they pass their own
+// clgId at the controller; if a school admin calls it, they pass their own
 // clg_ids and only get matching rows back.
 const listByColleges = async ({ clgIds }) => {
     const ids = (Array.isArray(clgIds) ? clgIds : [clgIds])
@@ -142,7 +142,7 @@ const listByColleges = async ({ clgIds }) => {
     return { batches: rows };
 };
 
-// List batches owned by this college, with member counts joined in.
+// List batches owned by this school, with member counts joined in.
 const list = async ({ clgId }) => {
     const batches = await Batch.findAll({
         where: { clg_id: clgId },
@@ -215,10 +215,10 @@ const create = async ({ clgId, body }) => {
     const prefix = buildCollegePrefix(clgName, clgId);
     const name = applyCollegePrefix(rawName, prefix);
 
-    // Reject duplicate name within this college so admins don't end up with
+    // Reject duplicate name within this school so admins don't end up with
     // two "AI Frontier - Jan 2026" rows that confuse the dropdown.
     const dup = await Batch.findOne({ where: { clg_id: clgId, name } });
-    if (dup) throw new HttpError(422, 'A batch with this name already exists at your college');
+    if (dup) throw new HttpError(422, 'A batch with this name already exists at your school');
 
     const batch = await Batch.create({
         clg_id: clgId,
@@ -301,7 +301,7 @@ const addMembers = async ({ clgId, id, body }) => {
     const valid = await filterValidStudents({ clgId, userIds: incoming });
     const invalid = incoming.filter((id) => !valid.includes(id));
     if (valid.length === 0) {
-        throw new HttpError(422, 'None of the selected users are students of your college');
+        throw new HttpError(422, 'None of the selected users are students of your school');
     }
 
     // Determine which users in `valid` are NEW to the batch so we only email
@@ -326,7 +326,7 @@ const addMembers = async ({ clgId, id, body }) => {
     const detail = await get({ clgId, id: batch.id });
     return {
         message: invalid.length
-            ? `Added ${valid.length} student(s); skipped ${invalid.length} outside this college`
+            ? `Added ${valid.length} student(s); skipped ${invalid.length} outside this school`
             : `Added ${valid.length} student(s)`,
         ...detail,
     };
@@ -340,7 +340,7 @@ const removeMember = async ({ clgId, id, userId }) => {
     return { message: 'Student removed from batch' };
 };
 
-// Students of this college that can be added to batches. Powers the picker
+// Students of this school that can be added to batches. Powers the picker
 // in the Add Batch form and the "add students" modal of Manage Batches.
 const eligibleStudents = async ({ clgId }) => {
     const rows = await authDb.query(

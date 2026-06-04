@@ -24,7 +24,7 @@ const SETTING_TYPES = {
   builder: 'certificate_builder_content',
 };
 
-const APP_URL = env.appUrl || 'http://localhost:4000';
+const APP_URL = env.appUrl || 'http://localhost:5000';
 
 // ---------- helpers ----------
 

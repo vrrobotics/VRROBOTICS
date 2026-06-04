@@ -4,7 +4,7 @@ const env = require('./env');
 /**
  * Second Sequelize handle pointed at the auth schema (`lucy_devdb`).
  * Used by:
- *   - College Dashboard endpoint (aggregate counts)
+ *   - School Dashboard endpoint (aggregate counts)
  *   - StudentService (program_requests + cross-schema user joins)
  *
  * Same physical Supabase Postgres DB as the primary handle — just a

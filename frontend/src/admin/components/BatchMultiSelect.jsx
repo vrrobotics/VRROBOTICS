@@ -193,7 +193,7 @@ export default function BatchMultiSelect({
 
             {noColleges ? (
                 <div className="ol-form-control flex items-center text-[14px] text-gray bg-gray-50">
-                    Select a college first to load its batches.
+                    Select a school first to load its batches.
                 </div>
             ) : needsCourse ? (
                 <div className="ol-form-control flex items-center text-[14px] text-gray bg-gray-50">

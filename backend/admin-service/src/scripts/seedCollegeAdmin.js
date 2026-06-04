@@ -27,12 +27,12 @@ const { sequelize, User } = require('../models');
                 college_id: collegeId,
                 password: await bcrypt.hash(password, 10),
             });
-            console.log(`Created college admin id=${created.id} email=${email} college_id=${collegeId}`);
+            console.log(`Created school admin id=${created.id} email=${email} college_id=${collegeId}`);
         }
         console.log(`\n✅ Login with:`);
         console.log(`   Email: ${email}`);
         console.log(`   Password: ${password}`);
-        console.log(`   College ID: ${collegeId}\n`);
+        console.log(`   School ID: ${collegeId}\n`);
         process.exit(0);
     } catch (e) {
         console.error(e);

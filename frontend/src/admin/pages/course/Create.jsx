@@ -43,6 +43,9 @@ export default function CourseCreate() {
         // category_id removed — courses are mapped to colleges via clg_ids.
         level: '',
         language: '',
+        // Class-access range (Class 1–12). Empty = open to all classes.
+        class_from: '',
+        class_to: '',
         is_paid: '1',
         price: '',
         discount_flag: '',
@@ -110,7 +113,7 @@ export default function CourseCreate() {
             return;
         }
         if (selectedClgIds.length === 0) {
-            toast.error('Select at least one college');
+            toast.error('Select at least one school');
             return;
         }
         setSubmitting(true);
@@ -238,6 +241,29 @@ export default function CourseCreate() {
                                     <option value="intermediate">Intermediate</option>
                                     <option value="advanced">Advanced</option>
                                 </select>
+                            </div>
+
+                            <div className="mb-3">
+                                <label className="ol-form-label" htmlFor="class_range">
+                                    Class access range
+                                </label>
+                                <select
+                                    id="class_range"
+                                    className="ol-form-control"
+                                    value={form.class_from && form.class_to ? `${form.class_from}-${form.class_to}` : ''}
+                                    onChange={(e) => {
+                                        const [cf, ct] = e.target.value.split('-');
+                                        set('class_from', cf || '');
+                                        set('class_to', ct || '');
+                                    }}
+                                >
+                                    <option value="">All classes</option>
+                                    <option value="8-12">Class 8 – 12</option>
+                                    <option value="12-18">Class 12 – 18</option>
+                                </select>
+                                <small className="text-muted">
+                                    Pick the class group this course is for. "All classes" makes it open to everyone.
+                                </small>
                             </div>
 
                             <div className="mb-3">

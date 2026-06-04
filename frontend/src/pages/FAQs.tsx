@@ -94,7 +94,7 @@ const FAQs = () => {
     },
     {
       question: "Can institutions integrate these programs?",
-      answer: "Partner colleges may embed our industry-aligned modules into curricula. We provide progress tracking dashboards and corporate connection frameworks. Contact our academic partnerships team for integration pathways."
+      answer: "Partner schools may embed our industry-aligned modules into curricula. We provide progress tracking dashboards and corporate connection frameworks. Contact our academic partnerships team for integration pathways."
     }
   ];
   return (

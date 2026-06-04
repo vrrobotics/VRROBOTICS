@@ -2,6 +2,21 @@ import { useEffect, useMemo, useState } from 'react';
 import { Outlet, NavLink, useLocation, Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import { logout as adminLogout, getStoredUser } from '@/admin/api/auth';
+import { getToken as getAdminToken } from '@/admin/api/client';
+
+// Decode a JWT payload (base64url) without a library. Returns null on any
+// malformed token. The admin-service signs is_root_admin / role / college_id
+// into the token, so this is an authoritative fallback when the cached
+// admin_user in localStorage is stale or missing those fields.
+const decodeJwt = (token) => {
+    try {
+        const part = token.split('.')[1];
+        const json = atob(part.replace(/-/g, '+').replace(/_/g, '/'));
+        return JSON.parse(decodeURIComponent(escape(json)));
+    } catch (_e) {
+        return null;
+    }
+};
 
 const Icon = ({ d, className = '' }) => (
     <svg
@@ -32,23 +47,31 @@ const ICONS = {
     logout: <Icon d={<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /></>} />,
 };
 
-// `collegeOnly: true` items are visible ONLY to college admins (admin user
+// `collegeOnly: true` items are visible ONLY to school admins (admin user
 // whose college_id is set). Items without that flag are visible only to root
 // admins (college_id null/empty). The filter logic in AdminLayout below
 // enforces that split — root admins should never see a college's data and
-// college admins should see only their dashboard.
+// school admins should see only their dashboard.
 const MENU = [
-    { key: 'college', label: 'Dashboard', icon: ICONS.college, to: '/admin/college', collegeOnly: true },
-    {
-        key: 'batches',
-        label: 'Batches',
-        icon: ICONS.users,
-        collegeOnly: true,
-        children: [
-            { label: 'Add Batch', to: '/admin/college?tab=add-batch' },
-            { label: 'Manage Batches', to: '/admin/college?tab=manage-batches' },
-        ],
-    },
+    // Mentor Dashboard is the school admin's landing (top of the sidebar,
+    // above Batches). Links to the School Dashboard base path, which renders
+    // the Mentor Dashboard section by default. The old "School Dashboard"
+    // (KPIs) sidebar item was removed at the admin's request.
+    { key: 'm_dashboard', label: 'Mentor Dashboard', icon: ICONS.dashboard, to: '/admin/college', collegeOnly: true },
+    // Teacher (Mentor) dashboard feature set, surfaced as college-admin sidebar
+    // items. Each links to the School Dashboard with ?tab=mentor-* which
+    // renders the matching MentorPanel section. collegeOnly so only college
+    // admins see them (root admin keeps the full standard menu).
+    { key: 'm_slots', label: 'Slots', icon: ICONS.assessment, to: '/admin/college?tab=mentor-slots', collegeOnly: true },
+    { key: 'm_demos', label: 'Demos', icon: ICONS.course, to: '/admin/college?tab=mentor-demos', collegeOnly: true },
+    { key: 'm_classes', label: 'Classes', icon: ICONS.course, to: '/admin/college?tab=mentor-classes', collegeOnly: true },
+    { key: 'm_timetable', label: 'Time table', icon: ICONS.category, to: '/admin/college?tab=mentor-timetable', collegeOnly: true },
+    { key: 'm_students', label: 'Students', icon: ICONS.users, to: '/admin/college?tab=mentor-students', collegeOnly: true },
+    { key: 'm_resources', label: 'Resources', icon: ICONS.course, to: '/admin/college?tab=mentor-resources', collegeOnly: true },
+    { key: 'm_profile', label: 'Profile', icon: ICONS.users, to: '/admin/college?tab=mentor-profile', collegeOnly: true },
+    { key: 'm_referral', label: 'Referral', icon: ICONS.users, to: '/admin/college?tab=mentor-referral', collegeOnly: true },
+    { key: 'm_payout', label: 'Payout', icon: ICONS.certificate, to: '/admin/college?tab=mentor-payout', collegeOnly: true },
+    { key: 'm_tasks', label: 'Tasks', icon: ICONS.assessment, to: '/admin/college?tab=mentor-tasks', collegeOnly: true },
     { key: 'dashboard', label: 'Dashboard', icon: ICONS.dashboard, to: '/admin/dashboard' },
     // Category sidebar entry removed — course grouping is now driven by the
     // `clg_ids` JSON column written from the course form (CollegeMultiSelect).
@@ -69,8 +92,77 @@ const MENU = [
         label: 'Gallery',
         icon: ICONS.course,
         children: [
-            { label: 'Add Gallery', to: '/admin/gallery?action=add' },
+            // "Add Gallery" sidebar link removed — adding is done via the
+            // "Add Gallery" button on the Manage Gallery page (the ?action=add
+            // deep-link logic is kept intact for that button / any direct link).
             { label: 'Manage Gallery', to: '/admin/gallery' },
+        ],
+    },
+    {
+        key: 'books',
+        label: 'Books',
+        icon: ICONS.course,
+        children: [
+            { label: 'Manage Books', to: '/admin/books' },
+        ],
+    },
+    {
+        key: 'projects',
+        label: 'Projects',
+        icon: ICONS.course,
+        children: [
+            { label: 'Manage Projects', to: '/admin/projects' },
+        ],
+    },
+    {
+        key: 'testimonials',
+        label: 'Testimonials',
+        icon: ICONS.users,
+        children: [
+            { label: 'Manage Testimonials', to: '/admin/testimonials' },
+        ],
+    },
+    {
+        key: 'resources',
+        label: 'Resources',
+        icon: ICONS.assessment,
+        children: [
+            { label: 'Manage Resources', to: '/admin/resources' },
+            // Resource categories (Coding, Maths…) that group teaching
+            // resources and drive the teacher dashboard category filter.
+            { label: 'Add Category', to: '/admin/resource-categories?action=add' },
+        ],
+    },
+    {
+        key: 'slots',
+        label: 'Slots',
+        icon: ICONS.assessment,
+        children: [
+            { label: 'Manage Slots', to: '/admin/slots' },
+        ],
+    },
+    {
+        key: 'demos',
+        label: 'Demos',
+        icon: ICONS.assessment,
+        children: [
+            { label: 'Manage Demos', to: '/admin/demos' },
+        ],
+    },
+    {
+        key: 'classes',
+        label: 'Classes',
+        icon: ICONS.course,
+        children: [
+            { label: 'Manage Classes', to: '/admin/classes' },
+        ],
+    },
+    {
+        key: 'timetable',
+        label: 'Time table',
+        icon: ICONS.category,
+        children: [
+            { label: 'Manage Time table', to: '/admin/timetable' },
         ],
     },
     {
@@ -135,11 +227,23 @@ const MENU = [
     },
     {
         key: 'colleges',
-        label: 'Colleges',
+        label: 'Schools',
         icon: ICONS.college,
         children: [
-            { label: 'Manage Colleges', to: '/admin/colleges' },
-            { label: 'Add New College', to: '/admin/colleges/create' },
+            { label: 'Manage Schools', to: '/admin/colleges' },
+            { label: 'Add New School', to: '/admin/colleges/create' },
+        ],
+    },
+    // Batches — moved here from the school admin. Root/super admin manages any
+    // college's batches (picks the college on the page). Not collegeOnly, so it
+    // shows in the root menu and NOT for school admins.
+    {
+        key: 'batches',
+        label: 'Batches',
+        icon: ICONS.users,
+        children: [
+            { label: 'Manage Batches', to: '/admin/batches' },
+            { label: 'Add Batch', to: '/admin/batches?tab=add' },
         ],
     },
     {
@@ -185,6 +289,30 @@ function isGroupActive(group, pathname, search = '') {
     if (group.key === 'gallery') {
         return pathname.startsWith('/admin/gallery');
     }
+    if (group.key === 'books') {
+        return pathname.startsWith('/admin/books');
+    }
+    if (group.key === 'projects') {
+        return pathname.startsWith('/admin/projects');
+    }
+    if (group.key === 'testimonials') {
+        return pathname.startsWith('/admin/testimonials');
+    }
+    if (group.key === 'resources') {
+        return pathname.startsWith('/admin/resources') || pathname.startsWith('/admin/resource-categories');
+    }
+    if (group.key === 'slots') {
+        return pathname.startsWith('/admin/slots');
+    }
+    if (group.key === 'demos') {
+        return pathname.startsWith('/admin/demos');
+    }
+    if (group.key === 'classes') {
+        return pathname.startsWith('/admin/classes');
+    }
+    if (group.key === 'timetable') {
+        return pathname.startsWith('/admin/timetable');
+    }
     // Note: `batches` is a children-only group, so the recursion above
     // already lights it up whenever any child's pathname+query matches
     // (see the renderChild matchesLeaf wiring). No special case needed.
@@ -198,20 +326,32 @@ export default function AdminLayout() {
     // returns a fresh object every call — referencing it inline on every
     // render caused downstream effects to see "new" deps and re-fire.
     const adminUser = useMemo(() => getStoredUser(), []);
+    // The admin JWT is the authoritative source for is_root_admin / role /
+    // college_id — it's freshly signed at login, whereas the cached admin_user
+    // can be stale or (in older sessions) missing is_root_admin entirely. Read
+    // it once per mount and prefer it for the cohort decision below.
+    const tokenClaims = useMemo(() => {
+        const t = getAdminToken();
+        return t ? decodeJwt(t) : null;
+    }, []);
 
     // Routing rule: only the explicit root admin sees the full sidebar. Every
     // other admin — whether they have a college_id or not — is treated as a
-    // college admin and sees only the College Dashboard tab. (The dashboard
+    // school admin and sees only the School Dashboard tab. (The dashboard
     // endpoint itself 403s if the JWT lacks a college_id, which surfaces a
     // clear "missing college" error rather than silently showing zeros.)
-    const isTeacher = adminUser?.role === 'teacher';
-    const isRootAdmin = !isTeacher && adminUser?.is_root_admin === true;
+    const isTeacher = (tokenClaims?.role ?? adminUser?.role) === 'teacher';
+    // Root admin if EITHER the token or the cached user says so. The token is
+    // checked first so a stale admin_user (missing is_root_admin) can't
+    // misclassify the root admin as a school admin and hide the full sidebar.
+    const isRootAdmin =
+        !isTeacher && (tokenClaims?.is_root_admin === true || adminUser?.is_root_admin === true);
     const isCollegeAdmin = !isTeacher && !isRootAdmin;
 
     // Three cohorts, three sidebars:
     //   - Teacher: only the Course group (Manage Courses), and only the
     //     Curriculum + Live Class tabs inside Edit Course (see Edit.jsx).
-    //   - College admin: only College Dashboard.
+    //   - School admin: only School Dashboard.
     //   - Root admin: full menu.
     let visibleMenu;
     if (isTeacher) {
@@ -341,8 +481,14 @@ export default function AdminLayout() {
         const current = new URLSearchParams(s);
         const target = new URLSearchParams(leafQuery);
         if ([...target.keys()].length === 0) {
-            // The "default tab" entry has no query — active only when no tab=
-            return !current.get('tab');
+            // The "default" entry has no query (e.g. "Manage Gallery" →
+            // /admin/gallery). It must light up ONLY when no distinguishing
+            // param is present. Siblings differentiate via `tab` (Assessments,
+            // Batches) or `action=add` (Gallery, Books, Projects, …) — so if
+            // either is set, the matching sibling owns the highlight, not this
+            // default entry. Excluding both prevents "Add" + "Manage" lighting
+            // up at the same time.
+            return !current.get('tab') && !current.get('action');
         }
         for (const [k, v] of target.entries()) {
             if (current.get(k) !== v) return false;
@@ -380,7 +526,7 @@ export default function AdminLayout() {
                                         // hardcoded text-gray kept the icon grey on /admin/dashboard
                                         // and /admin/categories.
                                         //
-                                        // College Dashboard shares its pathname with the Batches
+                                        // School Dashboard shares its pathname with the Batches
                                         // sub-tabs (`/admin/college?tab=…`). Plain NavLink would
                                         // highlight the Dashboard link AND the Batches group
                                         // whenever a batch tab is active. Use the query-aware

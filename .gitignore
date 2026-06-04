@@ -6,6 +6,10 @@ node_modules/
 .env
 .env.*
 !.env.example
+# Master credentials file — NOT matched by the .env.* rule above, so list it
+# explicitly. NEVER commit this.
+credentials.env
+**/credentials.env
 
 # Build output
 frontend/dist/

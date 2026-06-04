@@ -24,8 +24,20 @@ const Batch = require('./Batch')(sequelize);
 const BatchMember = require('./BatchMember')(sequelize);
 const EmailJob = require('./EmailJob')(sequelize);
 const Gallery = require('./Gallery')(sequelize);
+const Book = require('./Book')(sequelize);
+const Slot = require('./Slot')(sequelize);
+const Demo = require('./Demo')(sequelize);
+const ClassSession = require('./ClassSession')(sequelize);
+const TimetableEntry = require('./TimetableEntry')(sequelize);
+const Project = require('./Project')(sequelize);
+const Testimonial = require('./Testimonial')(sequelize);
+const Resource = require('./Resource')(sequelize);
+const ResourceCategory = require('./ResourceCategory')(sequelize);
+const TeacherFreeSchedule = require('./TeacherFreeSchedule')(sequelize);
+const StudentRecord = require('./StudentRecord')(sequelize);
+const StudentLearning = require('./StudentLearning')(sequelize);
 
-const models = { Category, Course, SeoField, User, Lesson, Section, Question, QuizSubmission, Setting, LiveClass, Coupon, Certificate, PreAssessmentResult, UserProgress, LessonCompletion, LessonWatchProgress, Language, Forum, ForumReport, Program, Batch, BatchMember, EmailJob, Gallery };
+const models = { Category, Course, SeoField, User, Lesson, Section, Question, QuizSubmission, Setting, LiveClass, Coupon, Certificate, PreAssessmentResult, UserProgress, LessonCompletion, LessonWatchProgress, Language, Forum, ForumReport, Program, Batch, BatchMember, EmailJob, Gallery, Book, Slot, Demo, ClassSession, TimetableEntry, Project, Testimonial, Resource, ResourceCategory, TeacherFreeSchedule, StudentRecord, StudentLearning };
 Object.values(models).forEach((m) => m.associate && m.associate(models));
 
 module.exports = { sequelize, ...models };

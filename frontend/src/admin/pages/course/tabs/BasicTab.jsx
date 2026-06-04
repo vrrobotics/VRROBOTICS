@@ -33,6 +33,9 @@ export default function BasicTab({ course, onSave, formId }) {
         // category_id removed — see CollegeMultiSelect below.
         level: course.level || 'beginner',
         language: course.language || 'english',
+        // Class-access range (Class 1–12). '' = open to all classes.
+        class_from: course.class_from == null ? '' : String(course.class_from),
+        class_to: course.class_to == null ? '' : String(course.class_to),
         // The screenshot offers only Active / Private. Treat everything else as the closer of the two.
         status: course.status === 'private' ? 'private' : 'active',
         // Whether completing the course issues a certificate. Defaults to
@@ -101,7 +104,7 @@ export default function BasicTab({ course, onSave, formId }) {
         const chosen = String(f.teacher_id || '').trim();
         const ids = chosen ? [chosen] : parseTeacherIds(course.teacher_ids);
         ids.forEach((id) => fd.append('teachers[]', id));
-        // Send clgIds[] when at least one college is selected so the backend
+        // Send clgIds[] when at least one school is selected so the backend
         // replaces the column with the visible state. If the admin cleared
         // every college we send a single empty sentinel so the backend can
         // distinguish "explicitly cleared" from "field not touched" — its
@@ -188,7 +191,7 @@ export default function BasicTab({ course, onSave, formId }) {
                 )}
             </Row>
 
-            <Row label="Colleges" required>
+            <Row label="Schools" required>
                 <CollegeMultiSelect
                     value={selectedClgIds}
                     onChange={setSelectedClgIds}
@@ -219,6 +222,31 @@ export default function BasicTab({ course, onSave, formId }) {
                     <option value="intermediate">Intermediate</option>
                     <option value="advanced">Advanced</option>
                 </select>
+            </Row>
+
+            <Row label="Class access range">
+                <select
+                    className="ol-form-control w-full"
+                    value={f.class_from && f.class_to ? `${f.class_from}-${f.class_to}` : ''}
+                    onChange={(e) => {
+                        const [cf, ct] = e.target.value.split('-');
+                        set('class_from', cf || '');
+                        set('class_to', ct || '');
+                    }}
+                >
+                    <option value="">All classes</option>
+                    <option value="8-12">Class 8 – 12</option>
+                    <option value="12-18">Class 12 – 18</option>
+                    {f.class_from && f.class_to &&
+                        !['8-12', '12-18'].includes(`${f.class_from}-${f.class_to}`) && (
+                        <option value={`${f.class_from}-${f.class_to}`}>
+                            Class {f.class_from} – {f.class_to}
+                        </option>
+                    )}
+                </select>
+                <div className="text-[12px] text-gray mt-1">
+                    Pick the class group this course is for. "All classes" makes it open to everyone.
+                </div>
             </Row>
 
             <Row label="Made in" required>

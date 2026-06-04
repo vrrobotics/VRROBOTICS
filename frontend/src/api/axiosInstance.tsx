@@ -23,12 +23,19 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Endpoints that AuthProvider/Pages probe speculatively to detect login state.
-// A 401 on these is the *expected* "not logged in" signal — it must NOT trigger
-// a redirect, otherwise the page reload re-mounts AuthProvider, which re-probes,
-// which 401s again, which reloads… an infinite loop visible as repeated
-// "GET /api/v1/auth/profile 401" entries in the Bastion proxy log.
-const SILENT_AUTH_PATHS = ['/auth/profile'];
+// Endpoints whose 401 the GLOBAL interceptor must NOT turn into a hard redirect
+// to /login — the caller already handles it:
+//   /auth/profile  — speculative "am I logged in?" probe (401 == not logged in).
+//                    Redirecting here re-mounts AuthProvider, which re-probes,
+//                    401s again, reloads… an infinite loop.
+//   /auth/login, /auth/register, /auth/refresh — an admin signs in here too, and
+//                    auth-service returns 401 for admin-only accounts ON PURPOSE
+//                    so AuthProvider can fall back to admin-service. If the
+//                    interceptor hard-redirects on that expected 401, the page
+//                    reloads and ABORTS the admin-service fallback, so the admin
+//                    never reaches /admin. The Auth form shows its own error for
+//                    a genuine wrong-password 401, so a redirect here is wrong.
+const SILENT_AUTH_PATHS = ['/auth/profile', '/auth/login', '/auth/register', '/auth/refresh'];
 
 axiosInstance.interceptors.response.use(
   (response) => response,
@@ -36,8 +43,12 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 401) {
       const url: string = error.config?.url || '';
       const isSilent = SILENT_AUTH_PATHS.some((p) => url.includes(p));
+      // The unified auth screen lives at /auth (with /login redirecting to it),
+      // so treat both as "on the login page" — a 401 while the user is actively
+      // signing in must never trigger a competing hard redirect.
       const onLoginPage =
-        typeof window !== 'undefined' && window.location.pathname === '/login';
+        typeof window !== 'undefined' &&
+        (window.location.pathname === '/login' || window.location.pathname === '/auth');
 
       // Only hard-redirect to /login when the user is GENUINELY logged out
       // (no access token stored). When a token IS present, a 401 from a

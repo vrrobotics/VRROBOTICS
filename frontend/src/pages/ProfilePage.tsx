@@ -1,7 +1,6 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { updateProfile, updateEducation, updateOrgClgBranch } from "@/api/authApi";
-import { CollegeContext } from "@/context/CollegeContext"; // Import CollegeContext
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -196,18 +195,8 @@ function DobPicker({
 
 const ProfilePage = () => {
   const { user, loading, checkAuth } = useAuth();
-  const collegeCtx = useContext(CollegeContext);
-  const { colleges, branches, refresh: refreshColleges } = collegeCtx || { colleges: [], branches: [] };
-
-  // CollegeProvider caches the colleges/branches list at the app root and only
-  // fetches once on mount. So when an admin deletes a college on another tab
-  // (or in another browser session) the profile dropdown keeps the stale row
-  // until full page reload. Refresh every time the profile page mounts so the
-  // dropdown always reflects current DB state.
-  useEffect(() => {
-    refreshColleges?.();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // College is now a free-text profile field (no predefined dropdown), so the
+  // CollegeContext / college list is no longer needed here.
 
   const [formData, setFormData] = useState<ProfileFormData>({
     email: "",
@@ -505,44 +494,17 @@ const ProfilePage = () => {
           <Card>
             <CardContent className="p-4 space-y-2">
               <Label className="flex items-center gap-2 text-gray-700">
-                <Building2 className="h-4 w-4 text-[#FF6A00]" /> College / Organization
+                <Building2 className="h-4 w-4 text-[#FF6A00]" /> School / College
               </Label>
-              {/* Must be a select bound to clgId — the College Admin dashboard
-                  matches student.collegeId against admin.college_id, so a
-                  free-text college name would never aggregate correctly. */}
-              <select
-                value={
-                  // If the saved college no longer exists in the DB (admin
-                  // deleted it), don't render the orphan id — show the
-                  // "Select your college" placeholder so the user picks a
-                  // valid current option.
-                  formData.college && colleges.some((c) => c.clgId === formData.college)
-                    ? formData.college
-                    : ''
-                }
+              {/* Free-text field — the predefined college dropdown was removed.
+                  Courses no longer depend on the selected college, so the
+                  student can simply type their school/college name. */}
+              <Input
+                value={formData.college}
                 onChange={(e) => handleInputChange('college', e.target.value)}
                 disabled={!isEditing}
-                className="w-full border rounded px-2 py-2 bg-white disabled:bg-gray-50 disabled:text-gray-700"
-              >
-                <option value="">Select your college</option>
-                {colleges.map((c) => (
-                  <option key={c.clgId} value={c.clgId}>
-                    {c.clgName} ({c.clgId})
-                  </option>
-                ))}
-              </select>
-              {isEditing &&
-                formData.college &&
-                !colleges.some((c) => c.clgId === formData.college) && (
-                  <p className="text-xs text-amber-700">
-                    Your previous college is no longer available. Please pick a new one.
-                  </p>
-                )}
-              {isEditing && colleges.length === 0 && !formData.college && (
-                <p className="text-xs text-amber-700">
-                  No colleges loaded. Ask the admin to add your college first.
-                </p>
-              )}
+                placeholder="Your school / college name (optional)"
+              />
             </CardContent>
           </Card>
 

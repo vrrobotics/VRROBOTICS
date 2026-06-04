@@ -149,7 +149,7 @@ export function PreAssessmentOnboardingModal({
     if (!state.selectedProgramId || !state.selectedProgram)
       next.selectedProgram = "Please choose a program";
 
-    if (!state.collegeProof) next.collegeProof = "Upload your college ID / proof";
+    if (!state.collegeProof) next.collegeProof = "Upload your school ID / proof";
     else {
       const file = state.collegeProof;
       const ext = "." + (file.name.split(".").pop() || "").toLowerCase();
@@ -335,7 +335,7 @@ export function PreAssessmentOnboardingModal({
               </div>
             ) : eligible.length === 0 ? (
               <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-4 text-sm text-gray-700">
-                No programs are available for your college/batch yet — please
+                No programs are available for your school/batch yet — please
                 contact your administrator.
               </div>
             ) : (
@@ -430,7 +430,7 @@ export function PreAssessmentOnboardingModal({
           {/* College proof upload */}
           <section className="space-y-2">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-[#FF6A00]">
-              College ID / Proof
+              School ID / Proof
             </h3>
             <p className="text-xs text-gray-500">
               Accepted formats: PDF, JPG, PNG. Max 5 MB.
@@ -452,7 +452,7 @@ export function PreAssessmentOnboardingModal({
                   fileInputRef.current?.click();
                 }
               }}
-              aria-label="Upload college ID or proof"
+              aria-label="Upload school ID or proof"
               className={cn(
                 "rounded-xl border-2 border-dashed px-4 py-6 cursor-pointer transition-all",
                 "flex flex-col items-center justify-center text-center gap-2",

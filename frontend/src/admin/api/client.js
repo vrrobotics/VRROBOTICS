@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // admin-service direct (port 4000). Used for both API calls and static asset
 // URLs (uploaded images served by express.static).
-const BASE = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:4000';
+const BASE = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:5000';
 export const API_BASE = BASE;
 const TOKEN_KEY = 'admin_token';
 
@@ -53,7 +53,15 @@ api.interceptors.response.use(
             const isAuthProbe = SILENT_AUTH_PATHS.some((p) => url.includes(p));
             const hasToken = Boolean(getToken() || localStorage.getItem('accessToken'));
 
-            if (isAuthProbe || !hasToken) {
+            // A 401 on /auth/login is EXPECTED, not a failure: loginUser tries
+            // admin-service first (admin precedence), so every student/teacher
+            // login 401s here before succeeding against auth-service. Stay
+            // silent so it doesn't look like an error in the console.
+            const isLoginProbe = url.includes('/auth/login');
+
+            if (isLoginProbe) {
+                clearToken();
+            } else if (isAuthProbe || !hasToken) {
                 clearToken();
                 // Don't hard-redirect — AuthProvider / ProtectedRoute route the
                 // logged-out user to /login via React Router. Hard redirects

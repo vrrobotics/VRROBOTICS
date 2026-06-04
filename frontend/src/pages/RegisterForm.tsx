@@ -74,7 +74,7 @@ const Register = () => {
                 <Input placeholder="Branch / Stream" />
                 <Input placeholder="College / Institution Name" />
                 <Input placeholder="Year of Study / Graduation" />
-                <Input placeholder="Enter college code" />
+                <Input placeholder="Enter school code" />
               </div>
             </div>
 
@@ -130,7 +130,7 @@ const Register = () => {
                 </div>
                 <div className="border border-dashed p-4 rounded-md text-center space-y-2">
                   <UploadCloud className="mx-auto w-6 h-6 text-muted-foreground" />
-                  <Label className="block font-medium">Upload College ID Proof</Label>
+                  <Label className="block font-medium">Upload School ID Proof</Label>
                   <Input type="file" />
                 </div>
               </div>

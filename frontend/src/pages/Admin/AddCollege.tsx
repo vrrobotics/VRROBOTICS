@@ -39,7 +39,7 @@ const AddCollege: React.FC<AddCollegeProps> = ({ onClose, onSuccess }) => {
         err?.response?.data?.message ||
         err?.response?.data?.error ||
         err?.message ||
-        "Failed to add college";
+        "Failed to add school";
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -57,11 +57,11 @@ const AddCollege: React.FC<AddCollegeProps> = ({ onClose, onSuccess }) => {
         >
           &times;
         </button>
-        <h2 className="text-3xl font-bold mb-8 text-gray-900">Add New College</h2>
+        <h2 className="text-3xl font-bold mb-8 text-gray-900">Add New School</h2>
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block mb-2 font-medium text-gray-700">College Name</label>
+              <label className="block mb-2 font-medium text-gray-700">School Name</label>
               <input
                 type="text"
                 name="name"
@@ -149,7 +149,7 @@ const AddCollege: React.FC<AddCollegeProps> = ({ onClose, onSuccess }) => {
             disabled={submitting}
             className="bg-[#FF6A00] hover:bg-[#FF6A00] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold px-6 py-2 rounded-lg transition-colors mt-4"
           >
-            {submitting ? "Adding..." : "Add College"}
+            {submitting ? "Adding..." : "Add School"}
           </button>
         </form>
       </div>

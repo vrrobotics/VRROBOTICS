@@ -10,7 +10,7 @@ import { listBatchesByColleges } from '../../api/batch';
 import { listProgramsForCollegeBatch } from '../../api/program';
 import { BsThreeDotsVertical } from 'react-icons/bs';
 
-const API = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:4000';
+const API = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:5000';
 
 // Pre-assessment time taken: seconds → "Mm Ss" (or "Ss" under a minute).
 // Null/undefined means the duration wasn't recorded (older attempts).
@@ -197,12 +197,12 @@ export default function StudentIndex() {
                         <div className="mb-3 flex flex-wrap items-center gap-2">
                             {query.college && (
                                 <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-skin/10 text-skin text-[13px] font-medium">
-                                    College: {query.college}
+                                    School: {query.college}
                                     <button
                                         type="button"
                                         className="text-skin hover:text-danger font-bold"
                                         onClick={() => onCollegeFilter('')}
-                                        aria-label="Clear college filter"
+                                        aria-label="Clear school filter"
                                     >
                                         ×
                                     </button>
@@ -248,7 +248,7 @@ export default function StudentIndex() {
                                             <th scope="col">#</th>
                                             <th scope="col">Name</th>
                                             <th scope="col">Phone</th>
-                                            <th scope="col">College</th>
+                                            <th scope="col">School</th>
                                             <th scope="col">Enrolled Courses</th>
                                             <th scope="col">Program Interested</th>
                                             <th scope="col">Batch</th>
@@ -458,7 +458,7 @@ function BulkRequestForm({ students = [], college, batch, onDone }) {
     return (
         <div>
             <p className="text-[13px] text-gray mb-3">
-                {college ? <>College: <span className="font-semibold text-dark">{college}</span> · </> : null}
+                {college ? <>School: <span className="font-semibold text-dark">{college}</span> · </> : null}
                 {batch ? <>Batch: <span className="font-semibold text-dark">{batch}</span> · </> : null}
                 {total} student{total === 1 ? '' : 's'} listed. Enter a row range
                 (1–{total}) and pick a program.
@@ -682,11 +682,11 @@ function ProgramRequestCell({ student }) {
                 value={program}
                 onChange={(e) => setProgram(e.target.value)}
                 disabled={sending || programsLoading || programs.length === 0}
-                title={noScope ? 'Assign a college and batch first' : undefined}
+                title={noScope ? 'Assign a school and batch first' : undefined}
             >
                 <option value="">
                     {noScope
-                        ? 'Needs college + batch'
+                        ? 'Needs school + batch'
                         : programsLoading
                             ? 'Loading…'
                             : programs.length === 0
@@ -765,7 +765,7 @@ function CollegeFilter({ value, onChange }) {
                 <input
                     className="ol-form-control w-full pl-9 pr-8"
                     type="text"
-                    placeholder="Search college…"
+                    placeholder="Search school…"
                     value={open ? term : (value || '')}
                     onFocus={() => { setOpen(true); setTerm(''); }}
                     onChange={(e) => { setTerm(e.target.value); setOpen(true); }}
@@ -774,7 +774,7 @@ function CollegeFilter({ value, onChange }) {
                     <button
                         type="button"
                         className="absolute right-2 top-1/2 -translate-y-1/2 text-gray hover:text-danger font-bold px-1"
-                        aria-label="Clear college filter"
+                        aria-label="Clear school filter"
                         onClick={() => { setTerm(''); onChange(''); setOpen(false); }}
                     >
                         ×
@@ -794,11 +794,11 @@ function CollegeFilter({ value, onChange }) {
                             className="w-full text-left px-3 py-2 text-gray hover:bg-gray-50"
                             onClick={() => pick('')}
                         >
-                            All colleges
+                            All schools
                         </button>
                     </li>
                     {filtered.length === 0 ? (
-                        <li className="px-3 py-2 text-gray">No colleges match</li>
+                        <li className="px-3 py-2 text-gray">No schools match</li>
                     ) : (
                         filtered.map((c) => (
                             <li key={c}>
@@ -905,7 +905,7 @@ function BatchFilter({ collegeName, value, onChange }) {
                 <input
                     className={`ol-form-control w-full pl-9 pr-8 ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     type="text"
-                    placeholder={disabled ? 'Select college first…' : (loading ? 'Loading batches…' : 'Search batch…')}
+                    placeholder={disabled ? 'Select school first…' : (loading ? 'Loading batches…' : 'Search batch…')}
                     value={open ? term : (value || '')}
                     onFocus={() => { if (!disabled) { setOpen(true); setTerm(''); } }}
                     onChange={(e) => { if (!disabled) { setTerm(e.target.value); setOpen(true); } }}
@@ -940,7 +940,7 @@ function BatchFilter({ collegeName, value, onChange }) {
                     </li>
                     {filtered.length === 0 ? (
                         <li className="px-3 py-2 text-gray">
-                            {loading ? 'Loading…' : 'No batches for this college'}
+                            {loading ? 'Loading…' : 'No batches for this school'}
                         </li>
                     ) : (
                         filtered.map((b) => (

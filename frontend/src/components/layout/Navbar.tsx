@@ -94,7 +94,7 @@ const Navbar = () => {
     { name: "Summer Camp 2026", href: "/summer-camp", icon: GraduationCap, highlight: true },
     { name: "Home", href: "/", icon: Home },
     { name: "Courses", href: "/vr-courses", icon: BookOpen, dropdown: true },
-    { name: "Books", href: "/books", icon: Book, dropdown: true },
+    { name: "Books", href: "/books", icon: Book },
     { name: "Gallery", href: "/gallery", icon: ImageIcon },
     { name: "Locations", href: "/locations", icon: MapPin },
     { name: "Contact Us", href: "/contact", icon: Mail },
@@ -105,22 +105,15 @@ const Navbar = () => {
   // Each Courses option opens the existing auth UI (login / signup) before
   // letting the visitor reach course content.
   const courseItems = [
-    { name: "For Age 8 - 12", href: "/auth" },
-    { name: "For Age 12 - 18", href: "/auth" },
+    { name: "Class 8 – 12", href: "/courses/browse?class=8-12" },
+    { name: "Class 12 – 18", href: "/courses/browse?class=12-18" },
+    { name: "All Courses", href: "/courses/browse" },
     { name: "Teachers", href: "/auth?role=teacher" },
-  ];
-
-  // Options shown under the "Books" dropdown — jump to the matching book.
-  const bookItems = [
-    { name: "Autonomous Robot with Arduino", href: "/books#autonomous" },
-    { name: "Advanced Electronics for Young Robot Builders", href: "/books#advanced-electronics" },
-    { name: "Electronics for Young Robot Builders", href: "/books#electronics" },
   ];
 
   // Map each dropdown nav item to its sub-items.
   const dropdownItems: Record<string, { name: string; href: string }[]> = {
     Courses: courseItems,
-    Books: bookItems,
   };
 
   // On admin pages the layout uses a fixed-width sidebar (w-[260px]).
@@ -273,7 +266,7 @@ const Navbar = () => {
               <Link
                 to="/auth"
                 onClick={(e) => scrollToTopWithOffset(e, "/auth")}
-                className="group inline-flex items-center gap-2 rounded-lg border-2 border-primary px-5 py-2 text-sm font-bold uppercase tracking-wide text-primary transition-colors duration-200 hover:bg-primary hover:text-white"
+                className="group inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-bold uppercase tracking-wide text-white transition-colors duration-200 hover:bg-primary/90 hover:text-white"
               >
                 <UserCircle className="w-5 h-5" />
                 <span>Login / Register</span>
@@ -380,7 +373,7 @@ const Navbar = () => {
                   <Link
                     to="/auth"
                     onClick={(e) => scrollToTopWithOffset(e, "/auth")}
-                    className="flex items-center justify-center gap-2 w-full rounded-lg border-2 border-primary px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-primary hover:bg-primary hover:text-white transition-colors"
+                    className="flex items-center justify-center gap-2 w-full rounded-lg bg-primary px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-white hover:bg-primary/90 hover:text-white transition-colors"
                   >
                     <UserCircle className="w-5 h-5" />
                     <span>Login / Register</span>

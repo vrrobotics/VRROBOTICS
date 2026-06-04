@@ -180,13 +180,15 @@ const Auth = () => {
 
                 <div>
                   <Label htmlFor="name">Full name</Label>
-                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Your name" />
+                  <Input id="name" name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Your name" />
                 </div>
 
                 <div>
                   <Label htmlFor="phone">Phone</Label>
                   <Input
                     id="phone"
+                    name="phone"
+                    autoComplete="tel"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -199,7 +201,7 @@ const Auth = () => {
 
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" />
+              <Input id="email" name="email" autoComplete="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" />
             </div>
 
             <div>
@@ -207,6 +209,8 @@ const Auth = () => {
               <div className="relative">
                 <Input
                   id="password"
+                  name="password"
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
                   type={showPwd ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

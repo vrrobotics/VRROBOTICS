@@ -117,7 +117,7 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
     setSubmitError(null);
 
     if (selectedClgIds.length === 0) {
-      setSubmitError("Select at least one college.");
+      setSubmitError("Select at least one school.");
       return;
     }
     if (!form.teacherId) {
@@ -278,11 +278,11 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
             )}
           </div>
 
-          {/* College segment */}
+          {/* School segment */}
           <div className="border-t pt-4">
             <div className="flex items-center justify-between mb-2">
               <label className="block font-medium text-gray-700">
-                Offered at colleges <span className="text-rose-500">*</span>
+                Offered at schools <span className="text-rose-500">*</span>
               </label>
               {colleges.length > 0 && (
                 <button
@@ -295,10 +295,10 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
               )}
             </div>
 
-            {/* Manual College ID entry */}
+            {/* Manual School ID entry */}
             <div className="mb-3">
               <label className="block mb-1 text-sm font-medium text-gray-700">
-                College ID
+                School ID
               </label>
               <div className="flex gap-2">
                 <input
@@ -324,12 +324,12 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
                 </button>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Type a college ID and press Enter, or pick from the list below.
+                Type a school ID and press Enter, or pick from the list below.
               </p>
             </div>
 
             {collegesLoading ? (
-              <div className="text-sm text-gray-500">Loading colleges…</div>
+              <div className="text-sm text-gray-500">Loading schools…</div>
             ) : collegesError ? (
               <div className="text-sm text-rose-600">
                 {collegesError}{" "}
@@ -345,7 +345,7 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
               </div>
             ) : colleges.length === 0 ? (
               <div className="text-sm text-gray-500">
-                No colleges available. Add a college first.
+                No schools available. Add a school first.
               </div>
             ) : (
               <div className="relative" ref={collegeBoxRef}>
@@ -359,8 +359,8 @@ const AddCourse: React.FC<AddCourseProps> = ({ onClose }) => {
                 >
                   <span className="text-sm text-gray-700 truncate">
                     {selectedClgIds.length === 0
-                      ? "Select colleges…"
-                      : `${selectedClgIds.length} college${selectedClgIds.length === 1 ? "" : "s"} selected`}
+                      ? "Select schools…"
+                      : `${selectedClgIds.length} school${selectedClgIds.length === 1 ? "" : "s"} selected`}
                   </span>
                   <svg
                     className={`w-4 h-4 ml-2 text-gray-500 transition-transform ${collegeOpen ? "rotate-180" : ""}`}

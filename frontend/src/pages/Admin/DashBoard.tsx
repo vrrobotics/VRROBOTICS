@@ -15,7 +15,7 @@ import {
 const Dashboard: React.FC = () => {
   const quickStats = [
     {
-      label: "Colleges",
+      label: "Schools",
       value: 10,
       icon: Building2,
       color: "bg-blue-500",
@@ -48,7 +48,7 @@ const Dashboard: React.FC = () => {
     },
     {
       user: "Admin",
-      activity: "Added new college",
+      activity: "Added new school",
       time: "Yesterday",
     },
   ];

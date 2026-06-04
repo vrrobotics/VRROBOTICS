@@ -23,8 +23,8 @@ export default function StudentForm({ student, onSubmit, submitLabel = 'Save' })
     const [photo, setPhoto] = useState(null);
     const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
 
-    // College dropdown options sourced from the canonical /colleges endpoint
-    // (same list the Manage Colleges page shows). Fetched once on mount.
+    // School dropdown options sourced from the canonical /colleges endpoint
+    // (same list the Manage Schools page shows). Fetched once on mount.
     const [colleges, setColleges] = useState([]);
     useEffect(() => {
         let alive = true;
@@ -98,7 +98,7 @@ export default function StudentForm({ student, onSubmit, submitLabel = 'Save' })
                                 </div>
                             </div>
                             <div className="mb-3 grid grid-cols-12 gap-0">
-                                <label className="col-span-2 ol-form-label">College</label>
+                                <label className="col-span-2 ol-form-label">School</label>
                                 <div className="col-span-10">
                                     <select
                                         className="ol-form-control"

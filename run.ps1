@@ -55,9 +55,10 @@ try {
 
 # ---- Step 3: install remaining services + frontend -------------------------
 Banner "Step 3/5: install remaining services + frontend"
-NpmInstall "$ROOT\backend\auth-service"   "auth-service"
-NpmInstall "$ROOT\backend\Bastion-server" "Bastion-server"
-NpmInstall "$ROOT\frontend"               "frontend"
+NpmInstall "$ROOT\backend\auth-service"       "auth-service"
+NpmInstall "$ROOT\backend\assessment-service" "assessment-service"
+NpmInstall "$ROOT\backend\Bastion-server"     "Bastion-server"
+NpmInstall "$ROOT\frontend"                   "frontend"
 
 # ---- Step 4: seed admin accounts (idempotent) ------------------------------
 Banner "Step 4/5: seed admin accounts (idempotent - safe re-run)"
@@ -74,14 +75,15 @@ try {
     & node "src\scripts\seedAdmin.js"
 } finally { Pop-Location }
 
-# ---- Step 5: launch all 4 services in separate windows ---------------------
+# ---- Step 5: launch all services in separate windows -----------------------
 Banner "Step 5/5: launch services in separate windows"
 
 $services = @(
-    @{ Name = 'auth-service';   Port = 8001; Path = "$ROOT\backend\auth-service" },
-    @{ Name = 'admin-service';  Port = 5000; Path = "$ROOT\backend\admin-service" },
-    @{ Name = 'Bastion-server'; Port = 8000; Path = "$ROOT\backend\Bastion-server" },
-    @{ Name = 'frontend';       Port = 5173; Path = "$ROOT\frontend" }
+    @{ Name = 'auth-service';       Port = 8001; Path = "$ROOT\backend\auth-service" },
+    @{ Name = 'admin-service';      Port = 5000; Path = "$ROOT\backend\admin-service" },
+    @{ Name = 'assessment-service'; Port = 8003; Path = "$ROOT\backend\assessment-service" },
+    @{ Name = 'Bastion-server';     Port = 8000; Path = "$ROOT\backend\Bastion-server" },
+    @{ Name = 'frontend';           Port = 5173; Path = "$ROOT\frontend" }
 )
 
 foreach ($svc in $services) {
@@ -115,6 +117,6 @@ Write-Host "   http://localhost:5000/api/health (admin-service)"
 Write-Host "   http://localhost:8000/health     (Bastion gateway)"
 Write-Host "-------------------------------------------------------------"
 Write-Host ""
-Write-Host " To stop everything: close the 4 service windows (Ctrl+C in each)."
+Write-Host " To stop everything: close the service windows (Ctrl+C in each)."
 Write-Host " To re-run anytime:  .\run.ps1   (idempotent)"
 Write-Host ""

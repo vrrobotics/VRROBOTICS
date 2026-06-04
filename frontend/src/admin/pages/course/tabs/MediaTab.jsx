@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const API = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:4000';
+const API = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:5000';
 
 // Stored media values are canonical asset URLs (Cloudflare R2 public URLs).
 // Pass absolute URLs through unchanged; only legacy relative "uploads/..."

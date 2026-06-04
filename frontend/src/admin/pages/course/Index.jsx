@@ -14,7 +14,7 @@ import { useCollege } from '@/hooks/useCollege';
 // VITE_ADMIN_API_URL points at admin-service (port 4000) — fine for asset
 // URLs (uploaded images) but wrong for "view course on frontend" links,
 // which need to land on the public site.
-const PUBLIC_BASE = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:4000';
+const PUBLIC_BASE = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:5000';
 // Where the student-facing site lives. Override with VITE_FRONTEND_URL in
 // production. Empty string is treated as same-origin (useful when admin and
 // public site are served from the same domain).
@@ -39,7 +39,7 @@ const MAX_VISIBLE_COLLEGES = 2;
 function CollegeChips({ clgIds, nameById }) {
     const ids = Array.isArray(clgIds) ? clgIds.filter(Boolean) : [];
     if (ids.length === 0) {
-        return <span className="text-[11px] text-muted">No colleges assigned</span>;
+        return <span className="text-[11px] text-muted">No schools assigned</span>;
     }
     const visible = ids.slice(0, MAX_VISIBLE_COLLEGES);
     const hiddenCount = ids.length - visible.length;
@@ -300,7 +300,7 @@ export default function CourseIndex() {
                                     <tr>
                                         <th scope="col">#</th>
                                         <th scope="col">Title</th>
-                                        <th scope="col">Colleges</th>
+                                        <th scope="col">Schools</th>
                                         <th scope="col">Lesson & Section</th>
                                         <th scope="col">Enrolled Student</th>
                                         <th scope="col">Status</th>
@@ -541,7 +541,7 @@ function FilterDropdown({ query, colleges, courses, onApply }) {
                 <div className="absolute left-0 z-20 mt-1 w-[280px] bg-white border border-border rounded-ol-8 shadow-lg p-4">
                     <form onSubmit={submit} className="flex flex-col gap-3">
                         <div>
-                            <label className="ol-form-label">College</label>
+                            <label className="ol-form-label">School</label>
                             <select
                                 className="ol-form-control w-full"
                                 value={local.college}

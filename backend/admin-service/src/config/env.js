@@ -22,7 +22,7 @@ module.exports = {
         schema: process.env.DB_SCHEMA || 'lms_admin',
     },
     // Cross-schema handle — same physical Supabase Postgres DB, different
-    // schema (`lucy_devdb`). Used by College Dashboard + StudentService.
+    // schema (`lucy_devdb`). Used by School Dashboard + StudentService.
     authDb: {
         url: process.env.DATABASE_URL || process.env.AUTH_DATABASE_URL || null,
         name: process.env.AUTH_DB_NAME || process.env.DB_NAME,

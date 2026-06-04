@@ -175,6 +175,9 @@ const sanitizeCourse = (course, sections = [], lessons = [], creator = null) => 
         faqs: c.faqs || '[]',
         language: c.language || 'english',
         level: c.level || 'beginner',
+        // Class-access range (Class 1–12). NULL = open to all classes.
+        class_from: c.class_from == null ? null : Number(c.class_from),
+        class_to: c.class_to == null ? null : Number(c.class_to),
         is_paid: c.is_paid ?? 0,
         price: Number(c.price || 0),
         discount_flag: c.discount_flag || 0,
@@ -576,4 +579,80 @@ const submitQuiz = async ({ quiz_id, user_id, score, total, answers }) => {
     return { attempts_used, persisted: true };
 };
 
-module.exports = { list, detailsBySlug, detailsFirstActive, playerData, submitQuiz };
+// Public marketing catalog — every active course, NOT college-scoped, with
+// just the fields the public home "Our Courses" preview needs (title, slug,
+// short description, thumbnail, level). Deliberately separate from list()
+// (which is the student-facing, college- and batch-scoped catalog) so this
+// preview can render on the anonymous home page without leaking enrolment
+// scope or pulling the heavier per-student progress hydration.
+const catalog = async ({ limit = 12, classFrom = null, classTo = null } = {}) => {
+    // Optional class-bucket filter [classFrom, classTo]. The admin assigns a
+    // course to one discrete bucket (e.g. "8–12" or "12–18"), and the navbar
+    // filters by those same buckets, so we use CONTAINMENT (the course range
+    // must fit INSIDE the selected bucket), not overlap — otherwise courses on
+    // a shared boundary (class 12) would leak into both buckets. A course with
+    // NULL bounds is "open to all classes" and shows in every bucket.
+    // Note: Number(null) === 0 (finite), so we must check the raw values are
+    // actually present before treating this as a filtered request — otherwise
+    // an unfiltered call looks like a bogus 0–0 bucket and matches nothing.
+    const present = (v) => v !== null && v !== undefined && v !== '';
+    const cf = Number(classFrom);
+    const ct = Number(classTo);
+    const hasFilter = present(classFrom) && present(classTo) && Number.isFinite(cf) && Number.isFinite(ct);
+
+    const where = { status: 'active' };
+    if (hasFilter) {
+        const { Op } = require('sequelize');
+        where[Op.and] = [
+            { [Op.or]: [{ class_from: null }, { class_from: { [Op.gte]: cf } }] },
+            { [Op.or]: [{ class_to: null }, { class_to: { [Op.lte]: ct } }] },
+        ];
+    }
+
+    const rows = await Course.findAll({
+        where,
+        order: [['id', 'DESC']],
+        limit: Math.min(Number(limit) || 12, 48),
+    });
+
+    // Lesson count + total duration per course, for the "N Lessons / N+ Hours"
+    // meta row on the home course cards. One query over all listed courses,
+    // grouped in JS (durations are "HH:MM:SS" strings, summed like
+    // sumLessonSeconds does elsewhere).
+    const courseIds = rows.map((r) => r.id);
+    const agg = new Map(); // course_id -> { count, secs }
+    if (courseIds.length) {
+        const lessons = await Lesson.findAll({
+            where: { course_id: courseIds },
+            attributes: ['course_id', 'duration'],
+            raw: true,
+        }).catch(() => []);
+        for (const l of lessons) {
+            const cid = Number(l.course_id);
+            const cur = agg.get(cid) || { count: 0, secs: 0 };
+            cur.count += 1;
+            const [h, m, s] = String(l.duration || '00:00:00').split(':').map((x) => Number(x) || 0);
+            cur.secs += h * 3600 + m * 60 + s;
+            agg.set(cid, cur);
+        }
+    }
+
+    return rows.map((r) => {
+        const c = sanitizeCourse(r);
+        const a = agg.get(r.id) || { count: 0, secs: 0 };
+        return {
+            id: c.id,
+            title: c.title,
+            slug: c.slug,
+            short_description: c.short_description,
+            thumbnail: c.thumbnail,
+            level: c.level,
+            class_from: c.class_from,
+            class_to: c.class_to,
+            lesson_count: a.count,
+            total_duration_secs: a.secs,
+        };
+    });
+};
+
+module.exports = { list, catalog, detailsBySlug, detailsFirstActive, playerData, submitQuiz };

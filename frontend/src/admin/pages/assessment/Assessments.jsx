@@ -162,7 +162,7 @@ export default function Assessments() {
                                     <th>ID</th>
                                     <th className="w-[100px]">Type</th>
                                     <th>Question Set</th>
-                                    <th>Colleges</th>
+                                    <th>Schools</th>
                                     <th>Courses</th>
                                     <th className="w-[100px]">Timer</th>
                                     <th className="w-[90px]">Score</th>
@@ -197,7 +197,7 @@ export default function Assessments() {
                                             <IdChips
                                                 ids={Array.isArray(a.clgIds) ? a.clgIds : []}
                                                 nameById={collegeNameById}
-                                                empty="No colleges assigned"
+                                                empty="No schools assigned"
                                             />
                                         </td>
                                         <td>

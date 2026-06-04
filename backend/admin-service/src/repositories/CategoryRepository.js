@@ -10,7 +10,7 @@ const findRootWithChildren = () =>
 
 // College-scoped variant. Returns only categories whose clg_ids JSONB array
 // contains the given clgId — applied to BOTH parents and their children so a
-// student never sees another college's category at any level. We use the
+// student never sees another school's category at any level. We use the
 // Postgres JSONB `@>` (contains) operator via a sequelize.literal; the value
 // is escaped to prevent injection from the query string.
 const findRootWithChildrenForCollege = (clgId) => {

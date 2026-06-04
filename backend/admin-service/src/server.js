@@ -20,6 +20,14 @@ const zoomLiveClassRoutes = require('./zoom-live-class/live-class.routes');
 const forumRoutes = require('./forum/forum.routes');
 const couponRoutes = require('./routes/coupon.routes');
 const galleryRoutes = require('./routes/gallery.routes');
+const bookRoutes = require('./routes/book.routes');
+const slotRoutes = require('./routes/slot.routes');
+const demoRoutes = require('./routes/demo.routes');
+const classRoutes = require('./routes/class.routes');
+const timetableRoutes = require('./routes/timetable.routes');
+const projectRoutes = require('./routes/project.routes');
+const testimonialRoutes = require('./routes/testimonial.routes');
+const resourceRoutes = require('./routes/resource.routes');
 const programRoutes = require('./routes/program.routes');
 const certificateRoutes = require('./routes/certificate.routes');
 const collegeDashboardRoutes = require('./routes/collegeDashboard.routes');
@@ -125,7 +133,103 @@ app.get('/api/public/categories', async (req, res, next) => {
 const galleryService = require('./services/GalleryService');
 app.get('/api/public/gallery', async (_req, res, next) => {
     try {
+        // Dynamic admin content — never let the browser serve a stale cached
+        // copy. Without this Express adds an ETag and the browser revalidates
+        // with a conditional GET, getting 304 Not Modified and re-rendering an
+        // older (e.g. empty) body, so newly added items wouldn't appear.
+        res.set('Cache-Control', 'no-store');
         res.json(await galleryService.listPublic());
+    } catch (e) { next(e); }
+});
+
+// Slots assigned to a teacher — drives the Teacher dashboard's Slots tab.
+// Returns active slots whose teacher_ids include :teacherId (the auth userId),
+// with course title + student names resolved. no-store so new admin slots show.
+const slotService = require('./services/SlotService');
+app.get('/api/public/slots/by-teacher/:teacherId', async (req, res, next) => {
+    try {
+        res.set('Cache-Control', 'no-store');
+        res.json(await slotService.listForTeacher(req.params.teacherId));
+    } catch (e) { next(e); }
+});
+
+// Teacher-scoped Demos / Classes / Time table — drive the matching tabs on the
+// Teacher dashboard. Live (no-store) so admin additions show without staleness.
+const demoSvc = require('./services/DemoService');
+app.get('/api/public/demos/by-teacher/:teacherId', async (req, res, next) => {
+    try { res.set('Cache-Control', 'no-store'); res.json(await demoSvc.listForTeacher(req.params.teacherId)); } catch (e) { next(e); }
+});
+const classSvc = require('./services/ClassSessionService');
+app.get('/api/public/classes/by-teacher/:teacherId', async (req, res, next) => {
+    try { res.set('Cache-Control', 'no-store'); res.json(await classSvc.listForTeacher(req.params.teacherId)); } catch (e) { next(e); }
+});
+const timetableSvc = require('./services/TimetableEntryService');
+app.get('/api/public/timetable/by-teacher/:teacherId', async (req, res, next) => {
+    try { res.set('Cache-Control', 'no-store'); res.json(await timetableSvc.listForTeacher(req.params.teacherId)); } catch (e) { next(e); }
+});
+const resourceSvc = require('./services/ResourceService');
+app.get('/api/public/resources/by-teacher/:teacherId', async (req, res, next) => {
+    try { res.set('Cache-Control', 'no-store'); res.json(await resourceSvc.listForTeacher(req.params.teacherId)); } catch (e) { next(e); }
+});
+
+// Teacher Free Schedule — teacher-authored weekly availability. The teacher
+// manages their own slots from the dashboard, so these are public endpoints
+// keyed by teacherId (same trust model as the other by-teacher routes).
+const freeScheduleSvc = require('./services/FreeScheduleService');
+app.get('/api/public/free-schedule/by-teacher/:teacherId', async (req, res, next) => {
+    try { res.set('Cache-Control', 'no-store'); res.json(await freeScheduleSvc.listForTeacher(req.params.teacherId)); } catch (e) { next(e); }
+});
+app.post('/api/public/free-schedule', async (req, res, next) => {
+    try { res.json(await freeScheduleSvc.create(req.body)); } catch (e) { next(e); }
+});
+app.delete('/api/public/free-schedule/:id', async (req, res, next) => {
+    try { res.json(await freeScheduleSvc.remove(req.params.id, req.query.teacherId)); } catch (e) { next(e); }
+});
+
+// Per-student teacher records (goals / badges / SPR / marks / exercises /
+// quizzes / projects) — back the Students-panel detail. Public, keyed by
+// teacherId + studentId (same trust model as the other by-teacher routes).
+const studentRecordSvc = require('./services/StudentRecordService');
+app.get('/api/public/student-records/by-teacher/:teacherId', async (req, res, next) => {
+    try { res.set('Cache-Control', 'no-store'); res.json(await studentRecordSvc.listForStudent(req.params.teacherId, req.query.studentId, req.query.kind)); } catch (e) { next(e); }
+});
+app.post('/api/public/student-records', async (req, res, next) => {
+    try { res.json(await studentRecordSvc.create(req.body)); } catch (e) { next(e); }
+});
+app.put('/api/public/student-records/:id', async (req, res, next) => {
+    try { res.json(await studentRecordSvc.update(req.params.id, req.body)); } catch (e) { next(e); }
+});
+app.delete('/api/public/student-records/:id', async (req, res, next) => {
+    try { res.json(await studentRecordSvc.remove(req.params.id, req.query.teacherId)); } catch (e) { next(e); }
+});
+
+// Student "My Learnings" notes — student-authored per lesson, in the course
+// player. Public, keyed by studentId (same model as other student endpoints).
+const learningSvc = require('./services/StudentLearningService');
+app.get('/api/public/learnings/by-student/:studentId', async (req, res, next) => {
+    try { res.set('Cache-Control', 'no-store'); res.json(await learningSvc.getOne(req.params.studentId, req.query.lessonId)); } catch (e) { next(e); }
+});
+app.post('/api/public/learnings', async (req, res, next) => {
+    try { res.json(await learningSvc.save(req.body)); } catch (e) { next(e); }
+});
+
+// Public student projects + testimonials — drive the Home page sections.
+const projectService = require('./services/ProjectService');
+app.get('/api/public/projects', async (_req, res, next) => {
+    try { res.set('Cache-Control', 'no-store'); res.json(await projectService.listPublic()); } catch (e) { next(e); }
+});
+const testimonialService = require('./services/TestimonialService');
+app.get('/api/public/testimonials', async (_req, res, next) => {
+    try { res.set('Cache-Control', 'no-store'); res.json(await testimonialService.listPublic()); } catch (e) { next(e); }
+});
+
+// Public books list — drives the Home → Books page. Only visible items.
+// Admins manage these under Books → Add/Manage Books; new books appear here.
+const bookService = require('./services/BookService');
+app.get('/api/public/books', async (_req, res, next) => {
+    try {
+        res.set('Cache-Control', 'no-store');
+        res.json(await bookService.listPublic());
     } catch (e) { next(e); }
 });
 
@@ -248,6 +352,24 @@ app.get('/api/public/courses', async (req, res, next) => {
             return res.status(503).json({ error: 'Course catalog unavailable' });
         }
         return courseContentCtrl.list(req, res, next);
+    }
+});
+
+// Public marketing catalog — all active courses (not college-scoped). Drives
+// the home page "Our Courses" preview. Kept separate from /api/public/courses
+// (student-facing, college/batch scoped) so the anonymous home can render a
+// short preview of every course the admin has published.
+app.get('/api/public/courses/catalog', async (req, res, next) => {
+    try {
+        res.set('Cache-Control', 'no-store');
+        res.json(await publicCourseService.catalog({
+            limit: req.query.limit,
+            classFrom: req.query.classFrom,
+            classTo: req.query.classTo,
+        }));
+    } catch (e) {
+        console.warn('[public/courses/catalog] failed:', e.message);
+        res.json([]);
     }
 });
 
@@ -407,6 +529,14 @@ app.use('/api/admin', adminOnly, quizRoutes);
 app.use('/api/admin', adminOnly, liveClassRoutes);
 app.use('/api/admin', adminOnly, couponRoutes);
 app.use('/api/admin', adminOnly, galleryRoutes);
+app.use('/api/admin', adminOnly, bookRoutes);
+app.use('/api/admin', adminOnly, slotRoutes);
+app.use('/api/admin', adminOnly, demoRoutes);
+app.use('/api/admin', adminOnly, classRoutes);
+app.use('/api/admin', adminOnly, timetableRoutes);
+app.use('/api/admin', adminOnly, projectRoutes);
+app.use('/api/admin', adminOnly, testimonialRoutes);
+app.use('/api/admin', adminOnly, resourceRoutes);
 app.use('/api/admin', adminOnly, programRoutes);
 app.use('/api/admin', adminOnly, certificateRoutes);
 app.use('/api/admin', adminOnly, collegeDashboardRoutes);
@@ -637,8 +767,22 @@ sequelize.authenticate()
             await ensureCourseCol('has_certificate', 'has_certificate BOOLEAN NOT NULL DEFAULT TRUE');
             await ensureCourseCol('batch_ids', 'batch_ids JSONB');
             await ensureCourseCol('bunny_collection_id', 'bunny_collection_id VARCHAR(64)');
+            // Class-access range (e.g. accessible to Class 8 → 12). Nullable —
+            // a course with no range set is treated as open to all classes.
+            await ensureCourseCol('class_from', 'class_from SMALLINT');
+            await ensureCourseCol('class_to', 'class_to SMALLINT');
         } catch (e) {
             console.warn('[courses] column check failed:', e.message);
+        }
+
+        // lms_admin.users.is_root_admin — lets the root admin grant another
+        // admin the full root dashboard ("Give Access"). Idempotent ADD COLUMN.
+        try {
+            await sequelize.query(
+                `ALTER TABLE lms_admin.users ADD COLUMN IF NOT EXISTS is_root_admin BOOLEAN NOT NULL DEFAULT FALSE`
+            );
+        } catch (e) {
+            console.warn('[users] is_root_admin column check failed:', e.message);
         }
 
         // Course discussion forum — create the `forums` + `forum_reports`
@@ -664,7 +808,7 @@ sequelize.authenticate()
         }
 
         // Batches — named cohorts of students inside a college. Created from
-        // the College Dashboard's Add/Manage Batches tabs. Member rows live
+        // the School Dashboard's Add/Manage Batches tabs. Member rows live
         // in the linked batch_members table; both are created on first run.
         try {
             const { Batch, BatchMember } = require('./models');
@@ -681,6 +825,77 @@ sequelize.authenticate()
             await EmailJob.sync();
         } catch (e) {
             console.warn('[email-jobs] table sync failed:', e.message);
+        }
+
+        // Books — shown on the public Books page, managed under Books →
+        // Add/Manage Books. Same idempotent .sync() pattern; creates the
+        // `books` table on first run without a manual migration.
+        try {
+            const { Book } = require('./models');
+            await Book.sync();
+        } catch (e) {
+            console.warn('[books] table sync failed:', e.message);
+        }
+
+        // Slots — admin scheduling: a course + time window + assigned
+        // teachers/students. Same idempotent .sync() pattern creates the
+        // `slots` table on first run.
+        try {
+            const { Slot } = require('./models');
+            await Slot.sync();
+            // .sync() won't add columns to an existing table — self-heal the
+            // later-added meeting_link column (resolves via search_path to
+            // lms_admin). No-op once the column exists.
+            await sequelize.query('ALTER TABLE slots ADD COLUMN IF NOT EXISTS meeting_link TEXT');
+        } catch (e) {
+            console.warn('[slots] table sync failed:', e.message);
+        }
+
+        // Demos / Classes / Timetable — admin scheduling features added
+        // alongside Slots. Same idempotent .sync() pattern creates each table
+        // (demos, class_sessions, timetable_entries) on first run.
+        try {
+            const { Demo, ClassSession, TimetableEntry } = require('./models');
+            await Demo.sync();
+            await ClassSession.sync();
+            await TimetableEntry.sync();
+        } catch (e) {
+            console.warn('[demos/classes/timetable] table sync failed:', e.message);
+        }
+
+        // Student Projects + Testimonials — drive the public Home page sections,
+        // managed under Projects / Testimonials. Idempotent .sync() creates the
+        // `projects` + `testimonials` tables on first run.
+        try {
+            const { Project, Testimonial } = require('./models');
+            await Project.sync();
+            await Testimonial.sync();
+        } catch (e) {
+            console.warn('[projects/testimonials] table sync failed:', e.message);
+        }
+
+        // Resources — admin-managed PDF library assigned to teachers, shown on
+        // the teacher dashboard Resources tab. Idempotent .sync() creates the
+        // `resources` table on first run.
+        try {
+            const { Resource, ResourceCategory, TeacherFreeSchedule, StudentRecord, StudentLearning } = require('./models');
+            await Resource.sync();
+            // Teacher-authored weekly availability ("Free Schedule"). Idempotent.
+            await TeacherFreeSchedule.sync();
+            // Per-student teacher records (goals/badges/SPR/marks/…). Idempotent.
+            await StudentRecord.sync();
+            // Student "My Learnings" notes per lesson. Idempotent.
+            await StudentLearning.sync();
+            // Resource categories table (admin-managed, drives the teacher
+            // dashboard category filter). Same idempotent .sync() pattern.
+            await ResourceCategory.sync();
+            // Late-added columns on resources for the categorized teacher
+            // dashboard: category, course, and free-text section. Idempotent.
+            await sequelize.query('ALTER TABLE lms_admin.resources ADD COLUMN IF NOT EXISTS resource_category_id INTEGER');
+            await sequelize.query('ALTER TABLE lms_admin.resources ADD COLUMN IF NOT EXISTS course_id INTEGER');
+            await sequelize.query('ALTER TABLE lms_admin.resources ADD COLUMN IF NOT EXISTS section VARCHAR(255)');
+        } catch (e) {
+            console.warn('[resources] table sync failed:', e.message);
         }
 
         // lms_admin.programs late-added columns. Same self-heal pattern.
@@ -709,8 +924,8 @@ sequelize.authenticate()
             console.warn('[programs] column check failed:', e.message);
         }
 
-        // lucy_devdb.colleges.isActive: per-college access toggle driven
-        // from Manage Colleges → Options → Revoke / Give Access. Default
+        // lucy_devdb.colleges.isActive: per-school access toggle driven
+        // from Manage Schools → Options → Revoke / Give Access. Default
         // TRUE so pre-existing rows stay accessible.
         try {
             const { QueryTypes } = require('sequelize');

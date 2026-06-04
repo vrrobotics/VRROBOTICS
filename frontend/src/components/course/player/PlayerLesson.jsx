@@ -6,7 +6,7 @@ import QuizPlayer from './QuizPlayer';
 // videos and uploaded documents are persisted as RELATIVE paths
 // ("uploads/lesson_file/videos/foo.mp4") by CurriculumService, so they need
 // the admin-service origin prepended before they're resolvable in <video>.
-const ADMIN_BASE = (import.meta.env.VITE_ADMIN_API_URL) || 'http://localhost:4000';
+const ADMIN_BASE = (import.meta.env.VITE_ADMIN_API_URL) || 'http://localhost:5000';
 
 // Build a playable URL for a stored upload. Absolute URLs (http://, https://,
 // blob:, data:) pass through unchanged so YouTube/Vimeo/Drive embeds keep

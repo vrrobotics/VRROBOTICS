@@ -1,13 +1,22 @@
 const service = require('../services/BatchService');
 const { asyncHandler, HttpError } = require('../middlewares/error');
 
-// All endpoints scope by the JWT's college_id — root admins (no college_id)
-// are blocked at the controller boundary so they can't pull/modify another
-// college's batches. Same gate the College Dashboard controller uses.
+// Resolve which college's batches a request operates on.
+//   - School admin: always their own JWT college_id (can't touch others).
+//   - Root/super admin: has no college, so they target one explicitly via the
+//     ?clgId= query param (the root Batches page sends it on every call). This
+//     lets the root admin manage any college's batches with the same feature.
 const requireCollege = (req) => {
-    const collegeId = req.user?.college_id;
+    if (req.user?.is_root_admin || req.user?.role === 'root') {
+        const cid = req.query.clgId || req.query.clg_id;
+        if (!cid) {
+            throw new HttpError(400, 'Select a school to manage its batches');
+        }
+        return String(cid);
+    }
+    const collegeId = req.user?.college_id || req.user?.collegeId;
     if (!collegeId) {
-        throw new HttpError(403, 'Batches are only available to college admins');
+        throw new HttpError(403, 'Batches are only available to school admins');
     }
     return collegeId;
 };

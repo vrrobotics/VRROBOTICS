@@ -22,7 +22,7 @@ export default function CollegeIndex() {
             const res = await listColleges(query);
             setData(res);
         } catch (err) {
-            setError(err?.response?.data?.error || err?.message || 'Failed to load colleges');
+            setError(err?.response?.data?.error || err?.message || 'Failed to load schools');
         } finally {
             setLoading(false);
         }
@@ -42,7 +42,7 @@ export default function CollegeIndex() {
     const handleDelete = async (id) => {
         try {
             await deleteCollege(id);
-            toast.success('College deleted successfully');
+            toast.success('School deleted successfully');
             setConfirm(null);
             load();
         } catch (e) {
@@ -69,7 +69,7 @@ export default function CollegeIndex() {
         return (
             <div className="flex flex-col items-center justify-center py-20 text-gray">
                 <div className="w-10 h-10 border-4 border-gray-200 border-t-skin rounded-full animate-spin mb-3" />
-                <p className="text-[14px]">Loading colleges…</p>
+                <p className="text-[14px]">Loading schools…</p>
             </div>
         );
     }
@@ -78,7 +78,7 @@ export default function CollegeIndex() {
         return (
             <div className="ol-card rounded-ol-8">
                 <div className="ol-card-body py-10 px-6 text-center">
-                    <p className="text-[16px] font-semibold text-danger mb-2">Couldn’t load colleges</p>
+                    <p className="text-[16px] font-semibold text-danger mb-2">Couldn’t load schools</p>
                     <p className="text-[13px] text-gray mb-4">{error}</p>
                     <button className="ol-btn-primary" onClick={load}>Retry</button>
                 </div>
@@ -96,14 +96,14 @@ export default function CollegeIndex() {
                     <div className="flex items-center justify-between flex-wrap gap-3">
                         <h4 className="text-[16px] font-semibold text-dark m-0 flex items-center gap-2">
                             <i className="fi-rr-settings-sliders" />
-                            College List
+                            School List
                         </h4>
                         <Link
                             to="/admin/colleges/create"
                             className="ol-btn-outline-secondary flex items-center gap-10px"
                         >
                             <span className="fi-rr-plus" />
-                            <span>Add new College</span>
+                            <span>Add new School</span>
                         </Link>
                     </div>
                 </div>
@@ -122,7 +122,7 @@ export default function CollegeIndex() {
                                         className="ol-form-control w-full"
                                         name="search"
                                         type="text"
-                                        placeholder="Search college name or ID"
+                                        placeholder="Search school name or ID"
                                         defaultValue={query.search || ''}
                                     />
                                 </div>
@@ -135,8 +135,8 @@ export default function CollegeIndex() {
 
                     {isEmpty ? (
                         <div className="py-12 text-center border border-dashed border-border rounded-ol-8">
-                            <p className="text-[16px] font-semibold text-dark mb-1">No colleges found</p>
-                            <p className="text-[13px] text-gray">Try adjusting your search or add a new college.</p>
+                            <p className="text-[16px] font-semibold text-dark mb-1">No schools found</p>
+                            <p className="text-[13px] text-gray">Try adjusting your search or add a new school.</p>
                         </div>
                     ) : (
                         <>
@@ -151,8 +151,8 @@ export default function CollegeIndex() {
                                     <thead>
                                         <tr>
                                             <th scope="col">#</th>
-                                            <th scope="col">College Name</th>
-                                            <th scope="col">College ID</th>
+                                            <th scope="col">School Name</th>
+                                            <th scope="col">School ID</th>
                                             <th scope="col">Batches</th>
                                             <th scope="col">Options</th>
                                         </tr>
@@ -197,7 +197,7 @@ export default function CollegeIndex() {
                 <ConfirmDialog
                     message={
                         confirm.type === 'revoke'
-                            ? `Revoke access for ${confirm.name}? The college admin will lose access until you grant it again.`
+                            ? `Revoke access for ${confirm.name}? The school admin will lose access until you grant it again.`
                             : confirm.type === 'give'
                                 ? `Grant access for ${confirm.name}?`
                                 : `Are you sure you want to delete ${confirm.name}?`

@@ -70,7 +70,7 @@ export const CollegeProvider = ({ children }: { children: ReactNode }) => {
       setError(
         status === 503
           ? "College service is unavailable. Start backend/college-service and retry."
-          : "Failed to load colleges. Check your network and retry."
+          : "Failed to load schools. Check your network and retry."
       );
     }
     setLoading(false);

@@ -9,7 +9,7 @@ const TABS = [
 ];
 
 // college-service direct (port 8005). Returns [{ clgId, clgName, ... }].
-// We hit it from here so the College dropdown stays the same source of
+// We hit it from here so the School dropdown stays the same source of
 // truth as the student profile dropdown — every admin assigned a college
 // is guaranteed to use a real clgId that students can also pick.
 const COLLEGE_SERVICE = import.meta.env.VITE_COLLEGE_SERVICE_URL || 'http://localhost:8005';
@@ -24,8 +24,8 @@ export default function AdminForm({ admin, onSubmit, submitLabel = 'Save' }) {
         phone: admin?.phone || '',
         address: admin?.address || '',
         college_name: admin?.college_name || '',
-        // Setting college_id flips this admin into "college admin" mode —
-        // after login they only see the College Dashboard scoped to this id.
+        // Setting college_id flips this admin into "school admin" mode —
+        // after login they only see the School Dashboard scoped to this id.
         // Leave blank for a root/general admin.
         college_id: admin?.college_id || '',
         email: admin?.email || '',
@@ -52,8 +52,8 @@ export default function AdminForm({ admin, onSubmit, submitLabel = 'Save' }) {
                 const status = err?.response?.status;
                 setCollegesError(
                     status
-                        ? `Failed to load colleges (HTTP ${status}). College dropdown will be empty.`
-                        : 'Could not reach college-service. College dropdown will be empty.'
+                        ? `Failed to load schools (HTTP ${status}). School dropdown will be empty.`
+                        : 'Could not reach college-service. School dropdown will be empty.'
                 );
             });
         return () => { alive = false; };
@@ -90,7 +90,7 @@ export default function AdminForm({ admin, onSubmit, submitLabel = 'Save' }) {
         const fd = new FormData();
         Object.entries(f).forEach(([k, v]) => {
             // college_id is intentionally allowed to be the empty string — it
-            // tells the backend to clear the column (turn a college admin back
+            // tells the backend to clear the column (turn a school admin back
             // into a regular admin). All other empty fields are skipped.
             if (k === 'college_id') {
                 fd.append(k, v ?? '');
@@ -147,14 +147,14 @@ export default function AdminForm({ admin, onSubmit, submitLabel = 'Save' }) {
                                 </div>
                             </div>
                             <div className="mb-3 grid grid-cols-12 gap-0">
-                                <label className="col-span-2 ol-form-label">College</label>
+                                <label className="col-span-2 ol-form-label">School</label>
                                 <div className="col-span-10">
                                     <select
                                         className="ol-form-control"
                                         value={f.college_id}
                                         onChange={(e) => handleCollegePick(e.target.value)}
                                     >
-                                        <option value="">— Root / General admin (no college) —</option>
+                                        <option value="">— Root / General admin (no school) —</option>
                                         {colleges.map((c) => (
                                             <option key={c.clgId} value={c.clgId}>
                                                 {c.clgName} ({c.clgId})
@@ -171,8 +171,8 @@ export default function AdminForm({ admin, onSubmit, submitLabel = 'Save' }) {
                                             )}
                                     </select>
                                     <p className="text-[12px] text-gray mt-1">
-                                        Pick a college to make this a college admin — they'll log in
-                                        and see only the College Dashboard scoped to that college's
+                                        Pick a school to make this a school admin — they'll log in
+                                        and see only the School Dashboard scoped to that school's
                                         students. Leave blank for a regular admin with full access.
                                     </p>
                                     {collegesError && (
@@ -180,29 +180,29 @@ export default function AdminForm({ admin, onSubmit, submitLabel = 'Save' }) {
                                     )}
                                     {!collegesError && colleges.length === 0 && (
                                         <p className="text-[12px] text-amber-700 mt-1">
-                                            No colleges exist yet. Add one in the College section first.
+                                            No schools exist yet. Add one in the School section first.
                                         </p>
                                     )}
                                 </div>
                             </div>
-                            {/* College Name shows the human label that was picked above. We
+                            {/* School Name shows the human label that was picked above. We
                                 keep it editable in case root admin wants to override the display
                                 name without changing the bound clgId (rare). */}
                             <div className="mb-3 grid grid-cols-12 gap-0">
-                                <label className="col-span-2 ol-form-label">College name</label>
+                                <label className="col-span-2 ol-form-label">School name</label>
                                 <div className="col-span-10">
                                     <input
                                         className="ol-form-control"
                                         value={f.college_name}
                                         onChange={(e) => set('college_name', e.target.value)}
-                                        placeholder="Auto-fills when you pick a college above"
+                                        placeholder="Auto-fills when you pick a school above"
                                     />
                                 </div>
                             </div>
                             <div className="mb-3 grid grid-cols-12 gap-0">
                                 <label className="col-span-2 ol-form-label">User image</label>
                                 <div className="col-span-10">
-                                    {admin?.photo && <div className="mb-2"><img src={`${import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:4000'}/${admin.photo}`} alt="" className="w-[80px] h-[80px] rounded-full object-cover border border-ebordermuted" /></div>}
+                                    {admin?.photo && <div className="mb-2"><img src={`${import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:5000'}/${admin.photo}`} alt="" className="w-[80px] h-[80px] rounded-full object-cover border border-ebordermuted" /></div>}
                                     <input className="ol-form-control" type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files[0])} />
                                 </div>
                             </div>

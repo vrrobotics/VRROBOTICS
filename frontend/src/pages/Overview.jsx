@@ -9,7 +9,7 @@ import { getProfile } from "@/api/authApi"
 
 // Use the admin-service URL like every other public courses call. Override via
 // VITE_ADMIN_API_URL if a different backend is needed.
-const ADMIN_BASE = import.meta.env.VITE_ADMIN_API_URL || "http://localhost:4000";
+const ADMIN_BASE = import.meta.env.VITE_ADMIN_API_URL || "http://localhost:5000";
 
 const Overview = () => {
   const location = useLocation();
@@ -54,7 +54,7 @@ const [loadingProfile, setLoadingProfile] = useState(true);
   // student's collegeId so we never render a course the student isn't
   // entitled to. If profile has no college yet the API responds with
   // `no_college: true` and an empty list, which the UI treats as "set
-  // your college in Profile".
+  // your school in Profile".
   useEffect(() => {
     const fetchPrograms = async () => {
       try {

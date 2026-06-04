@@ -31,7 +31,7 @@ export default function CourseMultiSelect({
     const [search, setSearch] = useState('');
     const boxRef = useRef(null);
 
-    // clgId → clgName so each row + chip can render "Course — College".
+    // clgId → clgName so each row + chip can render "Course — School".
     const { colleges } = useCollege();
     const collegeNameById = useMemo(() => {
         const map = {};
@@ -131,7 +131,7 @@ export default function CourseMultiSelect({
     };
 
     const placeholder = clgIds.length > 0 && scoped.length === 0
-        ? 'No courses available for the chosen college(s)'
+        ? 'No courses available for the chosen school(s)'
         : 'Select courses…';
 
     return (
@@ -214,7 +214,7 @@ export default function CourseMultiSelect({
                                     type="text"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    placeholder="Search by course or college…"
+                                    placeholder="Search by course or school…"
                                     className="ol-form-control"
                                     autoFocus
                                 />

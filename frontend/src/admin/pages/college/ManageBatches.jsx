@@ -15,7 +15,7 @@ import {
 // Manage Batches tab. Lists every batch for the caller's college, with
 // edit/delete and a "manage students" drawer that lets the admin add or
 // remove members.
-export default function ManageBatches({ refreshKey }) {
+export default function ManageBatches({ refreshKey, clgId }) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -27,7 +27,7 @@ export default function ManageBatches({ refreshKey }) {
         setLoading(true);
         setError(null);
         try {
-            const data = await listBatches();
+            const data = await listBatches(clgId);
             setRows(Array.isArray(data?.batches) ? data.batches : []);
         } catch (e) {
             setError(e?.response?.data?.error || e?.message || 'Failed to load batches');
@@ -38,11 +38,12 @@ export default function ManageBatches({ refreshKey }) {
 
     // refreshKey is bumped by the parent every time a new batch is created
     // via the Add Batch tab, so this list stays fresh without a page reload.
-    useEffect(() => { load(); /* eslint-disable-next-line */ }, [refreshKey]);
+    // Also reload when the selected college (clgId) changes (root admin).
+    useEffect(() => { load(); /* eslint-disable-next-line */ }, [refreshKey, clgId]);
 
     const handleDelete = async (id) => {
         try {
-            await deleteBatch(id);
+            await deleteBatch(id, clgId);
             toast.success('Batch deleted');
             setConfirmDelete(null);
             load();
@@ -182,6 +183,7 @@ export default function ManageBatches({ refreshKey }) {
                 <Modal title={`Edit Batch — ${editing.name}`} size="lg" onClose={() => setEditing(null)}>
                     <EditBatchForm
                         batch={editing}
+                        clgId={clgId}
                         onSaved={() => { setEditing(null); load(); }}
                     />
                 </Modal>
@@ -195,6 +197,7 @@ export default function ManageBatches({ refreshKey }) {
                 >
                     <ManageMembers
                         batchId={managing.id}
+                        clgId={clgId}
                         onChanged={load}
                     />
                 </Modal>
@@ -240,7 +243,7 @@ function StatusBadge({ active }) {
 }
 
 // ── Edit form ───────────────────────────────────────────────────────────────
-function EditBatchForm({ batch, onSaved }) {
+function EditBatchForm({ batch, onSaved, clgId }) {
     const [name, setName] = useState(batch.name || '');
     const [description, setDescription] = useState(batch.description || '');
     const [startDate, setStartDate] = useState(batch.start_date || '');
@@ -267,7 +270,7 @@ function EditBatchForm({ batch, onSaved }) {
                 start_date: startDate || null,
                 end_date: endDate || null,
                 is_active: isActive,
-            });
+            }, clgId);
             toast.success('Batch updated');
             onSaved?.();
         } catch (e) {
@@ -355,7 +358,7 @@ function EditBatchForm({ batch, onSaved }) {
 }
 
 // ── Members manager (inside the modal) ──────────────────────────────────────
-function ManageMembers({ batchId, onChanged }) {
+function ManageMembers({ batchId, onChanged, clgId }) {
     const [batch, setBatch] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -370,7 +373,7 @@ function ManageMembers({ batchId, onChanged }) {
         setLoading(true);
         setError(null);
         try {
-            const [b, e] = await Promise.all([getBatch(batchId), listEligibleStudents()]);
+            const [b, e] = await Promise.all([getBatch(batchId, clgId), listEligibleStudents(clgId)]);
             setBatch(b?.batch || null);
             setAllStudents(Array.isArray(e?.students) ? e.students : []);
         } catch (err) {
@@ -408,7 +411,7 @@ function ManageMembers({ batchId, onChanged }) {
         if (pendingIds.length === 0) return;
         setAdding(true);
         try {
-            const res = await addBatchMembers(batchId, pendingIds);
+            const res = await addBatchMembers(batchId, pendingIds, clgId);
             toast.success(res?.message || `Added ${pendingIds.length}`);
             setPendingIds([]);
             setSearch('');
@@ -424,7 +427,7 @@ function ManageMembers({ batchId, onChanged }) {
     const handleRemove = async (uid) => {
         setRemovingId(uid);
         try {
-            await removeBatchMember(batchId, uid);
+            await removeBatchMember(batchId, uid, clgId);
             toast.success('Student removed');
             await load();
             onChanged?.();
@@ -513,7 +516,7 @@ function ManageMembers({ batchId, onChanged }) {
                     {candidates.length === 0 && (
                         <p className="px-4 py-6 text-center text-[12px] text-gray m-0">
                             {allStudents.length === 0
-                                ? 'No students at your college yet.'
+                                ? 'No students at your school yet.'
                                 : 'No eligible students left to add.'}
                         </p>
                     )}

@@ -39,7 +39,7 @@ const Edit: React.FC<EditProps> = ({ onClose }) => {
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block mb-2 font-medium text-gray-700">College Name</label>
+              <label className="block mb-2 font-medium text-gray-700">School Name</label>
               <input
                 type="text"
                 name="name"

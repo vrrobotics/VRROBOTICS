@@ -82,7 +82,7 @@ export default function AssessmentForm({ initial, onSubmit, submitting, mode = '
         if (!assessmentId.trim()) return setError('Assessment ID is required');
         if (!TYPE_OPTIONS.includes(type)) return setError('Pick a type');
         if (!setId) return setError('Pick a question set');
-        if (selectedClgIds.length === 0) return setError('Pick at least one college');
+        if (selectedClgIds.length === 0) return setError('Pick at least one school');
         if (selectedCourseIds.length === 0) return setError('Pick at least one course');
 
         const minutes = Number(timerMinutes);

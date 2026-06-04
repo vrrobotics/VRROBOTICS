@@ -3,10 +3,15 @@ import { createPortal } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import ConfirmDialog from '../../components/ConfirmDialog';
-import { listAdmins, deleteAdmin } from '../../api/admin';
+import { listAdmins, deleteAdmin, grantAdminAccess, revokeAdminAccess } from '../../api/admin';
+import { getStoredUser } from '@/admin/api/auth';
 import { BsThreeDotsVertical } from 'react-icons/bs';
 
-const API = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:4000';
+// Only a root admin may grant/revoke root access. Read from the cached admin
+// profile; the backend enforces this too, so a stale cache can't bypass it.
+const viewerIsRoot = () => getStoredUser()?.is_root_admin === true;
+
+const API = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:5000';
 
 const avatarUrl = (row) => row.photo
     ? `${API}/${row.photo}`
@@ -45,16 +50,43 @@ export default function AdminIndex() {
         setParams(next);
     };
 
-    const handleDelete = async (id) => {
+    // Single dispatcher for the confirm dialog — handles delete + grant/revoke
+    // root access depending on confirm.action.
+    const runConfirm = async () => {
+        if (!confirm) return;
+        const { id, action } = confirm;
         try {
-            await deleteAdmin(id);
-            toast.success('Admin deleted successfully');
+            if (action === 'grant') {
+                const r = await grantAdminAccess(id);
+                toast.success(r?.message || 'Root access granted');
+            } else if (action === 'revoke') {
+                const r = await revokeAdminAccess(id);
+                toast.success(r?.message || 'Root access revoked');
+            } else {
+                await deleteAdmin(id);
+                toast.success('Admin deleted successfully');
+            }
             setConfirm(null);
             load();
         } catch (e) {
             toast.error(e.response?.data?.error || 'Failed');
             setConfirm(null);
         }
+    };
+
+    const confirmText = {
+        grant: {
+            title: 'Give root access',
+            message: `Give ${confirm?.name || 'this user'} full root-admin access? They'll see the same root dashboard you do on their next login.`,
+        },
+        revoke: {
+            title: 'Revoke root access',
+            message: `Revoke root access from ${confirm?.name || 'this user'}? They'll return to their normal admin view on next login.`,
+        },
+        delete: {
+            title: 'Delete admin',
+            message: `Are you sure you want to delete ${confirm?.name || 'this admin'}?`,
+        },
     };
 
     const handlePrint = () => window.print();
@@ -147,7 +179,7 @@ export default function AdminIndex() {
                                             <th scope="col">#</th>
                                             <th scope="col">Name</th>
                                             <th scope="col">Phone</th>
-                                            <th scope="col">College Name</th>
+                                            <th scope="col">School Name</th>
                                             <th scope="col">Options</th>
                                         </tr>
                                     </thead>
@@ -171,7 +203,7 @@ export default function AdminIndex() {
                                                 <td><p className="m-0">{a.phone || '-'}</p></td>
                                                 <td>
                                                     <p className="m-0 text-dark">
-                                                        {a.college_name || <span className="text-gray">College Name</span>}
+                                                        {a.college_name || <span className="text-gray">School Name</span>}
                                                     </p>
                                                 </td>
                                                 <td>
@@ -181,7 +213,9 @@ export default function AdminIndex() {
                                                         (the backend refuses it anyway — see AdminService.remove). */}
                                                     <AdminOptions
                                                         admin={a}
-                                                        onDelete={() => setConfirm({ id: a.id, name: a.name })}
+                                                        onDelete={() => setConfirm({ id: a.id, name: a.name, action: 'delete' })}
+                                                        onGrant={() => setConfirm({ id: a.id, name: a.name, action: 'grant' })}
+                                                        onRevoke={() => setConfirm({ id: a.id, name: a.name, action: 'revoke' })}
                                                     />
                                                 </td>
                                             </tr>
@@ -196,17 +230,18 @@ export default function AdminIndex() {
 
             {confirm && (
                 <ConfirmDialog
-                    title="Delete admin"
-                    message={`Are you sure you want to delete ${confirm.name}?`}
+                    title={confirmText[confirm.action]?.title || 'Confirm'}
+                    message={confirmText[confirm.action]?.message || ''}
                     onCancel={() => setConfirm(null)}
-                    onConfirm={() => handleDelete(confirm.id)}
+                    onConfirm={runConfirm}
                 />
             )}
         </div>
     );
 }
 
-function AdminOptions({ admin, onDelete }) {
+function AdminOptions({ admin, onDelete, onGrant, onRevoke }) {
+    const canManageAccess = viewerIsRoot();
     const [open, setOpen] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0 });
     const triggerRef = useRef(null);
@@ -284,6 +319,30 @@ function AdminOptions({ admin, onDelete }) {
                             Edit
                         </Link>
                     </li>
+                    {/* Give / Revoke root access — only a root admin sees these.
+                        Hidden for the primary root row (can't be revoked). */}
+                    {canManageAccess && !admin.is_root_admin && (
+                        <li>
+                            <button
+                                type="button"
+                                className="w-full text-left block px-3 py-2 text-emerald-700 hover:bg-gray-50"
+                                onClick={() => { close(); onGrant(); }}
+                            >
+                                Give Access
+                            </button>
+                        </li>
+                    )}
+                    {canManageAccess && admin.is_root_admin && !admin.is_primary_root && (
+                        <li>
+                            <button
+                                type="button"
+                                className="w-full text-left block px-3 py-2 text-amber-700 hover:bg-gray-50"
+                                onClick={() => { close(); onRevoke(); }}
+                            >
+                                Revoke Access
+                            </button>
+                        </li>
+                    )}
                     {!admin.is_root_admin && (
                         <li>
                             <button

@@ -35,7 +35,7 @@ module.exports = {
     from: process.env.MAIL_FROM || 'no-reply@example.com',
   },
 
-  appUrl: process.env.APP_URL || 'http://localhost:4000',
+  appUrl: process.env.APP_URL || 'http://localhost:5000',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
   corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:5173')
     .split(',')

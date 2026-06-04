@@ -1,7 +1,7 @@
 import api from './client';
 
 /**
- * College Dashboard — fetches the 5 KPI counts for the logged-in college
+ * School Dashboard — fetches the 5 KPI counts for the logged-in college
  * admin's college. The backend reads the college_id from the JWT, so the
  * frontend doesn't need to pass anything explicitly.
  */

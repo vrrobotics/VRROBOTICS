@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import Modal from '../../components/Modal';
+import ManageCard from '../../components/ManageCard';
 import {
     listGallery, storeGalleryItem, updateGalleryItem, deleteGalleryItem,
     toggleGalleryStatus, getGalleryItem,
@@ -17,6 +18,16 @@ import {
  * The page is rendered for both the "Manage Gallery" and "Add Gallery"
  * sidebar links; ?action=add (from Add Gallery) auto-opens the Add modal.
  */
+
+// Render a stored date as "AUG 18, 2024". Falls back to the raw value for
+// legacy free-text dates that aren't ISO-parseable.
+const fmtDate = (raw) => {
+    if (!raw) return '';
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return raw;
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).toUpperCase();
+};
+
 export default function GalleryIndex() {
     const [params, setParams] = useSearchParams();
     const [data, setData] = useState(null);
@@ -161,38 +172,22 @@ export default function GalleryIndex() {
                             </p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {rows.map((g) => (
-                                    <div key={g.id} className="border border-ebordermuted rounded-ol-12 overflow-hidden bg-white">
-                                        <div className="h-40 bg-gray-100 flex items-center justify-center overflow-hidden">
-                                            {g.media_url ? (
-                                                g.media_type === 'video' ? (
-                                                    <iframe title={g.title} src={g.media_url} className="w-full h-full" allowFullScreen />
-                                                ) : (
-                                                    <img src={g.media_url} alt={g.title} className="w-full h-full object-cover" />
-                                                )
-                                            ) : (
-                                                <span className="text-[12px] text-gray">No media</span>
-                                            )}
-                                        </div>
-                                        <div className="p-3">
-                                            <div className="flex items-start justify-between gap-2">
-                                                <h4 className="text-[14px] font-semibold text-dark m-0">{g.title}</h4>
-                                                <span className={`shrink-0 inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
-                                                    g.status ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                                }`}>
-                                                    {g.status ? 'Active' : 'Hidden'}
-                                                </span>
-                                            </div>
-                                            {g.event_date && <p className="text-[12px] text-warm-green font-semibold mt-1 mb-0">{g.event_date}</p>}
-                                            {g.description && <p className="text-[12px] text-gray mt-1 mb-0 line-clamp-2">{g.description}</p>}
-                                            <div className="flex gap-2 mt-3">
-                                                <button className="ol-btn-light text-[12px] px-3 py-1" onClick={() => openEdit(g.id)}>Edit</button>
-                                                <button className="ol-btn-outline-secondary text-[12px] px-3 py-1" onClick={() => handleToggle(g.id)}>
-                                                    {g.status ? 'Hide' : 'Show'}
-                                                </button>
-                                                <button className="ol-btn-danger text-[12px] px-3 py-1" onClick={() => setConfirm(g.id)}>Delete</button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <ManageCard
+                                        key={g.id}
+                                        active={!!g.status}
+                                        onEdit={() => openEdit(g.id)}
+                                        onToggle={() => handleToggle(g.id)}
+                                        onDelete={() => setConfirm(g.id)}
+                                        cover={g.media_url
+                                            ? (g.media_type === 'video'
+                                                ? <iframe title={g.title} src={g.media_url} className="w-full h-full" allowFullScreen />
+                                                : <img src={g.media_url} alt={g.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />)
+                                            : <div className="w-full h-full flex items-center justify-center text-[12px] text-gray bg-gradient-to-br from-orange-100 to-orange-50">No media</div>}
+                                    >
+                                        <h4 className="text-[14px] font-semibold text-dark m-0 truncate">{g.title}</h4>
+                                        {g.event_date && <p className="text-[12px] text-warm-green font-semibold mt-1 mb-0">{fmtDate(g.event_date)}</p>}
+                                        {g.description && <p className="text-[12px] text-gray mt-1 mb-0 line-clamp-2">{g.description}</p>}
+                                    </ManageCard>
                                 ))}
                             </div>
 
@@ -302,8 +297,8 @@ function GalleryForm({ initial, onSubmit, submitLabel }) {
             </div>
             <div className="mb-3 grid grid-cols-2 gap-3">
                 <div>
-                    <label className="ol-form-label">Event date</label>
-                    <input className="ol-form-control" value={form.event_date} onChange={(e) => set('event_date', e.target.value)} placeholder="SAT, MAY 02, 2026" />
+                    <label className="ol-form-label">Event date<span className="text-danger ms-1">*</span></label>
+                    <input type="date" className="ol-form-control" required value={form.event_date} onChange={(e) => set('event_date', e.target.value)} />
                 </div>
                 <div>
                     <label className="ol-form-label">Sort order</label>

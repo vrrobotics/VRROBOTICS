@@ -86,7 +86,7 @@ const auth = async (req, res, next) => {
 
         // TWO token types reach this service:
         //   1. Supabase access tokens (HS256, SUPABASE_JWT_SECRET) — students,
-        //      teachers, college admins provisioned through Supabase Auth.
+        //      teachers, school admins provisioned through Supabase Auth.
         //   2. admin-service-issued JWTs (env.jwt.secret) — the root/college
         //      admin break-glass login (AuthService.login → lms_admin.users).
         //      This bootstrap path must keep working even before any Supabase
@@ -109,7 +109,7 @@ const auth = async (req, res, next) => {
             // verification failed → fall through to local admin JWT
         }
 
-        // --- 2. admin-service local JWT (root / college admin) -------------
+        // --- 2. admin-service local JWT (root / school admin) -------------
         try {
             const decoded = jwt.verify(token, env.jwt.secret);
             // Shape mirrors AuthService.signToken: { id, email, role, name,

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import httpProxy from 'express-http-proxy';
 import serviceMap from '../utils/serviceMap.js';
 import HealthMonitor from '../utils/healthMonitor.js';
-import { bastionAllowedOrigins } from '../utils/cors.js';
+import { isAllowedOrigin } from '../utils/cors.js';
 
 const router = Router();
 const healthMonitor = new HealthMonitor(serviceMap);
@@ -47,7 +47,7 @@ Object.entries(serviceMap).forEach(([name, service]) => {
         if (h.toLowerCase().startsWith('access-control-')) delete headers[h];
       });
       const origin = userReq.headers?.origin;
-      if (origin && bastionAllowedOrigins.includes(origin)) {
+      if (origin && isAllowedOrigin(origin)) {
         headers['access-control-allow-origin'] = origin;
         headers['access-control-allow-credentials'] = 'true';
         headers['vary'] = headers['vary'] ? `${headers['vary']}, Origin` : 'Origin';

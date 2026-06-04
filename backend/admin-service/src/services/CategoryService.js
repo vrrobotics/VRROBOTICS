@@ -15,7 +15,7 @@ const normalizeClgIds = (raw) => {
 // `clgId` gates the public student view: when absent we return an empty list
 // (the spec says "show nothing until the student picks a college") flagged
 // with no_college so the UI can prompt them. When present, only categories
-// mapped to that college are returned — never another college's.
+// mapped to that college are returned — never another school's.
 //
 // Admin-side callers (CourseService.createMeta) call list() with no arg and
 // still get the full unfiltered tree, preserving existing behaviour.
@@ -41,7 +41,7 @@ const list = async (clgId = undefined) => {
 
 const create = async (body, files = {}) => {
     const { title, parent_id, icon, keywords, description } = body;
-    if (!title || !icon) throw new HttpError(422, 'title and icon are required');
+    if (!title || !String(title).trim()) throw new HttpError(422, 'Category name is required');
 
     const slug = slugify(title);
     if (await categoryRepo.isSlugTaken(slug)) {
@@ -82,7 +82,7 @@ const update = async (id, body, files = {}) => {
     if (!pre) throw new HttpError(404, 'Not found');
 
     const { title, parent_id, icon, keywords, description } = body;
-    if (!title || !icon) throw new HttpError(422, 'title and icon are required');
+    if (!title || !String(title).trim()) throw new HttpError(422, 'Category name is required');
 
     const slug = slugify(title);
     if (await categoryRepo.isSlugTaken(slug, id)) {

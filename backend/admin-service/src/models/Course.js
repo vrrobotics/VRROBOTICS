@@ -12,6 +12,10 @@ module.exports = (sequelize) => {
         status: { type: DataTypes.STRING(50), defaultValue: 'active' },
         level: { type: DataTypes.STRING(50) },
         language: { type: DataTypes.STRING(50) },
+        // Class-access range. A course is accessible to classes within
+        // [class_from, class_to]. NULL = no restriction (open to all classes).
+        class_from: { type: DataTypes.SMALLINT, allowNull: true },
+        class_to: { type: DataTypes.SMALLINT, allowNull: true },
         is_paid: { type: DataTypes.BOOLEAN, defaultValue: false },
         is_best: { type: DataTypes.BOOLEAN, defaultValue: false },
         price: { type: DataTypes.FLOAT, defaultValue: 0 },

@@ -33,7 +33,7 @@ export default function CourseSingleSelect({
     const [search, setSearch] = useState('');
     const boxRef = useRef(null);
 
-    // Resolve clgId → clgName so each row can render "Course — College".
+    // Resolve clgId → clgName so each row can render "Course — School".
     // useCollege() is shared across the admin so the hit is usually cached.
     const { colleges } = useCollege();
     const collegeNameById = useMemo(() => {
@@ -137,7 +137,7 @@ export default function CourseSingleSelect({
     const placeholder = clgIds.length === 0 && !loading && !error && courses.length > 0
         ? 'Select a course…'
         : clgIds.length > 0 && scoped.length === 0
-            ? 'No courses available for the chosen college(s)'
+            ? 'No courses available for the chosen school(s)'
             : 'Select a course…';
 
     return (
@@ -217,7 +217,7 @@ export default function CourseSingleSelect({
                                     type="text"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    placeholder="Search by course or college…"
+                                    placeholder="Search by course or school…"
                                     className="ol-form-control"
                                     autoFocus
                                 />

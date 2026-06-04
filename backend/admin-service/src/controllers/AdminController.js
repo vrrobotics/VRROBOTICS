@@ -1,5 +1,5 @@
 const adminService = require('../services/AdminService');
-const { asyncHandler } = require('../middlewares/error');
+const { asyncHandler, HttpError } = require('../middlewares/error');
 
 exports.index = asyncHandler(async (req, res) => {
     res.json(await adminService.list(req.query));
@@ -19,4 +19,21 @@ exports.update = asyncHandler(async (req, res) => {
 
 exports.destroy = asyncHandler(async (req, res) => {
     res.json(await adminService.remove(req.params.id));
+});
+
+// Only an existing root admin may grant/revoke root access.
+const assertRoot = (req) => {
+    if (!(req.user?.is_root_admin === true || req.user?.role === 'root')) {
+        throw new HttpError(403, 'Only a root admin can change root access');
+    }
+};
+
+exports.grantAccess = asyncHandler(async (req, res) => {
+    assertRoot(req);
+    res.json(await adminService.grantAccess(req.params.id));
+});
+
+exports.revokeAccess = asyncHandler(async (req, res) => {
+    assertRoot(req);
+    res.json(await adminService.revokeAccess(req.params.id));
 });

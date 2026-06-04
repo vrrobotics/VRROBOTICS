@@ -148,7 +148,7 @@ export default function ProgramIndex() {
                                 <tr>
                                     <th scope="col" className="w-[60px]">#</th>
                                     <th scope="col">Program title</th>
-                                    <th scope="col">College</th>
+                                    <th scope="col">School</th>
                                     <th scope="col">Course</th>
                                     <th scope="col">Options</th>
                                 </tr>
@@ -268,7 +268,7 @@ function CourseChips({ courseIds, titleById }) {
 function CollegeChips({ clgIds, nameById }) {
     const ids = Array.isArray(clgIds) ? clgIds.filter(Boolean) : [];
     if (ids.length === 0) {
-        return <span className="text-[11px] text-muted">No colleges assigned</span>;
+        return <span className="text-[11px] text-muted">No schools assigned</span>;
     }
     const visible = ids.slice(0, MAX_VISIBLE_COLLEGES);
     const hiddenCount = ids.length - visible.length;

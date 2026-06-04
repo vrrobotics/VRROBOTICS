@@ -220,12 +220,27 @@ const update = async (id, body, file = null) => {
     );
 
     // Keep Supabase Auth in sync on email changes.
+    const uid = String(existing.passwordHash || '').replace(/^supabase:/, '');
     if (body.email && body.email !== existing.email) {
-        const uid = String(existing.passwordHash || '').replace(/^supabase:/, '');
         if (uid) {
             await supabaseAdmin.auth.admin
                 .updateUserById(uid, { email: body.email })
                 .catch((e) => console.warn('[teacher] Supabase email sync failed:', e.message));
+        }
+    }
+
+    // Optional password reset — admin can set/replace the teacher's login
+    // password from Edit Teacher. Blank = keep current. This is what lets the
+    // teacher log in directly with admin-set credentials.
+    if (body.password != null && String(body.password).trim() !== '') {
+        if (String(body.password).length < 8) {
+            throw new HttpError(422, 'Password must be at least 8 characters');
+        }
+        if (uid) {
+            const { error } = await supabaseAdmin.auth.admin.updateUserById(uid, {
+                password: String(body.password),
+            });
+            if (error) throw new HttpError(400, `Failed to update password: ${error.message}`);
         }
     }
 

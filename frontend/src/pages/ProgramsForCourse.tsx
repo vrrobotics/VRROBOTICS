@@ -47,7 +47,7 @@ interface CourseSummary {
     slug: string;
 }
 
-const ADMIN_BASE = (import.meta.env.VITE_ADMIN_API_URL as string) || "http://localhost:4000";
+const ADMIN_BASE = (import.meta.env.VITE_ADMIN_API_URL as string) || "http://localhost:5000";
 
 // Parse `features` defensively — Sequelize JSON columns usually arrive as a
 // real array, but a stringified array slips through some serialisations.
@@ -234,7 +234,7 @@ const ProgramsForCourse = () => {
                     {course?.title ? `Programs for ${course.title}` : "Programs"}
                 </h2>
                 <p className="text-gray-600 mb-8 text-center">
-                    These are the programs available for this course at your college. Pick one to view details.
+                    These are the programs available for this course at your school. Pick one to view details.
                 </p>
 
                 {loading && (
@@ -249,13 +249,13 @@ const ProgramsForCourse = () => {
 
                 {!loading && hasCollege === false && (
                     <p className="text-gray-600 text-center">
-                        Your account isn't linked to a college yet. Contact your admin.
+                        Your account isn't linked to a school yet. Contact your admin.
                     </p>
                 )}
 
                 {!loading && !error && hasCollege === true && cards.length === 0 && (
                     <p className="text-gray-600 text-center">
-                        No programs have been added for this course at your college yet.
+                        No programs have been added for this course at your school yet.
                     </p>
                 )}
 

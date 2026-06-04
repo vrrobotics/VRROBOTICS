@@ -18,7 +18,7 @@ const { HttpError } = require('../middlewares/error');
 
 const getStats = async ({ collegeId }) => {
     if (!collegeId) {
-        throw new HttpError(400, 'College admin profile is missing a college_id');
+        throw new HttpError(400, 'School admin profile is missing a college_id');
     }
 
     // Trim and case-normalize the JWT value defensively. We've seen mismatches

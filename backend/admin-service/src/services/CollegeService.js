@@ -117,7 +117,7 @@ const create = async (body) => {
     };
 
     const college = await College.create(data);
-    return { message: 'College added successfully', college: college.toJSON() };
+    return { message: 'School added successfully', college: college.toJSON() };
 };
 
 const update = async (clgId, body) => {
@@ -144,14 +144,14 @@ const update = async (clgId, body) => {
     };
 
     await college.update(data);
-    return { message: 'College updated successfully', college: college.toJSON() };
+    return { message: 'School updated successfully', college: college.toJSON() };
 };
 
 const remove = async (clgId) => {
     const college = await College.findByPk(clgId);
     if (!college) throw new HttpError(404, 'College not found');
     await college.destroy();
-    return { message: 'College deleted successfully' };
+    return { message: 'School deleted successfully' };
 };
 
 const setAccess = async (clgId, isActive) => {

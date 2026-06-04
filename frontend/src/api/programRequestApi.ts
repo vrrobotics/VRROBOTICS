@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE = (import.meta.env.VITE_ADMIN_API_URL as string) || "http://localhost:4000";
+const BASE = (import.meta.env.VITE_ADMIN_API_URL as string) || "http://localhost:5000";
 
 // Same base + per-student x-user-id header as the other /api/public clients
 // (courseApi, preAssessmentApi). The header keys the request to the logged-in

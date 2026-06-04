@@ -16,10 +16,15 @@ const ScrollReveal = () => {
     root.classList.add("reveal-ready");
 
     if (reduce || !("IntersectionObserver" in window)) {
-      document.querySelectorAll<HTMLElement>(".card-ngo, [data-reveal]").forEach((el) =>
-        el.classList.add("revealed"),
-      );
-      return;
+      const revealAll = () =>
+        document
+          .querySelectorAll<HTMLElement>(".card-ngo:not(.revealed), [data-reveal]:not(.revealed)")
+          .forEach((el) => el.classList.add("revealed"));
+      revealAll();
+      // Content added later (e.g. after an async fetch) must be revealed too.
+      const mo = new MutationObserver(revealAll);
+      mo.observe(document.body, { childList: true, subtree: true });
+      return () => mo.disconnect();
     }
 
     const observer = new IntersectionObserver(
@@ -39,16 +44,27 @@ const ScrollReveal = () => {
       { threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
     );
 
-    // Defer one frame so freshly-routed content is in the DOM.
-    const raf = requestAnimationFrame(() => {
+    // Observe every not-yet-revealed element. Runs on the next frame (so
+    // freshly-routed content is in the DOM) and again whenever the DOM
+    // changes, so cards rendered after an async fetch — e.g. the Gallery
+    // page loading items from the API — are picked up instead of being left
+    // permanently hidden at opacity:0.
+    const scan = () =>
       document
         .querySelectorAll<HTMLElement>(".card-ngo:not(.revealed), [data-reveal]:not(.revealed)")
         .forEach((el) => observer.observe(el));
+
+    let raf = requestAnimationFrame(scan);
+    const mo = new MutationObserver(() => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(scan);
     });
+    mo.observe(document.body, { childList: true, subtree: true });
 
     return () => {
       cancelAnimationFrame(raf);
       observer.disconnect();
+      mo.disconnect();
     };
   }, [pathname]);
 

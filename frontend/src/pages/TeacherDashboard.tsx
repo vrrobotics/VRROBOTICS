@@ -1,6 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import { useAuth } from "@/hooks/useAuth";
+import { updateProfile } from "@/api/authApi";
+import { toast } from "react-toastify";
 import {
+  Video,
+  Calendar,
   LayoutDashboard,
   CalendarDays,
   MessageSquare,
@@ -31,6 +38,7 @@ const navItems = [
   { name: "Demos", icon: MessageSquare },
   { name: "Classes", icon: MonitorPlay },
   { name: "Time table", icon: Table2 },
+  { name: "Free Schedule", icon: CalendarDays },
   { name: "Students", icon: Users },
   { name: "Resources", icon: Library },
   { name: "Profile", icon: Contact },
@@ -68,9 +76,802 @@ const Stat = ({ value, label }: { value: string; label: string }) => (
   </div>
 );
 
+const ADMIN_BASE =
+  (import.meta.env.VITE_ADMIN_API_URL as string) || "http://localhost:5000";
+
+interface TeacherSlot {
+  id: number;
+  name: string;
+  course_title: string | null;
+  start_at: string | null;
+  end_at: string | null;
+  meeting_link: string | null;
+  students: { id: string; name: string }[];
+}
+
+const fmtSlot = (raw: string | null) => {
+  if (!raw) return "—";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  return d.toLocaleString(undefined, {
+    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+  });
+};
+
+// Split helpers for the table views (Date / Day / Time columns).
+const fmtDate = (raw: string | null) => {
+  if (!raw) return "—";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  return d.toLocaleDateString(undefined, { day: "2-digit", month: "2-digit", year: "numeric" });
+};
+const fmtDay = (raw: string | null) => {
+  if (!raw) return "—";
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString(undefined, { weekday: "short" });
+};
+const fmtTime = (raw: string | null) => {
+  if (!raw) return "—";
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+};
+
+/**
+ * Slots assigned to the logged-in teacher. Mirrors the admin Slots feature:
+ * whatever the super admin assigns to this teacher (by name) shows up here,
+ * with course, time window, the Google Meet link, and the student roster.
+ */
+const SlotsView = ({ teacherId }: { teacherId?: string }) => {
+  const [slots, setSlots] = useState<TeacherSlot[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!teacherId) { setSlots([]); setLoading(false); return; }
+    let cancelled = false;
+    setLoading(true);
+    axios
+      .get(`${ADMIN_BASE}/api/public/slots/by-teacher/${teacherId}`, {
+        params: { t: Date.now() },
+        headers: { "Cache-Control": "no-cache" },
+        timeout: 30000,
+      })
+      .then(({ data }) => { if (!cancelled) setSlots(Array.isArray(data?.slots) ? data.slots : []); })
+      .catch(() => { if (!cancelled) setSlots([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [teacherId]);
+
+  if (!teacherId) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm p-16 text-center">
+        <h1 className="text-2xl font-bold mb-2">Slots</h1>
+        <p className="text-muted-foreground">Sign in as a teacher to see your assigned slots.</p>
+      </div>
+    );
+  }
+
+  return (
+    <section className="bg-white rounded-2xl shadow-sm p-6">
+      <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
+        <Calendar className="w-6 h-6 text-primary" /> My Slots
+      </h1>
+      {loading ? (
+        <p className="text-muted-foreground py-8 text-center">Loading slots…</p>
+      ) : slots.length === 0 ? (
+        <p className="text-muted-foreground py-8 text-center">
+          No slots assigned to you yet. Slots created for you in admin will appear here.
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-muted-foreground border-b">
+                <th className="py-2 pr-4">Slot Date</th>
+                <th className="py-2 pr-4">Day</th>
+                <th className="py-2 pr-4">Slot Time</th>
+                <th className="py-2 pr-4">Course</th>
+                <th className="py-2 pr-4">Students</th>
+                <th className="py-2 pr-4">Session</th>
+              </tr>
+            </thead>
+            <tbody>
+              {slots.map((s) => (
+                <tr key={s.id} className="border-b">
+                  <td className="py-3 pr-4 whitespace-nowrap">{fmtDate(s.start_at)}</td>
+                  <td className="py-3 pr-4">{fmtDay(s.start_at)}</td>
+                  <td className="py-3 pr-4 whitespace-nowrap">{fmtTime(s.start_at)} – {fmtTime(s.end_at)}</td>
+                  <td className="py-3 pr-4">{s.course_title || s.name || "—"}</td>
+                  <td className="py-3 pr-4">{s.students.length}</td>
+                  <td className="py-3 pr-4">
+                    {s.meeting_link
+                      ? <a href={s.meeting_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-lg bg-gradient-hero text-white text-xs font-semibold px-3 py-1.5"><Video className="w-3.5 h-3.5" /> Join</a>
+                      : <span className="text-muted-foreground text-xs">NA</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+};
+
+// Generic fetch for a teacher-scoped public endpoint. Returns the array under
+// `key` (e.g. demos/classes/entries/resources). Live (no-cache) so admin
+// additions show without stale data.
+function useTeacherList<T>(teacherId: string | undefined, path: string, key: string) {
+  const [items, setItems] = useState<T[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!teacherId) { setItems([]); setLoading(false); return; }
+    let cancelled = false;
+    setLoading(true);
+    axios
+      .get(`${ADMIN_BASE}/api/public/${path}/by-teacher/${teacherId}`, {
+        params: { t: Date.now() }, headers: { "Cache-Control": "no-cache" }, timeout: 30000,
+      })
+      .then(({ data }) => { if (!cancelled) setItems(Array.isArray(data?.[key]) ? data[key] : []); })
+      .catch(() => { if (!cancelled) setItems([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [teacherId, path, key]);
+  return { items, loading };
+}
+
+const Panel = ({ title, icon: Icon, children }: { title: string; icon: typeof Calendar; children: ReactNode }) => (
+  <section className="bg-white rounded-2xl shadow-sm p-6">
+    <h1 className="text-2xl font-bold mb-4 flex items-center gap-2"><Icon className="w-6 h-6 text-primary" /> {title}</h1>
+    {children}
+  </section>
+);
+
+const Empty = ({ text }: { text: string }) => <p className="text-muted-foreground py-8 text-center">{text}</p>;
+
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+const DemosView = ({ teacherId }: { teacherId?: string }) => {
+  const { items, loading } = useTeacherList<{ id: number; title: string; course_title: string | null; start_at: string | null; end_at: string | null }>(teacherId, "demos", "demos");
+  return (
+    <Panel title="My Demos" icon={MessageSquare}>
+      {loading ? <Empty text="Loading demos…" /> : items.length === 0 ? <Empty text="No demos assigned to you yet." /> : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-muted-foreground border-b">
+                <th className="py-2 pr-4">Demo</th>
+                <th className="py-2 pr-4">Date</th>
+                <th className="py-2 pr-4">Day</th>
+                <th className="py-2 pr-4">Time</th>
+                <th className="py-2 pr-4">Course</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((d) => (
+                <tr key={d.id} className="border-b">
+                  <td className="py-3 pr-4 font-medium">{d.title}</td>
+                  <td className="py-3 pr-4 whitespace-nowrap">{fmtDate(d.start_at)}</td>
+                  <td className="py-3 pr-4">{fmtDay(d.start_at)}</td>
+                  <td className="py-3 pr-4 whitespace-nowrap">{fmtTime(d.start_at)} – {fmtTime(d.end_at)}</td>
+                  <td className="py-3 pr-4">{d.course_title || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
+  );
+};
+
+const ClassesView = ({ teacherId }: { teacherId?: string }) => {
+  const { items, loading } = useTeacherList<{ id: number; name: string; course_title: string | null; start_at: string | null; end_at: string | null; meeting_link: string | null; students: { id: string; name: string }[] }>(teacherId, "classes", "classes");
+  return (
+    <Panel title="My Classes" icon={MonitorPlay}>
+      {loading ? <Empty text="Loading classes…" /> : items.length === 0 ? <Empty text="No classes assigned to you yet." /> : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {items.map((c) => (
+            <div key={c.id} className="rounded-xl border border-border p-4 flex flex-col gap-2">
+              <div className="font-semibold text-lg">{c.name}</div>
+              {c.course_title && <div className="text-sm text-muted-foreground">{c.course_title}</div>}
+              <div className="text-sm"><span className="font-medium">{fmtSlot(c.start_at)}</span><span className="text-muted-foreground"> → {fmtSlot(c.end_at)}</span></div>
+              <div className="text-xs text-muted-foreground">{c.students.length} student{c.students.length === 1 ? "" : "s"}{c.students.length > 0 && `: ${c.students.slice(0, 3).map((x) => x.name).join(", ")}${c.students.length > 3 ? "…" : ""}`}</div>
+              {c.meeting_link
+                ? <a href={c.meeting_link} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-hero text-white text-sm font-semibold px-3 py-2"><Video className="w-4 h-4" /> Join class</a>
+                : <span className="text-xs text-muted-foreground mt-1">No meeting link</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </Panel>
+  );
+};
+
+const TimetableView = ({ teacherId }: { teacherId?: string }) => {
+  const { items, loading } = useTeacherList<{ id: number; day_of_week: number; start_time: string | null; end_time: string | null; course_title: string | null }>(teacherId, "timetable", "entries");
+  return (
+    <Panel title="My Time table" icon={Table2}>
+      {loading ? <Empty text="Loading time table…" /> : items.length === 0 ? <Empty text="No timetable entries assigned to you yet." /> : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-muted-foreground border-b"><th className="py-2 pr-4">Day</th><th className="py-2 pr-4">Time</th><th className="py-2 pr-4">Course</th></tr></thead>
+            <tbody>
+              {items.map((e) => (
+                <tr key={e.id} className="border-b">
+                  <td className="py-3 pr-4 font-semibold">{DAYS[e.day_of_week] || "—"}</td>
+                  <td className="py-3 pr-4 whitespace-nowrap">{e.start_time || "—"} – {e.end_time || "—"}</td>
+                  <td className="py-3 pr-4">{e.course_title || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
+  );
+};
+
+interface TeacherResource {
+  id: number;
+  title: string;
+  description: string | null;
+  files: { name: string; url: string }[];
+  resource_category_id: number | null;
+  category_name: string | null;
+  course_id: number | null;
+  course_title: string | null;
+  section: string | null;
+}
+
+const ResourcesView = ({ teacherId }: { teacherId?: string }) => {
+  const { items, loading } = useTeacherList<TeacherResource>(teacherId, "resources", "resources");
+  const [cat, setCat] = useState<string>("all");
+  const [course, setCourse] = useState<string>("all");
+
+  // Distinct categories among the teacher's assigned resources (radio filter).
+  const categories = Array.from(
+    new Map(
+      items.filter((r) => r.resource_category_id).map((r) => [String(r.resource_category_id), r.category_name || "Category"]),
+    ).entries(),
+  ).map(([id, name]) => ({ id, name }));
+
+  // Courses available within the selected category (dropdown filter).
+  const courses = Array.from(
+    new Map(
+      items
+        .filter((r) => cat === "all" || String(r.resource_category_id) === cat)
+        .filter((r) => r.course_id)
+        .map((r) => [String(r.course_id), r.course_title || `Course ${r.course_id}`]),
+    ).entries(),
+  ).map(([id, title]) => ({ id, title }));
+
+  const filtered = items.filter(
+    (r) =>
+      (cat === "all" || String(r.resource_category_id) === cat) &&
+      (course === "all" || String(r.course_id) === course),
+  );
+
+  // Group the filtered resources' PDFs under their section header.
+  const sectionMap = new Map<string, { name: string; url: string }[]>();
+  filtered.forEach((r) => {
+    const key = r.section || "Resources";
+    if (!sectionMap.has(key)) sectionMap.set(key, []);
+    (r.files || []).forEach((f) => sectionMap.get(key)!.push(f));
+  });
+  const sections = Array.from(sectionMap.entries())
+    .map(([name, files]) => ({ name, files }))
+    .filter((s) => s.files.length > 0);
+
+  return (
+    <Panel title="Resources" icon={Library}>
+      {loading ? (
+        <Empty text="Loading resources…" />
+      ) : items.length === 0 ? (
+        <Empty text="No resources shared with you yet." />
+      ) : (
+        <>
+          {/* Filters: category radios + course dropdown */}
+          <div className="flex flex-col lg:flex-row lg:items-stretch gap-4 mb-6">
+            <div className="rounded-xl border border-border p-4 flex-1">
+              <p className="text-sm font-semibold text-muted-foreground mb-2">Select Category</p>
+              <div className="flex flex-wrap gap-x-5 gap-y-2">
+                <label className="inline-flex items-center gap-2 cursor-pointer text-sm">
+                  <input type="radio" name="res-cat" checked={cat === "all"} onChange={() => { setCat("all"); setCourse("all"); }} className="accent-primary" /> All
+                </label>
+                {categories.map((c) => (
+                  <label key={c.id} className="inline-flex items-center gap-2 cursor-pointer text-sm">
+                    <input type="radio" name="res-cat" checked={cat === c.id} onChange={() => { setCat(c.id); setCourse("all"); }} className="accent-primary" /> {c.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl border border-border p-4 lg:w-72">
+              <p className="text-sm font-semibold text-muted-foreground mb-2">Select Course</p>
+              <select value={course} onChange={(e) => setCourse(e.target.value)} className="w-full rounded-lg border border-border px-3 py-2 text-sm bg-white">
+                <option value="all">All courses</option>
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>{c.title}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Sections of PDF cards */}
+          {sections.length === 0 ? (
+            <Empty text="No resources match this filter." />
+          ) : (
+            <div className="space-y-6">
+              {sections.map((s) => (
+                <div key={s.name} className="rounded-xl border border-border overflow-hidden">
+                  <div className="bg-primary/5 px-5 py-3 font-semibold text-primary">{s.name}</div>
+                  <div className="p-5 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {s.files.map((f, i) => (
+                      <a
+                        key={i}
+                        href={f.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 rounded-lg bg-orange-50 hover:bg-orange-100 transition-colors p-3"
+                      >
+                        <span className="shrink-0 w-10 h-10 rounded bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">PDF</span>
+                        <span className="text-sm font-medium leading-snug line-clamp-2">{f.name}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </Panel>
+  );
+};
+
+// Teacher profile — built from the auth-service profile in the auth context,
+// with inline editing (Edit profile) that PUTs to /auth/profile/update.
+const ProfileView = ({ user }: { user: Record<string, unknown> | null }) => {
+  const seed = (k: string) => {
+    const v = user?.[k];
+    return v === undefined || v === null ? "" : String(v);
+  };
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  // Local copy so saved edits show immediately without a full auth refetch.
+  const [data, setData] = useState({
+    name: seed("name"), bio: seed("bio"), expertise: seed("expertise"),
+    yearsOfExperience: seed("yearsOfExperience"), linkedinUrl: seed("linkedinUrl"),
+    phone: seed("phone"), email: seed("email"),
+  });
+  const [form, setForm] = useState(data);
+  const set = (k: string, v: string) => setForm((s) => ({ ...s, [k]: v }));
+
+  if (!user) return <Empty text="Sign in as a teacher to see your profile." />;
+
+  const name = data.name || data.email || "Teacher";
+  const initials = name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+  const years = data.yearsOfExperience;
+  const expertise = data.expertise.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+
+  const startEdit = () => { setForm(data); setEditing(true); };
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await updateProfile({
+        name: form.name, phone: form.phone, bio: form.bio, expertise: form.expertise,
+        yearsOfExperience: form.yearsOfExperience, linkedinUrl: form.linkedinUrl,
+      } as unknown as Parameters<typeof updateProfile>[0]);
+      setData(form);
+      setEditing(false);
+      toast.success("Profile updated");
+    } catch (err) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      toast.error(msg || "Failed to update profile");
+    } finally { setSaving(false); }
+  };
+
+  if (editing) {
+    return (
+      <Panel title="Edit Profile" icon={Contact}>
+        <form onSubmit={save} className="space-y-4 max-w-2xl">
+          <div>
+            <label className="block text-sm font-medium mb-1">Name</label>
+            <input className="w-full rounded-lg border border-border px-3 py-2 text-sm" value={form.name} onChange={(e) => set("name", e.target.value)} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">About me</label>
+            <textarea rows={4} className="w-full rounded-lg border border-border px-3 py-2 text-sm" value={form.bio} onChange={(e) => set("bio", e.target.value)} placeholder="Tell students and parents about your teaching…" />
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Expertise <span className="text-muted-foreground font-normal">(comma-separated)</span></label>
+              <input className="w-full rounded-lg border border-border px-3 py-2 text-sm" value={form.expertise} onChange={(e) => set("expertise", e.target.value)} placeholder="Scratch, Python, Robotics" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Years of experience</label>
+              <input className="w-full rounded-lg border border-border px-3 py-2 text-sm" value={form.yearsOfExperience} onChange={(e) => set("yearsOfExperience", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Phone</label>
+              <input className="w-full rounded-lg border border-border px-3 py-2 text-sm" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">LinkedIn URL</label>
+              <input className="w-full rounded-lg border border-border px-3 py-2 text-sm" value={form.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} />
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="submit" disabled={saving} className="rounded-lg bg-gradient-hero text-white text-sm font-semibold px-5 py-2">{saving ? "Saving…" : "Save"}</button>
+            <button type="button" onClick={() => setEditing(false)} className="rounded-lg border border-border text-sm font-semibold px-5 py-2">Cancel</button>
+          </div>
+        </form>
+      </Panel>
+    );
+  }
+
+  return (
+    <Panel title="My Profile" icon={Contact}>
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div className="flex items-center gap-5">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-hero text-white text-2xl font-bold flex items-center justify-center shrink-0">{initials || "T"}</div>
+          <div>
+            <h2 className="text-2xl font-bold">{name}</h2>
+            <p className="text-muted-foreground text-sm mt-1">{years ? `Teaching experience: ${years} year${years === "1" ? "" : "s"}` : "Teacher"}</p>
+          </div>
+        </div>
+        <button type="button" onClick={startEdit} className="rounded-lg border border-border text-sm font-semibold px-4 py-2 hover:bg-muted">Edit profile ✎</button>
+      </div>
+
+      {data.bio && (
+        <div className="mb-6">
+          <h3 className="font-semibold mb-1">Get to know me</h3>
+          <p className="text-muted-foreground text-sm leading-relaxed">{data.bio}</p>
+        </div>
+      )}
+
+      {expertise.length > 0 && (
+        <div className="mb-6">
+          <h3 className="font-semibold mb-2">High expertise in</h3>
+          <div className="flex flex-wrap gap-2">
+            {expertise.map((e) => (
+              <span key={e} className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1 text-sm">
+                <span className="text-primary">★</span> {e}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <h3 className="font-semibold mb-2">Contact</h3>
+        <div className="grid sm:grid-cols-2 gap-3 text-sm">
+          {data.email && <div><span className="text-muted-foreground">Email: </span>{data.email}</div>}
+          {data.phone && <div><span className="text-muted-foreground">Phone: </span>{data.phone}</div>}
+          {data.linkedinUrl && (
+            <div>
+              <span className="text-muted-foreground">LinkedIn: </span>
+              <a href={data.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{data.linkedinUrl}</a>
+            </div>
+          )}
+        </div>
+      </div>
+    </Panel>
+  );
+};
+
+const WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+interface FreeSlot { id: number; day_of_week: number; start_time: string; end_time: string }
+
+// Teacher-authored weekly availability. The teacher adds/removes free slots per
+// day; persisted via the public free-schedule endpoints keyed by teacherId.
+const FreeScheduleView = ({ teacherId }: { teacherId?: string }) => {
+  const [items, setItems] = useState<FreeSlot[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [day, setDay] = useState(0);
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const load = () => {
+    if (!teacherId) { setItems([]); setLoading(false); return; }
+    setLoading(true);
+    axios
+      .get(`${ADMIN_BASE}/api/public/free-schedule/by-teacher/${teacherId}`, { params: { t: Date.now() }, headers: { "Cache-Control": "no-cache" }, timeout: 30000 })
+      .then(({ data }) => setItems(Array.isArray(data?.schedule) ? data.schedule : []))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  };
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [teacherId]);
+
+  const add = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!teacherId || !start || !end) return;
+    setSaving(true);
+    try {
+      await axios.post(`${ADMIN_BASE}/api/public/free-schedule`, { teacherId, day_of_week: day, start_time: start, end_time: end });
+      setStart(""); setEnd(""); load();
+    } catch { /* ignore */ } finally { setSaving(false); }
+  };
+
+  const remove = async (id: number) => {
+    try { await axios.delete(`${ADMIN_BASE}/api/public/free-schedule/${id}`, { params: { teacherId } }); load(); } catch { /* ignore */ }
+  };
+
+  if (!teacherId) return <Panel title="Free Schedule" icon={CalendarDays}><Empty text="Sign in as a teacher to manage your free schedule." /></Panel>;
+
+  return (
+    <Panel title="Free Schedule" icon={CalendarDays}>
+      <form onSubmit={add} className="flex flex-wrap items-end gap-3 mb-6 rounded-xl border border-border p-4">
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1">Day</label>
+          <select value={day} onChange={(e) => setDay(Number(e.target.value))} className="rounded-lg border border-border px-3 py-2 text-sm bg-white">
+            {WEEK.map((d, i) => <option key={i} value={i}>{d}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1">From</label>
+          <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="rounded-lg border border-border px-3 py-2 text-sm" required />
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1">To</label>
+          <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="rounded-lg border border-border px-3 py-2 text-sm" required />
+        </div>
+        <button type="submit" disabled={saving} className="rounded-lg bg-gradient-hero text-white text-sm font-semibold px-4 py-2">{saving ? "Adding…" : "+ Add Schedule"}</button>
+      </form>
+
+      {loading ? <Empty text="Loading…" /> : (
+        <div className="space-y-4">
+          {WEEK.map((dname, di) => {
+            const daySlots = items.filter((s) => s.day_of_week === di).sort((a, b) => a.start_time.localeCompare(b.start_time));
+            return (
+              <div key={di} className="rounded-xl border border-border p-4">
+                <h3 className="font-semibold mb-3">{dname}</h3>
+                {daySlots.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No slots.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {daySlots.map((s) => (
+                      <span key={s.id} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm">
+                        {s.start_time} – {s.end_time}
+                        <button type="button" onClick={() => remove(s.id)} className="text-muted-foreground hover:text-red-600 font-bold leading-none" aria-label="Remove">×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Panel>
+  );
+};
+
+const BADGES = [
+  { key: "homework_hero", label: "Homework Hero" },
+  { key: "quick_learner", label: "Quick Learner" },
+  { key: "never_gives_up", label: "Never Gives Up" },
+  { key: "future_leader", label: "Future Leader" },
+  { key: "always_on_time", label: "Always on Time" },
+];
+interface StudentRec { id: number; kind: string; data: Record<string, unknown> }
+
+// Per-student detail: goals, badges, SPR notes, school marks and projects.
+// All persisted via the flexible /student-records endpoints (kind + data).
+const StudentDetail = ({ teacherId, student }: { teacherId: string; student: { id: string; name: string; classes: number; slots: number } }) => {
+  const [records, setRecords] = useState<StudentRec[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [primary, setPrimary] = useState("");
+  const [acad, setAcad] = useState({ subject: "", grade: "", goal: "" });
+  const [spr, setSpr] = useState("");
+  const [mark, setMark] = useState({ subject: "", score: "", total: "" });
+  const [project, setProject] = useState({ title: "", type: "mini" });
+
+  const load = () => {
+    setLoading(true);
+    axios
+      .get(`${ADMIN_BASE}/api/public/student-records/by-teacher/${teacherId}`, { params: { studentId: student.id, t: Date.now() }, headers: { "Cache-Control": "no-cache" }, timeout: 30000 })
+      .then(({ data }) => setRecords(Array.isArray(data?.records) ? data.records : []))
+      .catch(() => setRecords([]))
+      .finally(() => setLoading(false));
+  };
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [teacherId, student.id]);
+
+  const post = async (kind: string, data: Record<string, unknown>) => {
+    try { await axios.post(`${ADMIN_BASE}/api/public/student-records`, { teacherId, studentId: student.id, kind, data }); load(); }
+    catch { toast.error("Failed to save"); }
+  };
+  const del = async (id: number) => {
+    try { await axios.delete(`${ADMIN_BASE}/api/public/student-records/${id}`, { params: { teacherId } }); load(); }
+    catch { toast.error("Failed to delete"); }
+  };
+
+  const byKind = (k: string) => records.filter((r) => r.kind === k);
+  const d = (r: StudentRec) => r.data as Record<string, string>;
+  const badgeRow = records.find((r) => r.kind === "badge");
+  const assigned = new Set<string>(Array.isArray((badgeRow?.data as { badges?: string[] })?.badges) ? (badgeRow!.data as { badges: string[] }).badges : []);
+
+  const Row = ({ id, children }: { id: number; children: ReactNode }) => (
+    <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm mb-1">
+      <span>{children}</span>
+      <button type="button" onClick={() => del(id)} className="text-muted-foreground hover:text-red-600 font-bold leading-none">×</button>
+    </div>
+  );
+
+  return (
+    <div>
+      <div className="flex items-center gap-4 mb-5">
+        <div className="w-14 h-14 rounded-full bg-gradient-hero text-white text-lg font-bold flex items-center justify-center">{(student.name || "S").slice(0, 1).toUpperCase()}</div>
+        <h2 className="text-xl font-bold">{student.name || student.id}</h2>
+      </div>
+      <div className="flex flex-wrap gap-4 mb-8">
+        <Stat value={String(student.classes)} label="Classes" />
+        <Stat value={String(student.slots)} label="Slots" />
+        <Stat value={String(student.classes + student.slots)} label="Total sessions" />
+      </div>
+
+      {loading ? <Empty text="Loading…" /> : (
+        <div className="space-y-8">
+          <section>
+            <h3 className="font-semibold mb-2">Primary goal</h3>
+            {byKind("goal_primary").map((r) => <Row key={r.id} id={r.id}>{d(r).goal}</Row>)}
+            <form onSubmit={(e) => { e.preventDefault(); if (primary.trim()) { post("goal_primary", { goal: primary.trim() }); setPrimary(""); } }} className="flex gap-2 mt-1">
+              <input value={primary} onChange={(e) => setPrimary(e.target.value)} placeholder="Add a primary goal" className="flex-1 rounded-lg border border-border px-3 py-2 text-sm" />
+              <button className="rounded-lg bg-gradient-hero text-white text-sm font-semibold px-4">Add</button>
+            </form>
+          </section>
+
+          <section>
+            <h3 className="font-semibold mb-2">Academic goals</h3>
+            {byKind("goal_academic").map((r) => <Row key={r.id} id={r.id}>{[d(r).subject, d(r).grade && `Grade ${d(r).grade}`, d(r).goal].filter(Boolean).join(" · ")}</Row>)}
+            <form onSubmit={(e) => { e.preventDefault(); if (acad.goal.trim()) { post("goal_academic", { ...acad }); setAcad({ subject: "", grade: "", goal: "" }); } }} className="grid sm:grid-cols-4 gap-2 mt-1">
+              <input value={acad.subject} onChange={(e) => setAcad((s) => ({ ...s, subject: e.target.value }))} placeholder="Subject" className="rounded-lg border border-border px-3 py-2 text-sm" />
+              <input value={acad.grade} onChange={(e) => setAcad((s) => ({ ...s, grade: e.target.value }))} placeholder="Grade" className="rounded-lg border border-border px-3 py-2 text-sm" />
+              <input value={acad.goal} onChange={(e) => setAcad((s) => ({ ...s, goal: e.target.value }))} placeholder="Goal" className="rounded-lg border border-border px-3 py-2 text-sm" />
+              <button className="rounded-lg bg-gradient-hero text-white text-sm font-semibold px-4">Add</button>
+            </form>
+          </section>
+
+          <section>
+            <h3 className="font-semibold mb-2">Badges <span className="text-muted-foreground font-normal text-sm">({assigned.size} assigned)</span></h3>
+            <div className="flex flex-wrap gap-2">
+              {BADGES.map((b) => {
+                const on = assigned.has(b.key);
+                return (
+                  <button key={b.key} type="button" onClick={() => post("badge", { badge: b.key, status: on ? "unassigned" : "assigned" })} className={`rounded-full px-3 py-1.5 text-sm border ${on ? "bg-primary text-white border-primary" : "border-border hover:bg-muted"}`}>
+                    {on ? "★" : "☆"} {b.label}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section>
+            <h3 className="font-semibold mb-2">Student Progress Report</h3>
+            {byKind("spr").map((r) => <Row key={r.id} id={r.id}>{d(r).note}</Row>)}
+            {byKind("spr").length === 0 && <p className="text-sm text-muted-foreground mb-1">No SPR notes yet.</p>}
+            <form onSubmit={(e) => { e.preventDefault(); if (spr.trim()) { post("spr", { note: spr.trim() }); setSpr(""); } }} className="flex gap-2 mt-1">
+              <input value={spr} onChange={(e) => setSpr(e.target.value)} placeholder="Add a note" className="flex-1 rounded-lg border border-border px-3 py-2 text-sm" />
+              <button className="rounded-lg bg-gradient-hero text-white text-sm font-semibold px-4">Add</button>
+            </form>
+          </section>
+
+          <section>
+            <h3 className="font-semibold mb-2">School Marks</h3>
+            {byKind("mark").map((r) => <Row key={r.id} id={r.id}>{d(r).subject}: {d(r).score}{d(r).total ? ` / ${d(r).total}` : ""}</Row>)}
+            <form onSubmit={(e) => { e.preventDefault(); if (mark.subject.trim() && mark.score.trim()) { post("mark", { ...mark }); setMark({ subject: "", score: "", total: "" }); } }} className="grid sm:grid-cols-4 gap-2 mt-1">
+              <input value={mark.subject} onChange={(e) => setMark((s) => ({ ...s, subject: e.target.value }))} placeholder="Subject" className="rounded-lg border border-border px-3 py-2 text-sm" />
+              <input value={mark.score} onChange={(e) => setMark((s) => ({ ...s, score: e.target.value }))} placeholder="Score" className="rounded-lg border border-border px-3 py-2 text-sm" />
+              <input value={mark.total} onChange={(e) => setMark((s) => ({ ...s, total: e.target.value }))} placeholder="Out of" className="rounded-lg border border-border px-3 py-2 text-sm" />
+              <button className="rounded-lg bg-gradient-hero text-white text-sm font-semibold px-4">Add</button>
+            </form>
+          </section>
+
+          <section>
+            <h3 className="font-semibold mb-2">Projects</h3>
+            {byKind("project").map((r) => <Row key={r.id} id={r.id}>{d(r).title} <span className="text-muted-foreground">({d(r).type})</span></Row>)}
+            <form onSubmit={(e) => { e.preventDefault(); if (project.title.trim()) { post("project", { ...project }); setProject({ title: "", type: "mini" }); } }} className="grid sm:grid-cols-3 gap-2 mt-1">
+              <input value={project.title} onChange={(e) => setProject((s) => ({ ...s, title: e.target.value }))} placeholder="Project title" className="rounded-lg border border-border px-3 py-2 text-sm" />
+              <select value={project.type} onChange={(e) => setProject((s) => ({ ...s, type: e.target.value }))} className="rounded-lg border border-border px-3 py-2 text-sm bg-white">
+                <option value="mini">Mini</option><option value="major">Major</option><option value="final">Final</option>
+              </select>
+              <button className="rounded-lg bg-gradient-hero text-white text-sm font-semibold px-4">Add</button>
+            </form>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface RosterSched { id: number; students: { id: string; name: string }[] }
+
+// Students panel — step 1: the teacher's students, aggregated from the rosters
+// of their classes + slots, with per-student session counts. (Goals, badges,
+// SPR, marks, exercises, quizzes and projects are later steps.)
+const StudentsView = ({ teacherId }: { teacherId?: string }) => {
+  const [classes, setClasses] = useState<RosterSched[]>([]);
+  const [slots, setSlots] = useState<RosterSched[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [selected, setSelected] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!teacherId) { setLoading(false); return; }
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([
+      axios.get(`${ADMIN_BASE}/api/public/classes/by-teacher/${teacherId}`, { params: { t: Date.now() }, headers: { "Cache-Control": "no-cache" }, timeout: 30000 }),
+      axios.get(`${ADMIN_BASE}/api/public/slots/by-teacher/${teacherId}`, { params: { t: Date.now() }, headers: { "Cache-Control": "no-cache" }, timeout: 30000 }),
+    ])
+      .then(([c, s]) => {
+        if (cancelled) return;
+        setClasses(Array.isArray(c.data?.classes) ? c.data.classes : []);
+        setSlots(Array.isArray(s.data?.slots) ? s.data.slots : []);
+      })
+      .catch(() => { if (!cancelled) { setClasses([]); setSlots([]); } })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [teacherId]);
+
+  const map = new Map<string, { id: string; name: string; classes: number; slots: number }>();
+  const add = (entries: RosterSched[], key: "classes" | "slots") => {
+    entries.forEach((e) => (e.students || []).forEach((st) => {
+      const cur = map.get(st.id) || { id: st.id, name: st.name || "", classes: 0, slots: 0 };
+      cur[key] += 1;
+      if (st.name && !cur.name) cur.name = st.name;
+      map.set(st.id, cur);
+    }));
+  };
+  add(classes, "classes");
+  add(slots, "slots");
+  let students = Array.from(map.values()).sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
+  if (q.trim()) students = students.filter((s) => (s.name || s.id).toLowerCase().includes(q.toLowerCase()));
+  const sel = selected ? map.get(selected) : null;
+
+  return (
+    <Panel title="Students" icon={Users}>
+      {!teacherId ? (
+        <Empty text="Sign in as a teacher to see your students." />
+      ) : loading ? (
+        <Empty text="Loading students…" />
+      ) : (
+        <div className="grid lg:grid-cols-[280px_1fr] gap-6">
+          <div className="rounded-xl border border-border p-4">
+            <h3 className="font-semibold mb-3">Your Students</h3>
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search students" className="w-full rounded-lg border border-border px-3 py-2 text-sm mb-3" />
+            {students.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No students assigned via your classes/slots yet.</p>
+            ) : (
+              <ul className="space-y-1 max-h-[440px] overflow-y-auto">
+                {students.map((s) => (
+                  <li key={s.id}>
+                    <button type="button" onClick={() => setSelected(s.id)} className={`w-full text-left rounded-lg px-3 py-2 text-sm ${selected === s.id ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"}`}>
+                      {s.name || s.id}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div className="rounded-xl border border-border p-6">
+            {!sel ? (
+              <Empty text="Select a student to see their details." />
+            ) : (
+              <StudentDetail teacherId={teacherId} student={sel} />
+            )}
+          </div>
+        </div>
+      )}
+    </Panel>
+  );
+};
+
 const TeacherDashboard = () => {
   const [active, setActive] = useState("Dashboard");
   const [data] = useState<DashboardData>(PLACEHOLDER_DATA);
+  const { user } = useAuth();
 
   // TODO(backend): connect to the teacher earnings API. Uncomment & adapt:
   // useEffect(() => {
@@ -247,6 +1048,22 @@ const TeacherDashboard = () => {
               </div>
             </section>
           </>
+        ) : active === "Slots" ? (
+          <SlotsView teacherId={user?.userId} />
+        ) : active === "Demos" ? (
+          <DemosView teacherId={user?.userId} />
+        ) : active === "Classes" ? (
+          <ClassesView teacherId={user?.userId} />
+        ) : active === "Time table" ? (
+          <TimetableView teacherId={user?.userId} />
+        ) : active === "Free Schedule" ? (
+          <FreeScheduleView teacherId={user?.userId} />
+        ) : active === "Students" ? (
+          <StudentsView teacherId={user?.userId} />
+        ) : active === "Resources" ? (
+          <ResourcesView teacherId={user?.userId} />
+        ) : active === "Profile" ? (
+          <ProfileView user={user as unknown as Record<string, unknown> | null} />
         ) : (
           <div className="bg-white rounded-2xl shadow-sm p-16 text-center">
             <h1 className="text-2xl font-bold mb-2">{active}</h1>

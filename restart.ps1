@@ -17,11 +17,12 @@ Write-Host "  all node processes stopped." -ForegroundColor DarkGray
 
 # Services to (re)launch, in start order. Only launched if node_modules exists.
 $services = @(
-    @{ Name = 'auth-service';   Port = 8001; Path = "$ROOT\backend\auth-service" },
-    @{ Name = 'admin-service';  Port = 5000; Path = "$ROOT\backend\admin-service" },
-    @{ Name = 'college-service';Port = 8005; Path = "$ROOT\backend\college-service" },
-    @{ Name = 'Bastion-server'; Port = 8000; Path = "$ROOT\backend\Bastion-server" },
-    @{ Name = 'frontend';       Port = 8080; Path = "$ROOT\frontend" }
+    @{ Name = 'auth-service';       Port = 8001; Path = "$ROOT\backend\auth-service" },
+    @{ Name = 'admin-service';      Port = 5000; Path = "$ROOT\backend\admin-service" },
+    @{ Name = 'college-service';    Port = 8005; Path = "$ROOT\backend\college-service" },
+    @{ Name = 'assessment-service'; Port = 8003; Path = "$ROOT\backend\assessment-service" },
+    @{ Name = 'Bastion-server';     Port = 8000; Path = "$ROOT\backend\Bastion-server" },
+    @{ Name = 'frontend';           Port = 8080; Path = "$ROOT\frontend" }
 )
 
 Write-Host "`n=== Relaunching services ===" -ForegroundColor Cyan

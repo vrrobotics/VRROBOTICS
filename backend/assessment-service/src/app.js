@@ -425,7 +425,21 @@ async function seedPreAssessment() {
     await Question.findOrCreate({ where: { quesId: q.quesId }, defaults: q });
   }
 
-  // 2. Find Assessment A1 (create it if it doesn't exist yet)
+  // 2. Ensure the QuestionSet exists BEFORE the Assessment — assessments.setId
+  //    has a FK to questionsets.setId, so the set must exist first or the
+  //    INSERT into assessments fails on a fresh DB.
+  const [preSet] = await QuestionSet.findOrCreate({
+    where: { setId: PRE_ASSESSMENT_SET_ID },
+    defaults: {
+      setId: PRE_ASSESSMENT_SET_ID,
+      setName: 'AI Pre-Assessment Set',
+      category: 'AI',
+      questions: allIds,
+    },
+  });
+  await preSet.update({ questions: allIds });
+
+  // 3. Find Assessment A1 (create it if it doesn't exist yet)
   const [assessment, aCreated] = await Assessment.findOrCreate({
     where: { assessmentId: PRE_ASSESSMENT_ID },
     defaults: {
@@ -447,22 +461,20 @@ async function seedPreAssessment() {
     console.log(`  ✅ Assessment A1 updated:`, preUpdates);
   }
 
-  // 3. Update the QuestionSet that A1 actually uses (may differ from PRE_ASSESSMENT_SET_ID
-  //    if A1 was created manually before this seed ran)
+  // 4. If A1 already existed pointing at a DIFFERENT set (created manually
+  //    before this seed ran), make sure that set exists and carries the
+  //    canonical questions too.
   const actualSetId = assessment.setId;
-  let qs = await QuestionSet.findByPk(actualSetId);
-
-  if (!qs) {
-    // QuestionSet referenced by A1 doesn't exist — create it with all 20 questions
-    qs = await QuestionSet.create({
-      setId: actualSetId,
-      setName: 'AI Pre-Assessment Set',
-      category: 'AI',
-      questions: allIds,
+  if (actualSetId !== PRE_ASSESSMENT_SET_ID) {
+    const [qs] = await QuestionSet.findOrCreate({
+      where: { setId: actualSetId },
+      defaults: {
+        setId: actualSetId,
+        setName: 'AI Pre-Assessment Set',
+        category: 'AI',
+        questions: allIds,
+      },
     });
-    console.log(`  ✅ QuestionSet "${actualSetId}" created with ${allIds.length} questions`);
-  } else {
-    // Replace the questions array with exactly the 20 canonical IDs
     await qs.update({ questions: allIds });
     console.log(`  ✅ QuestionSet "${actualSetId}" set to exactly ${allIds.length} questions`);
   }
@@ -479,7 +491,19 @@ async function seedPostAssessment() {
     await Question.findOrCreate({ where: { quesId: q.quesId }, defaults: q });
   }
 
-  // 2. Find Assessment A2 (create if it doesn't exist)
+  // 2. Ensure the QuestionSet exists BEFORE the Assessment (FK on assessments.setId).
+  const [postSet] = await QuestionSet.findOrCreate({
+    where: { setId: POST_ASSESSMENT_SET_ID },
+    defaults: {
+      setId: POST_ASSESSMENT_SET_ID,
+      setName: 'AI Post-Assessment Set',
+      category: 'AI',
+      questions: allIds,
+    },
+  });
+  await postSet.update({ questions: allIds });
+
+  // 3. Find Assessment A2 (create if it doesn't exist)
   const [assessment, aCreated] = await Assessment.findOrCreate({
     where: { assessmentId: POST_ASSESSMENT_ID },
     defaults: {
@@ -501,19 +525,18 @@ async function seedPostAssessment() {
     console.log(`  ✅ Assessment A2 updated:`, postUpdates);
   }
 
-  // 3. Update the QuestionSet that A2 actually uses
+  // 4. If A2 already existed pointing at a DIFFERENT set, ensure it exists too.
   const actualSetId = assessment.setId;
-  let qs = await QuestionSet.findByPk(actualSetId);
-
-  if (!qs) {
-    await QuestionSet.create({
-      setId: actualSetId,
-      setName: 'AI Post-Assessment Set',
-      category: 'AI',
-      questions: allIds,
+  if (actualSetId !== POST_ASSESSMENT_SET_ID) {
+    const [qs] = await QuestionSet.findOrCreate({
+      where: { setId: actualSetId },
+      defaults: {
+        setId: actualSetId,
+        setName: 'AI Post-Assessment Set',
+        category: 'AI',
+        questions: allIds,
+      },
     });
-    console.log(`  ✅ QuestionSet "${actualSetId}" created with ${allIds.length} questions`);
-  } else {
     await qs.update({ questions: allIds });
     console.log(`  ✅ QuestionSet "${actualSetId}" set to exactly ${allIds.length} questions`);
   }
@@ -565,6 +588,27 @@ export async function initDb() {
     }
   } catch (e) {
     console.warn('[pre_assessment_registrations] column migration skipped:', e.message);
+  }
+
+  // assessments migrations:
+  //   • clgIds   — JSON array of clgId strings the assessment is offered to.
+  //   • courseIds — JSON array of course id strings the assessment bundles.
+  // Both were added to the Assessment model after the table already existed.
+  // sequelize.sync() (no alter) never adds columns to existing tables, so the
+  // SELECT in findOrCreate fails with "column clgIds does not exist". Add them
+  // idempotently — same pattern as pre_assessment_registrations above.
+  try {
+    const schema = process.env.DB_SCHEMA || 'lucy_devdb';
+    await sequelize.query(
+      `ALTER TABLE ${schema}.assessments
+         ADD COLUMN IF NOT EXISTS "clgIds" JSON NOT NULL DEFAULT '[]'`
+    );
+    await sequelize.query(
+      `ALTER TABLE ${schema}.assessments
+         ADD COLUMN IF NOT EXISTS "courseIds" JSON NOT NULL DEFAULT '[]'`
+    );
+  } catch (e) {
+    console.warn('[assessments] column migration skipped:', e.message);
   }
 
   await seedPreAssessment();

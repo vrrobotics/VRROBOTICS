@@ -10,6 +10,7 @@ import Layout from "./components/layout/Layout";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Courses from "./pages/Courses";
+import CourseCatalog from "./pages/CourseCatalog";
 import VrCourses from "./pages/VrCourses";
 import SummerCamp from "./pages/SummerCamp";
 import Books from "./pages/Books";
@@ -54,6 +55,16 @@ import AdminCourseCreate from "./admin/pages/course/Create";
 import AdminCourseEdit from "./admin/pages/course/Edit";
 import AdminCouponIndex from "./admin/pages/coupon/Index";
 import AdminGalleryIndex from "./admin/pages/gallery/Index";
+import AdminBooksIndex from "./admin/pages/books/Index";
+import AdminSlotsIndex from "./admin/pages/slots/Index";
+import AdminDemosIndex from "./admin/pages/demos/Index";
+import AdminClassesIndex from "./admin/pages/classes/Index";
+import AdminTimetableIndex from "./admin/pages/timetable/Index";
+import AdminBatchesIndex from "./admin/pages/batch/Index";
+import AdminProjectsIndex from "./admin/pages/projects/Index";
+import AdminTestimonialsIndex from "./admin/pages/testimonials/Index";
+import AdminResourcesIndex from "./admin/pages/resources/Index";
+import AdminResourceCategoryIndex from "./admin/pages/resource-category/Index";
 import AdminAssessmentIndex from "./admin/pages/assessment/Index";
 import AdminProgramIndex from "./admin/pages/program/Index";
 import AdminProgramCreate from "./admin/pages/program/Create";
@@ -99,6 +110,7 @@ const App = () => (
             <Route path="/" element={<Layout><Home /></Layout>} />
             <Route path="/about" element={<Layout><About /></Layout>} />
             <Route path="/courses" element={<Layout><Courses /></Layout>} />
+            <Route path="/courses/browse" element={<Layout><CourseCatalog /></Layout>} />
             <Route path="/vr-courses" element={<Layout><VrCourses /></Layout>} />
             <Route path="/summer-camp" element={<Layout><SummerCamp /></Layout>} />
             <Route path="/books" element={<Layout><Books /></Layout>} />
@@ -161,6 +173,16 @@ const App = () => (
               <Route path="course/edit/:id" element={<AdminCourseEdit />} />
               <Route path="coupons" element={<AdminCouponIndex />} />
               <Route path="gallery" element={<AdminGalleryIndex />} />
+              <Route path="books" element={<AdminBooksIndex />} />
+              <Route path="slots" element={<AdminSlotsIndex />} />
+              <Route path="demos" element={<AdminDemosIndex />} />
+              <Route path="classes" element={<AdminClassesIndex />} />
+              <Route path="timetable" element={<AdminTimetableIndex />} />
+              <Route path="batches" element={<AdminBatchesIndex />} />
+              <Route path="projects" element={<AdminProjectsIndex />} />
+              <Route path="testimonials" element={<AdminTestimonialsIndex />} />
+              <Route path="resources" element={<AdminResourcesIndex />} />
+              <Route path="resource-categories" element={<AdminResourceCategoryIndex />} />
               <Route path="assessments" element={<AdminAssessmentIndex />} />
               <Route path="programs" element={<AdminProgramIndex />} />
               <Route path="programs/create" element={<AdminProgramCreate />} />

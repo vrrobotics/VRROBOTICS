@@ -117,7 +117,7 @@ const ProgramSelect = () => {
         }
         if (!clgId) {
           if (!cancelled) {
-            setError("Your account isn't linked to a college yet. Contact your admin.");
+            setError("Your account isn't linked to a school yet. Contact your admin.");
             setLoading(false);
           }
           return;

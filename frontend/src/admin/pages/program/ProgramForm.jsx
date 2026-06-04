@@ -73,7 +73,7 @@ export default function ProgramForm({ initial = {}, onSubmit, submitting = false
     }, []);
 
     // Strict union of batch_ids across the admin's selected courses. Unlike
-    // earlier behavior, this NEVER falls back to "all college batches" — the
+    // earlier behavior, this NEVER falls back to "all school batches" — the
     // flow is college → course → batch, so batches must come from the courses
     // themselves. Returns an empty Set when no course has batch_ids, which
     // BatchMultiSelect renders as "no batches available".

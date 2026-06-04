@@ -43,7 +43,7 @@ const baseFrame = ({ heading, bodyHtml }) => `
   </body>
 </html>`;
 
-// Sent to a student when a college admin adds them to a batch (whether at
+// Sent to a student when a school admin adds them to a batch (whether at
 // batch-create time or via the "add students" modal afterwards).
 const batchAddedToStudent = ({ studentName, batchName, loginUrl }) => {
     const heading = 'You Have Been Added to a New Batch';
