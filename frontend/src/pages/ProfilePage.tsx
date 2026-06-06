@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { updateProfile, updateEducation, updateOrgClgBranch } from "@/api/authApi";
+import { updateProfile, updateEducation, updateOrgClgBranch, changePassword } from "@/api/authApi";
 import { uploadStudentPhoto, ADMIN_BASE } from "@/api/leadApi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import {
   User,
   Camera,
+  Lock,
   Mail,
   Phone,
   Calendar,
@@ -536,10 +537,64 @@ const ProfilePage = () => {
           </Card>
         </div>
 
-        
+        <ChangePasswordCard />
       </div>
     </section>
   );
 };
+
+function ChangePasswordCard() {
+  const [cur, setCur] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMsg(null);
+    if (next.length < 8) return setMsg({ ok: false, text: "New password must be at least 8 characters." });
+    if (next !== confirm) return setMsg({ ok: false, text: "New passwords do not match." });
+    setBusy(true);
+    try {
+      await changePassword({ currentPassword: cur, newPassword: next });
+      setMsg({ ok: true, text: "Password changed successfully." });
+      setCur(""); setNext(""); setConfirm("");
+    } catch (err: unknown) {
+      const text = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Could not change password.";
+      setMsg({ ok: false, text });
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <Card className="mt-6">
+      <CardContent className="p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <Lock className="h-5 w-5 text-[#FF6A00]" /> Change Password
+        </h3>
+        <form onSubmit={submit} className="grid md:grid-cols-3 gap-4 items-end">
+          <div>
+            <Label className="mb-1 block">Current password</Label>
+            <Input type="password" value={cur} onChange={(e) => setCur(e.target.value)} required />
+          </div>
+          <div>
+            <Label className="mb-1 block">New password</Label>
+            <Input type="password" value={next} onChange={(e) => setNext(e.target.value)} required />
+          </div>
+          <div>
+            <Label className="mb-1 block">Confirm new password</Label>
+            <Input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+          </div>
+          <div className="md:col-span-3 flex items-center gap-3">
+            <Button type="submit" disabled={busy} className="bg-[#FF6A00] text-white hover:bg-[#cc5500]">
+              {busy ? "Saving…" : "Update password"}
+            </Button>
+            {msg && <span className={`text-sm ${msg.ok ? "text-green-600" : "text-red-600"}`}>{msg.text}</span>}
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default ProfilePage;

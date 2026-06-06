@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "@/hooks/useAuth";
-import { updateProfile } from "@/api/authApi";
+import { updateProfile, changePassword } from "@/api/authApi";
 import { toast } from "react-toastify";
 // The teacher's assigned courses + lesson-release UI (same component the admin
 // shell uses; it auto-detects the teacher role → shows release, no create form).
@@ -542,6 +542,7 @@ const ProfileView = ({ user }: { user: Record<string, unknown> | null }) => {
   }
 
   return (
+    <>
     <Panel title="My Profile" icon={Contact}>
       <div className="flex items-start justify-between gap-4 mb-6">
         <div className="flex items-center gap-5">
@@ -588,8 +589,57 @@ const ProfileView = ({ user }: { user: Record<string, unknown> | null }) => {
         </div>
       </div>
     </Panel>
+    <TeacherChangePassword />
+    </>
   );
 };
+
+function TeacherChangePassword() {
+  const [cur, setCur] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMsg(null);
+    if (next.length < 8) return setMsg({ ok: false, text: "New password must be at least 8 characters." });
+    if (next !== confirm) return setMsg({ ok: false, text: "New passwords do not match." });
+    setBusy(true);
+    try {
+      await changePassword({ currentPassword: cur, newPassword: next });
+      setMsg({ ok: true, text: "Password changed successfully." });
+      setCur(""); setNext(""); setConfirm("");
+    } catch (err: unknown) {
+      const text = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Could not change password.";
+      setMsg({ ok: false, text });
+    } finally { setBusy(false); }
+  };
+  return (
+    <div className="mt-6">
+      <Panel title="Change Password" icon={Contact}>
+        <form onSubmit={submit} className="grid sm:grid-cols-3 gap-4 items-end max-w-3xl">
+          <div>
+            <label className="block text-sm font-medium mb-1">Current password</label>
+            <input type="password" className="w-full rounded-lg border border-border px-3 py-2 text-sm" value={cur} onChange={(e) => setCur(e.target.value)} required />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">New password</label>
+            <input type="password" className="w-full rounded-lg border border-border px-3 py-2 text-sm" value={next} onChange={(e) => setNext(e.target.value)} required />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Confirm new password</label>
+            <input type="password" className="w-full rounded-lg border border-border px-3 py-2 text-sm" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+          </div>
+          <div className="sm:col-span-3 flex items-center gap-3">
+            <button type="submit" disabled={busy} className="rounded-lg bg-gradient-hero text-white text-sm font-semibold px-5 py-2">{busy ? "Saving…" : "Update password"}</button>
+            {msg && <span className={`text-sm ${msg.ok ? "text-green-600" : "text-red-600"}`}>{msg.text}</span>}
+          </div>
+        </form>
+      </Panel>
+    </div>
+  );
+}
 
 const WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 interface FreeSlot { id: number; day_of_week: number; start_time: string; end_time: string }
