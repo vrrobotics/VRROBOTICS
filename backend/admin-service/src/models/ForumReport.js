@@ -12,9 +12,9 @@ module.exports = (sequelize) => {
     const ForumReport = sequelize.define('ForumReport', {
         id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
         forum_id: { type: DataTypes.INTEGER, allowNull: false },
-        // auth-service userId of the reporter — BIGINT, no FK (same reason as
-        // forums.user_id; users live in the auth DB).
-        user_id: { type: DataTypes.BIGINT, allowNull: false },
+        // auth-service userId of the reporter. VARCHAR in the live DB (matches
+        // forums.user_id) — model must be STRING or comparisons fail.
+        user_id: { type: DataTypes.STRING(64), allowNull: false },
         reason: { type: DataTypes.TEXT, allowNull: true },
     }, {
         tableName: 'forum_reports',

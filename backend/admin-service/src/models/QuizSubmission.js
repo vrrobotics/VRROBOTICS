@@ -4,7 +4,9 @@ module.exports = (sequelize) => {
     return sequelize.define('QuizSubmission', {
         id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
         quiz_id: { type: DataTypes.INTEGER },
-        user_id: { type: DataTypes.INTEGER },
+        // VARCHAR in the live DB. The model used to say INTEGER, which truncated
+        // big auth ids (collapsing students into one row). Store the real id.
+        user_id: { type: DataTypes.STRING(64) },
         correct_answer: { type: DataTypes.TEXT('long') },
         wrong_answer: { type: DataTypes.TEXT('long') },
         submits: { type: DataTypes.TEXT('long') },

@@ -288,7 +288,7 @@ const getCourseDetails = (idOrSlug) => {
     };
 };
 
-const getPlayerData = (slug, lessonId, userId = 99) => {
+const getPlayerData = (slug, lessonId, userId = 0) => {
     const course = findCourse(slug);
     if (!course) return null;
     const enriched = enrichCourse(course);
@@ -338,7 +338,7 @@ const getPlayerData = (slug, lessonId, userId = 99) => {
     };
 };
 
-const markLessonComplete = (courseId, lessonId, userId = 99) =>
+const markLessonComplete = (courseId, lessonId, userId = 0) =>
     watchStore.markLessonComplete(courseId, lessonId, userId);
 
 // Parse a "HH:MM:SS" duration string into seconds. Returns 0 if unparseable.
@@ -353,7 +353,7 @@ const durationToSeconds = (raw) => {
 // HomeController::update_watch_history_with_duration: a lesson is auto-completed
 // once watched seconds >= 30% of total duration. Drip-content courses use their
 // own admin-configured threshold; otherwise the 30% rule is the default.
-const markProgress = (courseId, lessonId, currentDuration, userId = 99) => {
+const markProgress = (courseId, lessonId, currentDuration, userId = 0) => {
     courseId = Number(courseId);
     lessonId = Number(lessonId);
     const seconds = Math.max(0, Math.floor(Number(currentDuration) || 0));
@@ -402,7 +402,7 @@ const markProgress = (courseId, lessonId, currentDuration, userId = 99) => {
     };
 };
 
-const setWatchingLesson = (courseId, lessonId, userId = 99) =>
+const setWatchingLesson = (courseId, lessonId, userId = 0) =>
     watchStore.setWatchingLesson(courseId, lessonId, userId);
 
 module.exports = {

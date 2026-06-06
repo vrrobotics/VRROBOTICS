@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import Hls from 'hls.js';
 import QuizPlayer from './QuizPlayer';
+import { sanitizeHtml } from '@/lib/sanitizeHtml';
 
 // Same env var the rest of the app uses (Home/Overview/Programspage). System
 // videos and uploaded documents are persisted as RELATIVE paths
@@ -56,7 +57,7 @@ export default function PlayerLesson({ lesson, course, locked, lockedMessage, on
         return (
             <div className="bg-black/30 rounded-xl p-12 text-center text-white/80 my-8">
                 <i className="fa fa-lock text-[48px] mb-4 text-amber-300" />
-                <div dangerouslySetInnerHTML={{ __html: lockedMessage || '<p>This lesson is locked. Complete the previous lesson to unlock it.</p>' }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(lockedMessage || '<p>This lesson is locked. Complete the previous lesson to unlock it.</p>') }} />
             </div>
         );
     }
@@ -81,7 +82,7 @@ function LessonRenderer({ lesson, course, onLessonEnded, onTimeUpdate }) {
 
     if (t === 'text') {
         return (
-            <article className="bg-white text-dark p-6 prose-custom" dangerouslySetInnerHTML={{ __html: lesson.attachment || '' }} />
+            <article className="bg-white text-dark p-6 prose-custom" dangerouslySetInnerHTML={{ __html: sanitizeHtml(lesson.attachment) }} />
         );
     }
 

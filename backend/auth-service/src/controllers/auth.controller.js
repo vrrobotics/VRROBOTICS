@@ -99,6 +99,16 @@ function shapeUserResponse(profile, role, session) {
 // downstream services (which key on userId everywhere) working without change.
 export async function register(req, res) {
   try {
+    // SECURITY: public self-signup is DISABLED. Only admins create teacher/
+    // student accounts (admin-service uses the service-role key directly). Public
+    // "interest" goes through the Leads form, not account creation. Set
+    // ALLOW_PUBLIC_SIGNUP=true to re-enable open registration.
+    if (process.env.ALLOW_PUBLIC_SIGNUP !== 'true') {
+      return res.status(403).json({
+        message: 'Public sign-up is disabled. Accounts are created by your administrator.',
+      });
+    }
+
     const data = registerSchema.parse(req.body);
 
     // Block duplicate emails before we touch Supabase Auth.
@@ -121,6 +131,11 @@ export async function register(req, res) {
       email_confirm: true,
       user_metadata: {
         name: data.name,
+      },
+      // Role drives authorization, so it must live in app_metadata — settable
+      // only with the service-role key, NOT editable by the user themselves
+      // (user_metadata is, via supabase.auth.updateUser).
+      app_metadata: {
         role: role.role,
       },
     });
@@ -319,9 +334,18 @@ export async function updateOrgClgBranch(req, res) {
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     const { orgId, collegeId, branchId } = req.body;
-    user.orgId     = orgId     ?? user.orgId;
-    user.collegeId = collegeId ?? user.collegeId;
-    user.branchId  = branchId  ?? user.branchId;
+
+    // SECURITY (multi-tenant boundary): orgId + collegeId define which tenant a
+    // user belongs to and gate what data they can see. Allowing a user to change
+    // their OWN org/college lets them hop into another tenant's scope. So these
+    // are SET-ONCE: writable only while still empty (self-onboarding for users an
+    // admin created without one); immutable once set. To move a user between
+    // colleges, an admin re-assigns via admin-service. branchId stays editable
+    // within the user's own college.
+    const isEmpty = (v) => v === null || v === undefined || v === '';
+    if (!isEmpty(orgId) && isEmpty(user.orgId)) user.orgId = orgId;
+    if (!isEmpty(collegeId) && isEmpty(user.collegeId)) user.collegeId = collegeId;
+    user.branchId = branchId ?? user.branchId;
 
     await user.save();
     return res.status(200).json({ user, message: 'Org/College/Branch details updated successfully' });

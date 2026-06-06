@@ -3,6 +3,7 @@ import { findCourseCertificate, issueCourseCertificate } from '@/api/course/cour
 import { useAuth } from '@/hooks/useAuth';
 import LiveClassPane from '@/zoom-live-class/player/LiveClassPane';
 import ForumTab from '@/forum/ForumTab';
+import { sanitizeHtml } from '@/lib/sanitizeHtml';
 
 // Post-assessment score required to earn a certificate. Tweak here if the
 // course threshold changes; keep in sync with Certificate.tsx.
@@ -50,7 +51,7 @@ function SummaryPane({ lesson, course, progress, completedCount }) {
     return (
         <div>
             {lesson?.summary ? (
-                <div className="prose-custom text-gray-800" dangerouslySetInnerHTML={{ __html: lesson.summary }} />
+                <div className="prose-custom text-gray-800" dangerouslySetInnerHTML={{ __html: sanitizeHtml(lesson.summary) }} />
             ) : (
                 <p className="text-gray-500">No summary available for this lesson.</p>
             )}

@@ -5,7 +5,10 @@ import * as Sentry from '@sentry/node';
 const dsn = process.env.SENTRY_DSN;
 const enabled = Boolean(dsn);
 
-if (enabled) {
+// Idempotent: started via `--import ./instrument.mjs` (prod) Sentry is ALREADY
+// initialised (full tracing) → skip. Plain `node index.js` (local) → init here
+// as a fallback so error capture still works.
+if (enabled && !Sentry.getClient()) {
   Sentry.init({
     dsn,
     environment: process.env.NODE_ENV || 'development',
@@ -14,7 +17,7 @@ if (enabled) {
     tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE || 0.1),
   });
   // eslint-disable-next-line no-console
-  console.log('[observability] Sentry initialised');
+  console.log('[observability] Sentry initialised (fallback)');
 }
 
 export function attachErrorHandler(app) {

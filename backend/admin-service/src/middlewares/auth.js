@@ -101,7 +101,13 @@ const auth = async (req, res, next) => {
                 if (!profile) {
                     return res.status(403).json({ error: 'Profile not provisioned for this account' });
                 }
-                const metadataRole = payload.user_metadata?.role || payload.app_metadata?.role;
+                // Role for authorization comes from the DB (loadProfile) plus
+                // app_metadata ONLY. app_metadata is settable only by the
+                // service-role key; user_metadata is editable by the user
+                // themselves (supabase.auth.updateUser) — trusting it here let
+                // any logged-in user escalate to root. Never read role from
+                // user_metadata for authz.
+                const metadataRole = payload.app_metadata?.role;
                 if (metadataRole === 'root') profile.role = 'root';
                 req.user = { ...profile, supabaseUid: payload.sub };
                 return next();
@@ -130,6 +136,39 @@ const auth = async (req, res, next) => {
     }
 };
 
+// Best-effort identity for /api/public endpoints. Verifies a token IF one is
+// present and sets req.authUser = { userId, role }; otherwise req.authUser =
+// null. NEVER rejects — anonymous browsing keeps working. The point is that
+// when a token IS supplied we trust the verified id over any client-supplied
+// x-user-id, so a student can't read another student's gated content by
+// spoofing the header.
+const optionalAuth = async (req, _res, next) => {
+    req.authUser = null;
+    try {
+        const token = req.headers.authorization?.split(' ')[1] || req.cookies?.token;
+        if (!token) return next();
+
+        if (jwks || supabaseSecret) {
+            const payload = await verifySupabaseToken(token);
+            if (payload) {
+                const profile = await loadProfile(payload.sub, payload.email);
+                if (profile) {
+                    req.authUser = { userId: String(profile.userId), role: profile.role };
+                    return next();
+                }
+            }
+        }
+        try {
+            const decoded = jwt.verify(token, env.jwt.secret);
+            req.authUser = {
+                userId: String(decoded.userId ?? decoded.id ?? ''),
+                role: decoded.is_root_admin ? 'root' : decoded.role,
+            };
+        } catch (_) { /* unverifiable token → stay anonymous */ }
+    } catch (_) { /* never block the request */ }
+    return next();
+};
+
 const adminOnly = (req, res, next) => {
     auth(req, res, () => {
         if (req.user?.role !== 'admin' && req.user?.role !== 'root') {
@@ -153,4 +192,4 @@ const adminOrTeacher = (req, res, next) => {
     });
 };
 
-module.exports = { auth, adminOnly, adminOrTeacher };
+module.exports = { auth, adminOnly, adminOrTeacher, optionalAuth };

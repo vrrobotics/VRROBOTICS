@@ -229,6 +229,8 @@ import Overview from "./Overview";
 import ProfilePage from "./ProfilePage";
 import SectionHeader from "./SectionHeader";
 import ProgramsPage from "./Programspage";
+import MyCoursesGrid from "@/components/course/MyCoursesGrid";
+import Leaderboard from "@/components/course/Leaderboard";
 import NotificationsPage from "./NotificationsPage";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 
@@ -240,6 +242,7 @@ import {
   Bell,
   LogOut,
   Target,
+  Trophy,
   Menu,
   X,
 } from "lucide-react";
@@ -247,6 +250,7 @@ import {
 const tabs = [
   { value: "overview", label: "Overview", icon: BookOpen },
   { value: "courses", label: "My Courses", icon: GraduationCap },
+  { value: "leaderboard", label: "Leaderboard", icon: Trophy },
   { value: "profile", label: "Profile", icon: User },
   // { value: "payments", label: "Payments", icon: CreditCard },
 ];
@@ -260,7 +264,7 @@ interface StudentDashboardProps {
   contentOverride?: { title: string; node: React.ReactNode };
 }
 
-const VALID_TABS = ["overview", "courses", "notifications", "profile"] as const;
+const VALID_TABS = ["overview", "courses", "leaderboard", "notifications", "profile"] as const;
 
 const StudentDashboard = ({ contentOverride }: StudentDashboardProps = {}) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -490,7 +494,16 @@ const StudentDashboard = ({ contentOverride }: StudentDashboardProps = {}) => {
 
           <TabsContent value="courses">
             <SectionHeader title="My Courses" student={studentData} />
+            {/* Owned courses (paid ∪ enrolled ∪ delegated) from the canonical
+                lms_admin /my-courses; renders nothing when the student has none,
+                leaving the program browser below as the entry point. */}
+            <MyCoursesGrid />
             <ProgramsPage />
+          </TabsContent>
+
+          <TabsContent value="leaderboard">
+            <SectionHeader title="Leaderboard" student={studentData} />
+            <Leaderboard />
           </TabsContent>
 
           <TabsContent value="notifications">

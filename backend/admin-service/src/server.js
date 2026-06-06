@@ -4,9 +4,10 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const env = require('./config/env');
+const cache = require('./config/cache');
 const { attachErrorHandler } = require('./observability');
 const { sequelize } = require('./models');
-const { adminOnly, auth, adminOrTeacher } = require('./middlewares/auth');
+const { adminOnly, auth, adminOrTeacher, optionalAuth } = require('./middlewares/auth');
 const { errorHandler } = require('./middlewares/error');
 
 const authRoutes = require('./routes/auth.routes');
@@ -35,13 +36,103 @@ const batchRoutes = require('./routes/batch.routes');
 const collegeRoutes = require('./routes/college.routes');
 const studentRoutes = require('./routes/student.routes');
 const teacherRoutes = require('./routes/teacher.routes');
+const teachingRoutes = require('./routes/teaching.routes');
+const leadRoutes = require('./routes/lead.routes');
 const preAssessmentRoutes = require('./routes/preassessment.routes');
 const languageRoutes = require('./routes/language.routes');
 
 const app = express();
 
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
+// Behind Railway/any single proxy → trust 1 hop so rate-limit sees the real IP.
+app.set('trust proxy', 1);
+
+// CORS allowlist. This is the public service exposing admin + payment APIs and
+// it accepts cookie auth (credentials:true), so `cors()` (reflect-any-origin)
+// is unsafe — reflecting an arbitrary origin WITH credentials is a CSRF /
+// credential-theft hole. Set ADMIN_ALLOWED_ORIGINS (or CORS_ORIGINS) to a
+// comma-separated list of frontend origins. localhost is always allowed for
+// dev. FAIL CLOSED: if unset in prod, only localhost is allowed (cross-origin
+// browser calls are blocked) — this forces the deployer to set the origin
+// rather than silently shipping a wide-open credentialed API.
+const adminCorsAllow = (process.env.ADMIN_ALLOWED_ORIGINS || process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+if (!adminCorsAllow.length && env.env === 'production') {
+    console.warn('\n⚠️  [SECURITY] ADMIN_ALLOWED_ORIGINS/CORS_ORIGINS is unset in production. '
+        + 'Only localhost is allowed — set ADMIN_ALLOWED_ORIGINS=https://<frontend> or browser calls will be CORS-blocked.\n');
+}
+app.use(cors({
+    origin: (origin, cb) => {
+        if (!origin) return cb(null, true); // same-origin / curl / mobile apps
+        if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return cb(null, true);
+        if (adminCorsAllow.includes(origin)) return cb(null, true);
+        return cb(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+}));
+
+// Rate limiting on public endpoints — prevents lead-form spam, enumeration of
+// by-teacher/leaderboard data, and brute force. Generous for normal use.
+const rateLimit = require('express-rate-limit');
+// Shared rate-limit store across replicas. With the default in-memory store each
+// instance counts independently, so the real limit = configured × replica count.
+// When Redis (Upstash) is available we back the counters with it so the limit is
+// correct regardless of how many admin-service instances run. GRACEFUL: if Redis
+// is unset/down, makeStore() returns undefined and express-rate-limit falls back
+// to its in-memory store — rate limiting still works, just per-instance.
+// Dedicated Redis connection for the rate-limit store. NOT the shared cache
+// client: that one runs enableOfflineQueue:false (fail-fast for caching), which
+// makes rate-limit-redis throw at construction when it loads its Lua script
+// before Redis is ready. Here we enable the offline queue so that init command
+// waits for the connection instead of erroring. Lazily built once; returns
+// undefined (→ in-memory fallback) when REDIS_URL is unset or ioredis fails.
+let rlRedis;
+let rlRedisInit = false;
+const getRlRedis = () => {
+    if (rlRedisInit) return rlRedis;
+    rlRedisInit = true;
+    const url = process.env.REDIS_URL || '';
+    if (!url) return (rlRedis = null);
+    try {
+        const Redis = require('ioredis');
+        rlRedis = new Redis(url, {
+            maxRetriesPerRequest: 2,
+            enableOfflineQueue: true,
+            connectTimeout: 5000,
+            tls: url.startsWith('rediss://') ? {} : undefined,
+        });
+        rlRedis.on('error', (e) => console.warn('[rate-limit] Redis error (limits fall back to in-memory):', e.message));
+    } catch (e) {
+        console.warn('[rate-limit] Redis init failed, using in-memory:', e.message);
+        rlRedis = null;
+    }
+    return rlRedis;
+};
+const makeStore = (prefix) => {
+    try {
+        const redisClient = getRlRedis();
+        if (!redisClient) return undefined;
+        const { RedisStore } = require('rate-limit-redis');
+        return new RedisStore({ prefix, sendCommand: (...args) => redisClient.call(...args) });
+    } catch (e) {
+        console.warn('[rate-limit] Redis store unavailable, using in-memory:', e.message);
+        return undefined;
+    }
+};
+// passOnStoreError: if the Redis store errors (Redis down/slow), ALLOW the
+// request instead of 500ing — same fail-open philosophy as the cache. Rate
+// limiting must never take down the public API.
+const rlOpts = { windowMs: 60 * 1000, standardHeaders: true, legacyHeaders: false, passOnStoreError: true };
+const publicLimiter = rateLimit({ ...rlOpts, max: 300, store: makeStore('rl:pub:'), message: { error: 'Too many requests — please slow down.' } });
+const writeLimiter = rateLimit({ ...rlOpts, max: 20, store: makeStore('rl:write:'), message: { error: 'Too many submissions — try again shortly.' } });
+app.use('/api/public', publicLimiter);
+// Capture the raw request body so the Razorpay webhook can verify its HMAC
+// signature (signature is computed over the exact bytes, not the parsed JSON).
+app.use(express.json({
+    limit: '50mb',
+    verify: (req, _res, buf) => { req.rawBody = buf; },
+}));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Asset serving moved off-box:
@@ -142,11 +233,34 @@ app.get('/api/public/gallery', async (_req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// Guard for /api/public/*/by-teacher/:teacherId — these expose a teacher's
+// roster / student records / schedule, so they must NOT be open (was an IDOR:
+// anyone could pass any teacherId). A verified TEACHER may read only their own
+// (userId === :teacherId); admins/root may read any. Requires a token.
+const requireTeacherSelfOrAdmin = [optionalAuth, (req, res, next) => {
+    const a = req.authUser;
+    if (!a) return res.status(401).json({ error: 'Please sign in.' });
+    if (a.role === 'admin' || a.role === 'root') return next();
+    if (String(a.userId) === String(req.params.teacherId)) return next();
+    return res.status(403).json({ error: 'You can only access your own data.' });
+}];
+
+// Same, for WRITES where teacherId is in the body/query (free-schedule,
+// student-records). A teacher may only write their own; admins any.
+const requireTeacherWrite = [optionalAuth, (req, res, next) => {
+    const a = req.authUser;
+    if (!a) return res.status(401).json({ error: 'Please sign in.' });
+    if (a.role === 'admin' || a.role === 'root') return next();
+    const tid = req.body?.teacherId ?? req.query?.teacherId;
+    if (tid != null && String(a.userId) === String(tid)) return next();
+    return res.status(403).json({ error: 'You can only modify your own data.' });
+}];
+
 // Slots assigned to a teacher — drives the Teacher dashboard's Slots tab.
 // Returns active slots whose teacher_ids include :teacherId (the auth userId),
 // with course title + student names resolved. no-store so new admin slots show.
 const slotService = require('./services/SlotService');
-app.get('/api/public/slots/by-teacher/:teacherId', async (req, res, next) => {
+app.get('/api/public/slots/by-teacher/:teacherId', ...requireTeacherSelfOrAdmin, async (req, res, next) => {
     try {
         res.set('Cache-Control', 'no-store');
         res.json(await slotService.listForTeacher(req.params.teacherId));
@@ -156,19 +270,19 @@ app.get('/api/public/slots/by-teacher/:teacherId', async (req, res, next) => {
 // Teacher-scoped Demos / Classes / Time table — drive the matching tabs on the
 // Teacher dashboard. Live (no-store) so admin additions show without staleness.
 const demoSvc = require('./services/DemoService');
-app.get('/api/public/demos/by-teacher/:teacherId', async (req, res, next) => {
+app.get('/api/public/demos/by-teacher/:teacherId', ...requireTeacherSelfOrAdmin, async (req, res, next) => {
     try { res.set('Cache-Control', 'no-store'); res.json(await demoSvc.listForTeacher(req.params.teacherId)); } catch (e) { next(e); }
 });
 const classSvc = require('./services/ClassSessionService');
-app.get('/api/public/classes/by-teacher/:teacherId', async (req, res, next) => {
+app.get('/api/public/classes/by-teacher/:teacherId', ...requireTeacherSelfOrAdmin, async (req, res, next) => {
     try { res.set('Cache-Control', 'no-store'); res.json(await classSvc.listForTeacher(req.params.teacherId)); } catch (e) { next(e); }
 });
 const timetableSvc = require('./services/TimetableEntryService');
-app.get('/api/public/timetable/by-teacher/:teacherId', async (req, res, next) => {
+app.get('/api/public/timetable/by-teacher/:teacherId', ...requireTeacherSelfOrAdmin, async (req, res, next) => {
     try { res.set('Cache-Control', 'no-store'); res.json(await timetableSvc.listForTeacher(req.params.teacherId)); } catch (e) { next(e); }
 });
 const resourceSvc = require('./services/ResourceService');
-app.get('/api/public/resources/by-teacher/:teacherId', async (req, res, next) => {
+app.get('/api/public/resources/by-teacher/:teacherId', ...requireTeacherSelfOrAdmin, async (req, res, next) => {
     try { res.set('Cache-Control', 'no-store'); res.json(await resourceSvc.listForTeacher(req.params.teacherId)); } catch (e) { next(e); }
 });
 
@@ -176,13 +290,13 @@ app.get('/api/public/resources/by-teacher/:teacherId', async (req, res, next) =>
 // manages their own slots from the dashboard, so these are public endpoints
 // keyed by teacherId (same trust model as the other by-teacher routes).
 const freeScheduleSvc = require('./services/FreeScheduleService');
-app.get('/api/public/free-schedule/by-teacher/:teacherId', async (req, res, next) => {
+app.get('/api/public/free-schedule/by-teacher/:teacherId', ...requireTeacherSelfOrAdmin, async (req, res, next) => {
     try { res.set('Cache-Control', 'no-store'); res.json(await freeScheduleSvc.listForTeacher(req.params.teacherId)); } catch (e) { next(e); }
 });
-app.post('/api/public/free-schedule', async (req, res, next) => {
+app.post('/api/public/free-schedule', ...requireTeacherWrite, async (req, res, next) => {
     try { res.json(await freeScheduleSvc.create(req.body)); } catch (e) { next(e); }
 });
-app.delete('/api/public/free-schedule/:id', async (req, res, next) => {
+app.delete('/api/public/free-schedule/:id', ...requireTeacherWrite, async (req, res, next) => {
     try { res.json(await freeScheduleSvc.remove(req.params.id, req.query.teacherId)); } catch (e) { next(e); }
 });
 
@@ -190,28 +304,65 @@ app.delete('/api/public/free-schedule/:id', async (req, res, next) => {
 // quizzes / projects) — back the Students-panel detail. Public, keyed by
 // teacherId + studentId (same trust model as the other by-teacher routes).
 const studentRecordSvc = require('./services/StudentRecordService');
-app.get('/api/public/student-records/by-teacher/:teacherId', async (req, res, next) => {
+app.get('/api/public/student-records/by-teacher/:teacherId', ...requireTeacherSelfOrAdmin, async (req, res, next) => {
     try { res.set('Cache-Control', 'no-store'); res.json(await studentRecordSvc.listForStudent(req.params.teacherId, req.query.studentId, req.query.kind)); } catch (e) { next(e); }
 });
-app.post('/api/public/student-records', async (req, res, next) => {
+app.post('/api/public/student-records', ...requireTeacherWrite, async (req, res, next) => {
     try { res.json(await studentRecordSvc.create(req.body)); } catch (e) { next(e); }
 });
 app.put('/api/public/student-records/:id', async (req, res, next) => {
     try { res.json(await studentRecordSvc.update(req.params.id, req.body)); } catch (e) { next(e); }
 });
-app.delete('/api/public/student-records/:id', async (req, res, next) => {
+app.delete('/api/public/student-records/:id', ...requireTeacherWrite, async (req, res, next) => {
     try { res.json(await studentRecordSvc.remove(req.params.id, req.query.teacherId)); } catch (e) { next(e); }
 });
 
 // Student "My Learnings" notes — student-authored per lesson, in the course
 // player. Public, keyed by studentId (same model as other student endpoints).
+// --- Student identity guards for /api/public/* --------------------------------
+// requireStudent: WRITES that record a student's own data must be tied to a
+// verified token; rejects if absent and overrides the spoofable x-user-id with
+// the verified id (blocks acting as another student — e.g. quiz grade fraud).
+const requireStudent = [optionalAuth, (req, res, next) => {
+    const uid = req.authUser?.userId;
+    if (!uid) return res.status(401).json({ error: 'Please sign in to continue.' });
+    req.headers['x-user-id'] = String(uid);
+    req.verifiedUserId = String(uid);
+    next();
+}];
+// attachVerifiedId: READS — when a token is present, force the response to the
+// token's user (override header/query); no token → legacy header fallback. Stops
+// a logged-in student reading a peer's progress/certificates/stats.
+const attachVerifiedId = [optionalAuth, (req, _res, next) => {
+    const uid = req.authUser?.userId;
+    if (uid) {
+        req.headers['x-user-id'] = String(uid);
+        if (req.query) req.query.user_id = String(uid);
+    }
+    req.verifiedUserId = uid || null;
+    next();
+}];
+
 const learningSvc = require('./services/StudentLearningService');
-app.get('/api/public/learnings/by-student/:studentId', async (req, res, next) => {
-    try { res.set('Cache-Control', 'no-store'); res.json(await learningSvc.getOne(req.params.studentId, req.query.lessonId)); } catch (e) { next(e); }
+app.get('/api/public/learnings/by-student/:studentId', ...attachVerifiedId, async (req, res, next) => {
+    // Verified id wins over the URL param so a student can't read another's notes.
+    try { res.set('Cache-Control', 'no-store'); res.json(await learningSvc.getOne(req.verifiedUserId || req.params.studentId, req.query.lessonId)); } catch (e) { next(e); }
 });
-app.post('/api/public/learnings', async (req, res, next) => {
-    try { res.json(await learningSvc.save(req.body)); } catch (e) { next(e); }
+app.post('/api/public/learnings', ...attachVerifiedId, async (req, res, next) => {
+    try { res.json(await learningSvc.save({ ...req.body, studentId: req.verifiedUserId || req.body.studentId })); } catch (e) { next(e); }
 });
+
+// Public lead capture — portal signup. Creates a LEAD (no login); admin
+// follows up and converts it to a student. Unauthenticated by design.
+const leadCtrl = require('./controllers/LeadController');
+app.post('/api/public/leads', writeLimiter, leadCtrl.capture);
+
+// Razorpay payments. order/verify require a verified student (requireStudent);
+// the webhook is authenticated by its HMAC signature over the raw body.
+const paymentCtrl = require('./controllers/PaymentController');
+app.post('/api/public/payments/order', ...requireStudent, paymentCtrl.createOrder);
+app.post('/api/public/payments/verify', ...requireStudent, paymentCtrl.verify);
+app.post('/api/public/payments/webhook', paymentCtrl.webhook);
 
 // Public student projects + testimonials — drive the Home page sections.
 const projectService = require('./services/ProjectService');
@@ -361,24 +512,26 @@ app.get('/api/public/courses', async (req, res, next) => {
 // short preview of every course the admin has published.
 app.get('/api/public/courses/catalog', async (req, res, next) => {
     try {
+        // Public marketing list, hammered on every homepage load and identical
+        // for everyone → cache 60s to shield Postgres. No per-user data here.
+        const args = { limit: req.query.limit, classFrom: req.query.classFrom, classTo: req.query.classTo };
+        const key = `pub:catalog:${JSON.stringify(args)}`;
+        const data = await cache.wrap(key, 60, () => publicCourseService.catalog(args));
         res.set('Cache-Control', 'no-store');
-        res.json(await publicCourseService.catalog({
-            limit: req.query.limit,
-            classFrom: req.query.classFrom,
-            classTo: req.query.classTo,
-        }));
+        res.json(data);
     } catch (e) {
         console.warn('[public/courses/catalog] failed:', e.message);
         res.json([]);
     }
 });
 
-app.get('/api/public/course/:slug', async (req, res) => {
+app.get('/api/public/course/:slug', ...attachVerifiedId, async (req, res) => {
     const clgId = typeof req.query.clgId === 'string' ? req.query.clgId.trim() : null;
     try {
+        const vid = req.verifiedUserId || null;
         const real = req.params.slug === 'first'
             ? await publicCourseService.detailsFirstActive()
-            : await publicCourseService.detailsBySlug(req.params.slug, clgId || null);
+            : await publicCourseService.detailsBySlug(req.params.slug, clgId || null, vid);
         if (real) return res.json(real);
         // Course-detail must always reflect real admin data. Previously this
         // fell back to mockData (Mastering React 18, etc.) whenever the slug
@@ -393,10 +546,17 @@ app.get('/api/public/course/:slug', async (req, res) => {
     }
 });
 
-app.get('/api/public/player/:slug', async (req, res, next) => {
+app.get('/api/public/player/:slug', optionalAuth, async (req, res, next) => {
     try {
-        const userId = req.headers['x-user-id'] || req.query.user_id;
-        const real = await publicCourseService.playerData(req.params.slug, req.query.lesson_id, userId);
+        // verifiedUserId comes from a validated JWT (optionalAuth); the x-user-id
+        // header is client-supplied and spoofable. Release-gating trusts ONLY the
+        // verified id — so a student can't unlock another student's videos by
+        // passing their id. Progress falls back to the header for anonymous use.
+        const clientId = req.headers['x-user-id'] || req.query.user_id;
+        const verifiedId = req.authUser?.userId || null;
+        const real = await publicCourseService.playerData(
+            req.params.slug, req.query.lesson_id, verifiedId || clientId, { verifiedUserId: verifiedId },
+        );
         if (real) return res.json(real);
         return playerCtrl.player(req, res, next);
     } catch (e) {
@@ -404,15 +564,81 @@ app.get('/api/public/player/:slug', async (req, res, next) => {
         return playerCtrl.player(req, res, next);
     }
 });
-app.post('/api/public/player/complete', playerCtrl.complete);
-app.post('/api/public/player/progress', playerCtrl.progress);
+app.post('/api/public/player/complete', ...requireStudent, playerCtrl.complete);
+app.post('/api/public/player/progress', ...requireStudent, playerCtrl.progress);
+
+// Student "daily card" — which lessons of a course the teacher has released to
+// THIS student right now. Powers the dashboard card without loading the full
+// player payload. Public, keyed by user_id (same model as other student
+// endpoints). Response: { delegated, lesson_ids }. When delegated === false the
+// course has no teaching assignment, so the student sees the whole course
+// (caller should fall back to the normal curriculum).
+// Canonical "My Courses" — courses the verified student owns (paid), is
+// enrolled in, or is delegated (school/batch). Replaces the legacy
+// course-service /enroll/my-courses (different DB + course-id space).
+app.get('/api/public/my-courses', ...attachVerifiedId, async (req, res) => {
+    try {
+        res.set('Cache-Control', 'no-store');
+        const result = await publicCourseService.myCourses(req.verifiedUserId);
+        return res.json(result);
+    } catch (e) {
+        console.warn('[public/my-courses] failed:', e.message);
+        return res.status(500).json({ error: 'Could not load your courses' });
+    }
+});
+
+// Student leaderboard — points (completed lessons + best quiz scores). With
+// ?course_id=X it's per-course; without, it's overall. Includes the verified
+// student's own rank ("me") even if they're outside the top.
+const rankingSvc = require('./services/RankingService');
+app.get('/api/public/leaderboard', ...attachVerifiedId, async (req, res) => {
+    try {
+        res.set('Cache-Control', 'no-store');
+        const courseId = req.query.course_id ? Number(req.query.course_id) : null;
+        const data = await rankingSvc.build({ courseId, limit: req.query.limit, meUserId: req.verifiedUserId });
+        return res.json(data);
+    } catch (e) {
+        console.warn('[leaderboard] failed:', e.message);
+        return res.status(500).json({ error: 'Could not load leaderboard' });
+    }
+});
+
+const teachingDelegationSvc = require('./services/TeachingAssignmentService');
+
+// Teacher's roster students across all their assignments — powers the teacher
+// dashboard "Students" tab (by-teacher, same public pattern as classes/slots).
+app.get('/api/public/teaching/students-by-teacher/:teacherId', ...requireTeacherSelfOrAdmin, async (req, res) => {
+    try {
+        res.set('Cache-Control', 'no-store');
+        res.json({ students: await teachingDelegationSvc.studentsByTeacher(req.params.teacherId) });
+    } catch (e) {
+        console.warn('[students-by-teacher] failed:', e.message);
+        return res.status(500).json({ error: 'Could not load students' });
+    }
+});
+
+app.get('/api/public/my-lessons', optionalAuth, async (req, res) => {
+    try {
+        res.set('Cache-Control', 'no-store');
+        // Trust ONLY the verified JWT id for gating — never the client header.
+        // No token on a delegated course → nothing is visible (locked).
+        const verifiedId = req.authUser?.userId || null;
+        const gate = await teachingDelegationSvc.visibleLessonIdsForStudent(req.query.course_id, verifiedId);
+        return res.json({ delegated: gate.enforced, lesson_ids: [...gate.lessonIds] });
+    } catch (e) {
+        console.warn('[public/my-lessons] failed:', e.message);
+        return res.status(500).json({ error: 'Could not load released lessons' });
+    }
+});
 
 // Persist one quiz attempt so re-entering the lesson restores the last score
 // and remaining-retry state. user_id comes from the x-user-id header (set by
 // the frontend course API interceptor) or the body, matching existing pattern.
-app.post('/api/public/player/quiz-submit', async (req, res) => {
+app.post('/api/public/player/quiz-submit', ...requireStudent, async (req, res) => {
     try {
-        const user_id = req.headers['x-user-id'] || req.body.user_id;
+        // Verified id only — never trust a client-supplied user_id for a graded
+        // submission (prevents submitting a score as another student).
+        const user_id = req.verifiedUserId;
         const result = await publicCourseService.submitQuiz({ ...req.body, user_id });
         return res.json(result);
     } catch (e) {
@@ -425,7 +651,7 @@ app.post('/api/public/player/quiz-submit', async (req, res) => {
 // admin sent them ("you are eligible for X") and accepts/rejects it. Student
 // identity via x-user-id header, matching the other /api/public endpoints.
 const studentSvc = require('./services/StudentService');
-app.get('/api/public/program-request', async (req, res) => {
+app.get('/api/public/program-request', ...attachVerifiedId, async (req, res) => {
     try {
         const userId = req.headers['x-user-id'] || req.query.user_id;
         return res.json(await studentSvc.getStudentProgramRequest(userId));
@@ -434,7 +660,7 @@ app.get('/api/public/program-request', async (req, res) => {
         return res.status(500).json({ error: 'Could not load program request' });
     }
 });
-app.get('/api/public/program-request/accepted', async (req, res) => {
+app.get('/api/public/program-request/accepted', ...attachVerifiedId, async (req, res) => {
     try {
         const userId = req.headers['x-user-id'] || req.query.user_id;
         return res.json(await studentSvc.getAcceptedProgram(userId));
@@ -443,9 +669,9 @@ app.get('/api/public/program-request/accepted', async (req, res) => {
         return res.status(500).json({ error: 'Could not load accepted program' });
     }
 });
-app.post('/api/public/program-request/respond', async (req, res) => {
+app.post('/api/public/program-request/respond', ...requireStudent, async (req, res) => {
     try {
-        const userId = req.headers['x-user-id'] || req.body.user_id;
+        const userId = req.verifiedUserId;
         const result = await studentSvc.respondProgramRequest(userId, req.body.action);
         return res.json(result);
     } catch (e) {
@@ -465,16 +691,17 @@ app.use('/api', userProgressRoutes);
 // param matches the watch store's keying (defaults to 99 for the dev/anonymous case).
 const watchStore = require('./course-content/watchStore');
 const { Lesson } = require('./models');
-app.get('/api/public/course-progress', async (req, res) => {
+app.get('/api/public/course-progress', ...attachVerifiedId, async (req, res) => {
     try {
         // Pull the student id from header first (set by frontend axios interceptor),
         // fall back to query param. No silent default — anonymous = empty progress.
-        const userId = Number(req.headers['x-user-id'] || req.query.user_id) || 0;
+        const userId = req.verifiedUserId || String(req.headers['x-user-id'] || req.query.user_id || '');
         if (!userId) return res.json({ user_id: 0, max_progress: 0, completed_any: false });
-        const histories = watchStore.listHistoriesForUser(userId);
-        if (!histories.length) return res.json({ user_id: userId, max_progress: 0, completed_any: false });
+        // DB-authoritative (works across instances; no whole-table memory load).
+        const counts = await watchStore.completedCountsByCourse(userId);
+        if (!counts.length) return res.json({ user_id: userId, max_progress: 0, completed_any: false });
 
-        const courseIds = histories.map((h) => h.course_id);
+        const courseIds = counts.map((c) => c.course_id);
         // Tally lesson counts per course in a single grouped query.
         const lessonCounts = await Lesson.findAll({
             where: { course_id: courseIds },
@@ -486,18 +713,17 @@ app.get('/api/public/course-progress', async (req, res) => {
 
         let maxProgress = 0;
         let completedAny = false;
-        for (const h of histories) {
-            const total = totalByCourse[h.course_id] || 0;
+        for (const c of counts) {
+            const total = totalByCourse[c.course_id] || 0;
             if (!total) continue;
-            const done = (h.completed_lesson || []).length;
-            const pct = Math.round((done / total) * 100);
+            const pct = Math.round((c.count / total) * 100);
             if (pct > maxProgress) maxProgress = pct;
-            if (done >= total) completedAny = true;
+            if (c.count >= total) completedAny = true;
         }
         return res.json({ user_id: userId, max_progress: maxProgress, completed_any: completedAny });
     } catch (err) {
         console.warn('[course-progress] failed:', err.message);
-        return res.json({ user_id: Number(req.query.user_id) || 99, max_progress: 0, completed_any: false });
+        return res.json({ user_id: Number(req.query.user_id) || 0, max_progress: 0, completed_any: false });
     }
 });
 
@@ -523,7 +749,15 @@ app.use('/api/public', zoomLiveClassRoutes.public);
 app.use('/api/admin', auth, forumRoutes.admin);
 app.use('/api/public', forumRoutes.public);
 
+// Teacher-delegation: admin assigns course+roster, teacher drips lessons.
+// adminOrTeacher (not adminOnly) so a teacher reaches their own assignments /
+// release endpoints. The service further restricts admin-only actions (create
+// assignment, edit roster). MUST sit before the adminOnly block below so a
+// teacher request isn't short-circuited by an earlier adminOnly mount.
+app.use('/api/admin', adminOrTeacher, teachingRoutes);
+
 // Protected admin endpoints — adminOnly enforces JWT + role
+app.use('/api/admin', adminOnly, leadRoutes);
 app.use('/api/admin', adminOnly, adminRoutes);
 app.use('/api/admin', adminOnly, quizRoutes);
 app.use('/api/admin', adminOnly, liveClassRoutes);
@@ -549,9 +783,11 @@ app.use('/api/admin', adminOnly, languageRoutes);
 // Public certificate routes — unauthenticated. Mirror the player flow which
 // also uses /api/public/* with an x-user-id header for student keying.
 const certificateCtrl = require('./controllers/CertificateController');
-app.get('/api/public/certificate/find', certificateCtrl.studentFind);
-app.get('/api/public/certificate/mine', certificateCtrl.studentList);
-app.post('/api/public/certificate/issue', certificateCtrl.studentIssue);
+// Reads scoped to the verified student; issue requires a verified identity.
+// The :identifier render stays open (shareable certificate link).
+app.get('/api/public/certificate/find', ...attachVerifiedId, certificateCtrl.studentFind);
+app.get('/api/public/certificate/mine', ...attachVerifiedId, certificateCtrl.studentList);
+app.post('/api/public/certificate/issue', ...requireStudent, certificateCtrl.studentIssue);
 app.get('/api/public/certificate/:identifier', certificateCtrl.render);
 
 // Aggregated student-overview KPIs:
@@ -561,21 +797,20 @@ app.get('/api/public/certificate/:identifier', certificateCtrl.render);
 // One round-trip to keep the dashboard snappy. Reuses the same watchStore +
 // Lesson tally as /api/public/course-progress above.
 const { UserProgress, Certificate } = require('./models');
-app.get('/api/public/student/overview-stats', async (req, res) => {
+app.get('/api/public/student/overview-stats', ...attachVerifiedId, async (req, res) => {
     try {
         const rawUserId = req.headers['x-user-id'] || req.query.user_id;
         if (!rawUserId) {
             return res.json({ active_programs: 0, completed_programs: 0, certificates: 0 });
         }
 
-        // user_id needs both shapes: BIGINT for UserProgress, string for Certificate.
-        const userIdNum = Number(rawUserId);
-        const userIdStr = String(rawUserId);
+        // All progress/certificate tables key user_id as a string (varchar).
+        const userIdStr = String(rawUserId || '').trim();
 
         // Pull all enrollments for this user.
-        const enrollments = Number.isFinite(userIdNum) && userIdNum > 0
+        const enrollments = userIdStr
             ? await UserProgress.findAll({
-                where: { user_id: userIdNum, enrolled: true },
+                where: { user_id: userIdStr, enrolled: true },
                 attributes: ['program_id', 'course_id'],
                 raw: true,
             })
@@ -594,10 +829,8 @@ app.get('/api/public/student/overview-stats', async (req, res) => {
             const totalByCourse = Object.fromEntries(
                 lessonCounts.map((r) => [Number(r.course_id), Number(r.count) || 0])
             );
-            const histories = watchStore.listHistoriesForUser(userIdNum);
-            const doneByCourse = Object.fromEntries(
-                histories.map((h) => [Number(h.course_id), (h.completed_lesson || []).length])
-            );
+            const counts = await watchStore.completedCountsByCourse(userIdStr);
+            const doneByCourse = Object.fromEntries(counts.map((c) => [c.course_id, c.count]));
             for (const courseId of courseIds) {
                 const total = totalByCourse[Number(courseId)] || 0;
                 const done = doneByCourse[Number(courseId)] || 0;
@@ -692,16 +925,13 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 sequelize.authenticate()
     .then(async () => {
-        // Hydrate the in-memory watch store from MySQL so completion ticks and
-        // resume positions survive a restart. Failure here is non-fatal — cold
-        // cache just means new writes still persist normally.
-        try {
-            const watchStore = require('./course-content/watchStore');
-            const stats = await watchStore.loadFromDb();
-            console.log(`watchStore hydrated: ${stats.histories} histories, ${stats.durations} durations`);
-        } catch (e) {
-            console.warn('watchStore hydrate failed:', e.message);
-        }
+        // NOTE: previously we loaded the ENTIRE progress tables into memory here
+        // (watchStore.loadFromDb). That doesn't scale — at thousands of students
+        // it's a memory blow-up and is wrong across multiple server instances.
+        // The reads that matter (player, course-progress, overview-stats,
+        // teacher progress) now query the DB per-user, so no boot hydration is
+        // needed. The in-memory store remains only as a best-effort cache for
+        // the mock fallback path.
 
         // Idempotently ensure auth-schema users columns exist. Originally
         // these were MySQL DESCRIBE / ALTER ADD COLUMN patches added when
@@ -896,6 +1126,53 @@ sequelize.authenticate()
             await sequelize.query('ALTER TABLE lms_admin.resources ADD COLUMN IF NOT EXISTS section VARCHAR(255)');
         } catch (e) {
             console.warn('[resources] table sync failed:', e.message);
+        }
+
+        // Teacher-delegation tables: admin assigns a course+roster to a teacher
+        // (teaching_assignments + assignment_members) and the teacher releases
+        // lessons day by day (lesson_releases). Same idempotent .sync() pattern
+        // — created on first run, no manual migration. Additive: does NOT touch
+        // courses.teacherId or any existing access logic.
+        // Idempotent create-if-missing. Plain .sync() on an EXISTING table still
+        // re-issues CREATE INDEX for the model-defined indexes (no IF NOT EXISTS)
+        // → "relation ... already exists" on every boot. And because these three
+        // shared one try/catch, that throw previously aborted the block and
+        // skipped LessonRelease.sync() (latent: a partial DB would never get the
+        // lesson_releases table). Guard each on an information_schema existence
+        // check so we only create what's actually missing.
+        try {
+            const { QueryTypes } = require('sequelize');
+            const { TeachingAssignment, AssignmentMember, LessonRelease } = require('./models');
+            const exists = async (table) => {
+                const rows = await sequelize.query(
+                    `SELECT 1 FROM information_schema.tables
+                       WHERE table_schema = 'lms_admin' AND table_name = :table LIMIT 1`,
+                    { replacements: { table }, type: QueryTypes.SELECT }
+                );
+                return rows.length > 0;
+            };
+            if (!(await exists('teaching_assignments'))) await TeachingAssignment.sync();
+            if (!(await exists('assignment_members')))   await AssignmentMember.sync();
+            if (!(await exists('lesson_releases')))       await LessonRelease.sync();
+        } catch (e) {
+            console.warn('[teacher-delegation] table sync failed:', e.message);
+        }
+
+        // Leads — public signups awaiting admin follow-up / conversion. Same
+        // idempotent .sync() pattern; created on first run, no manual migration.
+        try {
+            const { Lead } = require('./models');
+            await Lead.sync();
+        } catch (e) {
+            console.warn('[leads] table sync failed:', e.message);
+        }
+
+        // Payments — Razorpay course purchases (paywall source of truth).
+        try {
+            const { Payment } = require('./models');
+            await Payment.sync();
+        } catch (e) {
+            console.warn('[payments] table sync failed:', e.message);
         }
 
         // lms_admin.programs late-added columns. Same self-heal pattern.

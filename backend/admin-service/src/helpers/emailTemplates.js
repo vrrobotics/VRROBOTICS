@@ -254,9 +254,37 @@ const certificateIssued = ({
     return { subject, html: baseFrame({ heading, bodyHtml }) };
 };
 
+// Sent when an admin converts a lead into a student account. Gives the student
+// their login email + the password the admin set, and a button to sign in — so
+// onboarding is one smooth step (no "admin tells them the password by phone").
+const studentWelcome = ({ studentName, email, password, loginUrl }) => {
+    const heading = 'Welcome — Your LMS Account Is Ready';
+    const subject = 'Your LMS account is ready — here are your login details';
+    const safeStudent = escape(studentName || 'Student');
+    const safeEmail = escape(email || '');
+    const safePassword = escape(password || '');
+    const safeUrl = escape(loginUrl || '');
+    const bodyHtml = `
+        <p style="margin:0 0 16px 0;">Dear ${safeStudent},</p>
+        <p style="margin:0 0 16px 0;">Your account has been created. You can now sign in and start learning.</p>
+        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px 0;font-size:15px;">
+            <tr><td style="padding:4px 12px 4px 0;color:#7a8189;">Email</td><td style="font-weight:600;">${safeEmail}</td></tr>
+            <tr><td style="padding:4px 12px 4px 0;color:#7a8189;">Password</td><td style="font-weight:600;">${safePassword}</td></tr>
+        </table>
+        <p style="margin:0 0 24px 0;">
+            <a href="${safeUrl}" style="display:inline-block;background:#177385;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:600;">Sign in to LMS</a>
+        </p>
+        <p style="margin:0 0 4px 0;color:#7a8189;font-size:13px;">For your security, please change your password after your first login.</p>
+        <p style="margin:0 0 24px 0;font-size:13px;word-break:break-all;"><a href="${safeUrl}" style="color:#177385;">${safeUrl}</a></p>
+        <p style="margin:0;">Best Regards,<br/>YagnaTech Team</p>
+    `;
+    return { subject, html: baseFrame({ heading, bodyHtml }) };
+};
+
 module.exports = {
     batchAddedToStudent,
     preAssessmentRegistered,
     courseAssignedToStudent,
     certificateIssued,
+    studentWelcome,
 };

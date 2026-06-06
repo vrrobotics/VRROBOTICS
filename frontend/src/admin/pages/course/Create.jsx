@@ -108,14 +108,9 @@ export default function CourseCreate() {
 
     const submit = async (e) => {
         e.preventDefault();
-        if (!form.teacher_id) {
-            toast.error('Please select an teacher');
-            return;
-        }
-        if (selectedClgIds.length === 0) {
-            toast.error('Select at least one school');
-            return;
-        }
+        // Teacher + Schools are OPTIONAL at creation. A teacher (or several) is
+        // assigned later via Teacher Assignments; Schools only apply to B2B/
+        // school-delegated courses. A B2C paid course needs neither.
         setSubmitting(true);
         const fd = new FormData();
         // teacher_id is the form-state key; we send it on the wire as
@@ -126,7 +121,7 @@ export default function CourseCreate() {
             fd.append(k, v);
         });
         fd.append('course_type', 'general');
-        fd.append('teachers[]', form.teacher_id);
+        if (form.teacher_id) fd.append('teachers[]', form.teacher_id);
         selectedClgIds.forEach((id) => fd.append('clgIds[]', id));
         selectedBatchIds.forEach((id) => fd.append('batchIds[]', id));
         if (thumbnail) fd.append('thumbnail', thumbnail);
@@ -301,13 +296,12 @@ export default function CourseCreate() {
                                 submitted with an invalid value. */}
                             <div className="mb-3">
                                 <label className="ol-form-label" htmlFor="teacher_id">
-                                    Teacher<span className="text-danger ml-1">*</span>
+                                    Teacher <span className="text-gray text-[12px] font-normal">(optional — assign later in Teacher Assignments)</span>
                                 </label>
                                 <select
                                     id="teacher_id"
                                     className="ol-form-control"
                                     name="teacher_id"
-                                    required
                                     disabled={teachersLoading || !!teachersError}
                                     value={form.teacher_id}
                                     onChange={(e) => set('teacher_id', e.target.value)}
@@ -346,10 +340,11 @@ export default function CourseCreate() {
                             </div>
 
                             <div className="mb-3">
+                                {/* Optional: only for school/batch-delegated courses.
+                                    A B2C paid course needs no school. */}
                                 <CollegeMultiSelect
                                     value={selectedClgIds}
                                     onChange={setSelectedClgIds}
-                                    required
                                 />
                             </div>
 

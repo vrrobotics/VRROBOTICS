@@ -3,9 +3,9 @@ const { DataTypes } = require('sequelize');
 module.exports = (sequelize) => {
     const PreAssessmentResult = sequelize.define('PreAssessmentResult', {
         id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-        // BIGINT because user ids come from auth-service (different DB) and can
-        // exceed INT range. No FK to admin-service's users table for the same reason.
-        user_id: { type: DataTypes.BIGINT, allowNull: false },
+        // VARCHAR in the live DB (auth userIds; different DB, no FK). Was BIGINT,
+        // which mismatches the column and can silently fail result writes/reads.
+        user_id: { type: DataTypes.STRING(64), allowNull: false },
         program_id: { type: DataTypes.INTEGER, allowNull: true },
         score: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 0 },
         passed: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },

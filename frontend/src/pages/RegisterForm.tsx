@@ -13,9 +13,64 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UploadCloud } from "lucide-react";
+import { captureLead } from "@/api/leadApi";
 
 const Register = () => {
   const [program, setProgram] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErr(null);
+    if (!name.trim() || !email.trim()) {
+      setErr("Please enter your name and email.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      // Creates a LEAD (no login). Admin reviews and contacts you to enroll.
+      await captureLead({
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim() || undefined,
+        course_interest: program || undefined,
+        source: "signup",
+      });
+      setSubmitted(true);
+    } catch (e2: unknown) {
+      const msg =
+        (e2 as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        "Something went wrong. Please try again.";
+      setErr(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-muted py-10 px-4">
+        <div className="max-w-xl mx-auto">
+          <Card className="card-ngo border-0">
+            <CardHeader className="text-center">
+              <CardTitle className="text-xl md:text-2xl font-bold text-gradient-800">
+                Request received 🎉
+              </CardTitle>
+              <CardDescription className="text-sm text-muted-foreground">
+                Thanks, {name.trim()}! Our team will review your details and contact you
+                shortly about joining the course. You don’t need to do anything else right now.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-muted py-10 px-4">
@@ -37,9 +92,9 @@ const Register = () => {
                 <span className="text-xl">1.</span> Basic Details
               </h3>
               <div className="grid md:grid-cols-2 gap-4">
-                <Input placeholder="Full Name" required />
-                <Input placeholder="Email Address" type="email" required />
-                <Input placeholder="Mobile Number" />
+                <Input placeholder="Full Name" required value={name} onChange={(e) => setName(e.target.value)} />
+                <Input placeholder="Email Address" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                <Input placeholder="Mobile Number" value={phone} onChange={(e) => setPhone(e.target.value)} />
                 <Input placeholder="dd-mm-yyyy" type="date" />
                 <Select required>
                   <SelectTrigger>
@@ -144,7 +199,10 @@ const Register = () => {
                   I confirm that all details provided above are accurate.
                 </span>
               </label>
-              <Button className="w-full bg-gradient-hero">Submit</Button>
+              {err && <p className="text-sm text-red-600">{err}</p>}
+              <Button type="button" onClick={handleSubmit} disabled={submitting} className="w-full bg-gradient-hero">
+                {submitting ? "Submitting…" : "Submit"}
+              </Button>
             </div>
           </CardContent>
         </Card>

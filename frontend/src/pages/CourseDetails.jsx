@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { getCourseDetails } from '@/api/course/courseApi';
 import { enrollCourse } from '@/api/userProgressApi';
+import { buyCourse } from '@/api/paymentApi';
 import { fmtDuration, safeArr } from '@/components/course/format';
+import { sanitizeHtml } from '@/lib/sanitizeHtml';
 import PreviewModal from '@/components/course/PreviewModal';
 
 const TABS = [
@@ -26,10 +28,37 @@ export default function CourseDetails({ slug: slugProp } = {}) {
     // Stays true after the user clicks Enroll/Start Learning. Component unmounts
     // when the player route mounts, so we never need to clear it explicitly.
     const [enrolling, setEnrolling] = useState(false);
+    const [payError, setPayError] = useState(null);
 
     const handleEnroll = async (e) => {
         e?.preventDefault?.();
         if (enrolling || !data?.course?.slug) return;
+        const c = data.course;
+        const goToPlayer = () => navigate(`/courses/programs/course-details/play/${c.slug}`);
+
+        // Paid course → Razorpay checkout first. The server grants access on a
+        // verified payment (or returns alreadyPaid). Free courses skip this.
+        const paidCourse = (c.is_paid === true || Number(c.is_paid) === 1)
+            && Number(c.discounted_price || c.price || 0) > 0;
+        // Already owned → straight to the player, no re-payment.
+        if (paidCourse && c.purchased) { goToPlayer(); return; }
+        if (paidCourse) {
+            if (!localStorage.getItem('accessToken')) { navigate('/auth'); return; }
+            setPayError(null);
+            setEnrolling(true);
+            await buyCourse(
+                c.id,
+                {
+                    name: localStorage.getItem('userName') || undefined,
+                    email: localStorage.getItem('userEmail') || undefined,
+                    phone: localStorage.getItem('userPhone') || undefined,
+                },
+                goToPlayer,
+                (msg) => { setEnrolling(false); setPayError(msg || 'Payment could not be completed.'); },
+            );
+            return;
+        }
+
         setEnrolling(true);
         // Persist enrollment so revisits from /programs auto-redirect to the player.
         // program_id is carried in the URL by /programs/select; if absent (user came
@@ -165,6 +194,7 @@ export default function CourseDetails({ slug: slugProp } = {}) {
                             onPreview={() => setPreview(true)}
                             onEnroll={handleEnroll}
                             enrolling={enrolling}
+                            payError={payError}
                         />
                     </div>
                 </div>
@@ -212,7 +242,7 @@ export default function CourseDetails({ slug: slugProp } = {}) {
     );
 }
 
-function PricingCard({ course, onPreview, onEnroll, enrolling }) {
+function PricingCard({ course, onPreview, onEnroll, enrolling, payError }) {
     // is_paid can come back as 0/1 (MySQL) or false/true; treat anything
     // falsy / explicit zero as "Free". Paid courses surface the price block
     // above the CTA; free courses show a "Free enrolment" line instead.
@@ -226,7 +256,7 @@ function PricingCard({ course, onPreview, onEnroll, enrolling }) {
     // stale value behind).
     const hasDiscount = !isFree && !!course.discount_flag && discounted > 0 && discounted < price;
     const effectivePrice = hasDiscount ? discounted : price;
-    const formatPrice = (n) => `$${n.toFixed(2)}`;
+    const formatPrice = (n) => `₹${n.toLocaleString('en-IN')}`;
     const percentOff = hasDiscount && price > 0
         ? Math.round(((price - discounted) / price) * 100)
         : 0;
@@ -319,11 +349,21 @@ function PricingCard({ course, onPreview, onEnroll, enrolling }) {
                             </>
                         ) : (
                             <>
-                                {isFree ? 'Go to Course' : 'Buy this course'}
+                                {isFree || course.purchased ? 'Go to Course' : 'Buy this course'}
                                 <i className="fa fa-arrow-right text-[12px]" />
                             </>
                         )}
                     </button>
+
+                    {payError && (
+                        <p className="mt-2 text-[12px] text-red-600 text-center">{payError}</p>
+                    )}
+                    {!isFree && course.purchased && (
+                        <p className="mt-2 text-[11px] text-green-600 text-center font-semibold">✓ You own this course</p>
+                    )}
+                    {!isFree && !course.purchased && (
+                        <p className="mt-2 text-[11px] text-muted text-center">🔒 Secure payment via Razorpay</p>
+                    )}
 
                     <div className="mt-6 pt-5 border-t border-border">
                         <p className="text-[11px] uppercase tracking-wider text-muted font-semibold mb-3">
@@ -365,7 +405,7 @@ function Overview({ course, outcomes, faqs }) {
                 <SectionHeading icon="fa-align-left" title="Description" />
                 <div
                     className="mt-5 text-[15px] text-dark leading-[1.75] prose-custom"
-                    dangerouslySetInnerHTML={{ __html: course.description || '' }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(course.description) }}
                 />
             </div>
 
@@ -564,7 +604,7 @@ function Teacher({ teacher }) {
                         {teacher.biography ? (
                             <div
                                 className="text-[14px] text-dark leading-[1.75] prose-custom"
-                                dangerouslySetInnerHTML={{ __html: teacher.biography }}
+                                dangerouslySetInnerHTML={{ __html: sanitizeHtml(teacher.biography) }}
                             />
                         ) : (
                             <p className="text-[14px] text-muted italic m-0">

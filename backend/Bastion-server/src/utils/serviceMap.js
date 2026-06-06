@@ -34,7 +34,11 @@ const serviceMap = {
     host: process.env.ADMIN_SERVICE_HOST || 'localhost',
     port: process.env.ADMIN_SERVICE_PORT || 8007,
     stripPrefix: '/api/v1/admin',
-    forwardPrefix: '/api',
+    // admin-service mounts its admin routes at `/api/admin/*` (e.g. the login is
+    // `/api/admin/auth/login`). With forwardPrefix '/api' the gateway forwarded
+    // to `/api/auth/login`, which 404s. The frontend currently calls admin-service
+    // directly so this was latent, but the mapping must match the real mount.
+    forwardPrefix: '/api/admin',
   },
 
 };

@@ -6,7 +6,10 @@ const { DataTypes } = require('sequelize');
 module.exports = (sequelize) => {
     const LessonCompletion = sequelize.define('LessonCompletion', {
         id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-        user_id: { type: DataTypes.BIGINT, allowNull: false },
+        // VARCHAR in the live DB (auth userIds are stored as strings everywhere).
+        // Must match or Sequelize emits "varchar = bigint" comparison errors and
+        // every progress read/write silently fails.
+        user_id: { type: DataTypes.STRING(64), allowNull: false },
         course_id: { type: DataTypes.INTEGER, allowNull: false },
         lesson_id: { type: DataTypes.INTEGER, allowNull: false },
     }, {

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Layers, GraduationCap, Users, ArrowUpRight, PieChart } from 'lucide-react';
 import { dashboardStats } from '../../api/admin';
+import { leadStats } from '../../api/leads';
 
 // Attractive stat card: colored icon badge, big bold number, soft gradient
 // background, left accent bar, and a hover lift. `accent` carries the metric's
@@ -46,6 +47,12 @@ export default function Dashboard() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [newLeads, setNewLeads] = useState(0);
+
+    // Lead alert — best-effort; a failure here must not break the dashboard.
+    useEffect(() => {
+        leadStats().then((s) => setNewLeads(s?.new || 0)).catch(() => {});
+    }, []);
 
     // Pulled out of useEffect so the error-state Retry button can call it too.
     const load = async () => {
@@ -111,6 +118,20 @@ export default function Dashboard() {
                 <h4 className="text-[20px] font-bold m-0">Dashboard</h4>
                 <p className="text-[13px] opacity-90 mt-1">Overview of your platform at a glance.</p>
             </div>
+
+            {/* New-leads alert — new portal signups awaiting follow-up. */}
+            {newLeads > 0 && (
+                <Link to="/admin/leads?status=new" className="block rounded-ol-12 border border-blue-200 bg-blue-50 px-5 py-4 hover:bg-blue-100 transition-colors">
+                    <div className="flex items-center justify-between gap-3">
+                        <span className="text-[14px] text-blue-800 font-semibold">
+                            🔔 {newLeads} new lead{newLeads > 1 ? 's' : ''} waiting for follow-up
+                        </span>
+                        <span className="text-[12px] text-blue-700 font-semibold inline-flex items-center gap-1">
+                            Review leads <ArrowUpRight className="w-3.5 h-3.5" />
+                        </span>
+                    </div>
+                </Link>
+            )}
 
             {/* Stat cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

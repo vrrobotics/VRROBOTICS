@@ -197,6 +197,34 @@ function thumbnailUrl(guid) {
     return `https://${env.bunnyStream.cdnHostname}/${guid}/thumbnail.jpg`;
 }
 
+// Bunny CDN "URL Token Authentication" for playback. Signs a Bunny HLS URL with
+// a short-lived directory token so a leaked/shared link stops working after
+// `ttlSeconds` — and so a revoked student can't keep playing a URL they already
+// fetched. INERT unless BUNNY_STREAM_TOKEN_KEY is set (and token auth enabled on
+// the pull zone); otherwise the URL is returned unchanged so nothing breaks.
+// Only signs URLs on our own CDN host — external/embed URLs pass through.
+function signPlaybackUrl(rawUrl, { ttlSeconds = 6 * 3600 } = {}) {
+    const key = env.bunnyStream.tokenKey;
+    if (!key || !rawUrl) return rawUrl || null;
+    let u;
+    try { u = new URL(String(rawUrl)); } catch { return rawUrl; }
+    const cdnHost = String(env.bunnyStream.cdnHostname || '').replace(/^https?:\/\//, '');
+    if (!cdnHost || u.hostname !== cdnHost) return rawUrl; // not ours → don't touch
+
+    const expires = Math.floor(Date.now() / 1000) + ttlSeconds;
+    // Directory-level token so every HLS segment under "/{guid}/" inherits it.
+    const dir = u.pathname.replace(/\/[^/]*$/, '/');
+    const token = crypto
+        .createHash('sha256')
+        .update(`${key}${dir}${expires}`)
+        .digest('base64')
+        .replace(/\n/g, '').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    u.searchParams.set('token', token);
+    u.searchParams.set('expires', String(expires));
+    u.searchParams.set('token_path', dir);
+    return u.toString();
+}
+
 // Mint everything the browser needs for a direct TUS upload to Bunny:
 //   1. register the video to get its GUID
 //   2. compute the presigned auth signature
@@ -257,4 +285,5 @@ module.exports = {
     hlsUrl,
     embedUrl,
     thumbnailUrl,
+    signPlaybackUrl,
 };

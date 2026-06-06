@@ -3,9 +3,15 @@ const sectionRepo = require('../repositories/SectionRepository');
 const lessonRepo = require('../repositories/LessonRepository');
 const questionRepo = require('../repositories/QuestionRepository');
 const quizSubmissionRepo = require('../repositories/QuizSubmissionRepository');
-const { User, Course, BatchMember, Lesson, LessonCompletion } = require('../models');
+const { User, Course, BatchMember, Lesson, LessonCompletion, Payment, UserProgress } = require('../models');
 const watchStore = require('./watchStore');
-const { QueryTypes } = require('sequelize');
+const teachingSvc = require('../services/TeachingAssignmentService');
+const { computeGating } = require('../services/teachingLogic');
+const bunny = require('../services/BunnyStream');
+const paymentSvc = require('../services/PaymentService');
+const { isPaywalled } = require('../services/paymentLogic');
+const cache = require('../config/cache');
+const { QueryTypes, Op } = require('sequelize');
 const authDb = require('../config/authDatabase');
 const env = require('../config/env');
 
@@ -301,7 +307,7 @@ const list = async (query = {}) => {
                         'course_id',
                         [Course.sequelize.fn('COUNT', Course.sequelize.col('id')), 'done'],
                     ],
-                    where: { course_id: courseIds, user_id: uidNum },
+                    where: { course_id: courseIds, user_id: String(userIdRaw) },
                     group: ['course_id'],
                     raw: true,
                 }),
@@ -343,7 +349,7 @@ const list = async (query = {}) => {
     };
 };
 
-const detailsBySlug = async (slug, clgId = null) => {
+const detailsBySlug = async (slug, clgId = null, verifiedUserId = null) => {
     const course = await Course.findOne({ where: { slug } });
     if (!course) return null;
 
@@ -361,10 +367,66 @@ const detailsBySlug = async (slug, clgId = null) => {
     const lessons = await lessonRepo.findBySectionIds(sectionIds);
     const creator = await resolveTeacher(course);
 
+    const sanitized = sanitizeCourse(course, sections, lessons, creator);
+    // Mark whether the verified student already owns (paid for) this course so
+    // the UI shows "Go to Course" instead of a misleading "Buy" button.
+    sanitized.purchased = verifiedUserId ? await paymentSvc.hasPaid(verifiedUserId, course.id) : false;
+
     return {
-        course: sanitizeCourse(course, sections, lessons, creator),
+        course: sanitized,
         reviews: [],
     };
+};
+
+// Canonical "My Courses" for a student in the lms_admin universe: the union of
+// courses they PAID for, are ENROLLED in (program), or are DELEGATED (teacher
+// roster / school-batch). Each card carries a progress %. This replaces the
+// legacy course-service /enroll/my-courses (different DB, different course ids).
+const myCourses = async (userIdRaw) => {
+    const uid = String(userIdRaw ?? '').trim();
+    if (!uid) return { courses: [] };
+    // Cache per-student (60s). Invalidated immediately on payment (PaymentService)
+    // so a buyer sees their course at once; delegation/enrollment changes show
+    // within the TTL.
+    return cache.wrap(`mycourses:${uid}`, 60, () => myCoursesUncached(uid));
+};
+
+const myCoursesUncached = async (uid) => {
+    const [paidRows, enrolledRows, delegatedIds] = await Promise.all([
+        Payment.findAll({ where: { user_id: uid, status: 'paid' }, attributes: ['course_id'], raw: true }),
+        UserProgress.findAll({ where: { user_id: uid, enrolled: true }, attributes: ['course_id'], raw: true }),
+        teachingSvc.coursesForStudent(uid),
+    ]);
+
+    const ids = new Set();
+    for (const r of paidRows) if (r.course_id) ids.add(Number(r.course_id));
+    for (const r of enrolledRows) if (r.course_id) ids.add(Number(r.course_id));
+    for (const c of delegatedIds) ids.add(Number(c));
+    if (!ids.size) return { courses: [] };
+    const idList = [...ids];
+
+    const [courseRows, completed, lessonTotals] = await Promise.all([
+        Course.findAll({ where: { id: { [Op.in]: idList } } }),
+        watchStore.completedCountsByCourse(uid),
+        Lesson.findAll({
+            where: { course_id: { [Op.in]: idList } },
+            attributes: ['course_id', [Course.sequelize.fn('COUNT', Course.sequelize.col('id')), 'total']],
+            group: ['course_id'],
+            raw: true,
+        }),
+    ]);
+
+    const doneBy = Object.fromEntries(completed.map((c) => [c.course_id, c.count]));
+    const totalBy = Object.fromEntries(lessonTotals.map((r) => [Number(r.course_id), Number(r.total) || 0]));
+
+    const courses = courseRows.map((c) => {
+        const card = sanitizeCourse(c);
+        const total = totalBy[c.id] || 0;
+        const done = doneBy[c.id] || 0;
+        card.progress = total ? Math.round((done / total) * 100) : 0;
+        return card;
+    });
+    return { courses };
 };
 
 const detailsFirstActive = async () => {
@@ -375,7 +437,7 @@ const detailsFirstActive = async () => {
 
 // userIdRaw lets the caller (server.js) pass in the requesting student. When
 // missing/invalid, progress fields render as zero (anonymous browse).
-const playerData = async (slug, lessonIdRaw, userIdRaw) => {
+const playerData = async (slug, lessonIdRaw, userIdRaw, { verifiedUserId = null } = {}) => {
     const course = await Course.findOne({ where: { slug } });
     if (!course) return null;
 
@@ -459,7 +521,17 @@ const playerData = async (slug, lessonIdRaw, userIdRaw) => {
         }
         lesson.quiz_state = quizState;
     }
-    const stored = userId ? watchStore.getHistory(course.id, userId) : null;
+    // DB-authoritative progress (works across server instances); fall back to
+    // the in-memory cache only if the DB read fails.
+    let stored = null;
+    if (userId) {
+        try {
+            stored = await watchStore.getHistoryDb(course.id, userId);
+        } catch (e) {
+            console.warn('[playerData] DB progress read failed, using cache:', e.message);
+            stored = watchStore.getHistory(course.id, userId);
+        }
+    }
     const completedIds = stored ? stored.completed_lesson : [];
     const totalLessons = sanitized.lesson_count;
     const progress = totalLessons ? Math.round((completedIds.length / totalLessons) * 100) : 0;
@@ -475,9 +547,84 @@ const playerData = async (slug, lessonIdRaw, userIdRaw) => {
         }
     }
 
+    // --- Teacher-delegation release gating (additive, server-enforced) ------
+    // If an admin has delegated this course to a teacher, the student may only
+    // see lessons the teacher has RELEASED to their roster. We both (a) lock
+    // every un-released lesson and (b) strip the video/attachment from the
+    // CURRENT lesson when it isn't released — so the URL can't be obtained by
+    // calling the player with an arbitrary lesson_id. Free lessons stay open.
+    // Courses with no teaching assignment are untouched (enforced === false).
+    let delegated = false;
+    try {
+        // Release-gating trusts ONLY a verified identity. If the request had no
+        // valid token, verifiedUserId is null → on a delegated course nothing is
+        // visible (everything locked, video src withheld). This prevents
+        // unlocking another student's content by spoofing x-user-id.
+        const gate = await teachingSvc.visibleLessonIdsForStudent(course.id, verifiedUserId);
+        if (gate.enforced) {
+            delegated = true;
+            const { lockedLessonIds: gatedLocks, stripCurrent } = computeGating({
+                visibleLessonIds: gate.lessonIds,
+                freeLessonIds: flatLessons.filter((l) => l.is_free).map((l) => l.id),
+                allLessonIds: flatLessons.map((l) => l.id),
+                currentLessonId: lesson?.id ?? null,
+                alreadyLocked: lockedLessonIds,
+            });
+            // Replace lockedLessonIds' contents in place (it's a const binding).
+            lockedLessonIds.length = 0;
+            for (const id of gatedLocks) lockedLessonIds.push(id);
+            if (lesson && stripCurrent) {
+                lesson.locked = true;
+                lesson.lesson_src = '';
+                lesson.attachment = '';
+                if (Array.isArray(lesson.questions)) lesson.questions = [];
+            }
+        }
+    } catch (e) {
+        console.warn('[playerData] release-gating failed:', e.message);
+    }
+
+    // --- Paywall (paid courses) -------------------------------------------
+    // A paid course (is_paid + price > 0) only serves its lessons to a student
+    // who has PAID (verified identity). Free lessons stay open as a preview.
+    // Independent of delegation: a paid course can also be teacher-released.
+    let paywalled = false;
+    try {
+        // Delegated courses (school/batch) are governed by teacher releases, not
+        // by personal payment — don't double-gate those students.
+        const effectivePrice = Number(course.discounted_price) > 0
+            ? Number(course.discounted_price) : Number(course.price || 0);
+        const paid = verifiedUserId ? await paymentSvc.hasPaid(verifiedUserId, course.id) : false;
+        if (!delegated && isPaywalled({ isPaid: course.is_paid, price: effectivePrice, hasPaid: paid })) {
+            paywalled = true;
+            const freeIds = new Set(flatLessons.filter((l) => l.is_free).map((l) => Number(l.id)));
+            for (const l of flatLessons) {
+                if (!freeIds.has(Number(l.id)) && !lockedLessonIds.includes(l.id)) lockedLessonIds.push(l.id);
+            }
+            if (lesson && !freeIds.has(Number(lesson.id))) {
+                lesson.locked = true;
+                lesson.lesson_src = '';
+                lesson.attachment = '';
+                if (Array.isArray(lesson.questions)) lesson.questions = [];
+            }
+        }
+    } catch (e) {
+        console.warn('[playerData] paywall check failed:', e.message);
+    }
+
+    // Sign the (still-served) video URL with a short-lived Bunny token so a
+    // leaked/shared link expires and a revoked student can't keep playing one
+    // they already fetched. No-op unless BUNNY_STREAM_TOKEN_KEY is configured,
+    // and only affects Bunny-hosted URLs — external/embed srcs pass through.
+    if (lesson && lesson.lesson_src && VIDEO_TYPES.includes(lesson.lesson_type)) {
+        lesson.lesson_src = bunny.signPlaybackUrl(lesson.lesson_src) || lesson.lesson_src;
+    }
+
     return {
         course: sanitized,
         lesson,
+        delegated,
+        paywalled,
         history: {
             course_id: course.id,
             student_id: userId,
@@ -495,15 +642,11 @@ const playerData = async (slug, lessonIdRaw, userIdRaw) => {
 // page load can restore the result and remaining-retry state. Returns the
 // authoritative attempt count after saving.
 const submitQuiz = async ({ quiz_id, user_id, score, total, answers }) => {
-    // Keep BOTH forms of the user id around:
-    //   uidStr — the auth users.userId PK (string; can exceed INT range)
-    //   uidNum — what we write into quiz_submissions.user_id (declared BIGINT
-    //            in the model but the underlying MySQL column is INT, so
-    //            values > 2^31-1 get clamped). We use uidStr for everything
-    //            that must round-trip the real identity (the JSON mirror and
-    //            attempt counting via auth-side keys).
+    // user_id is the auth users.userId (string). quiz_submissions.user_id is
+    // varchar, so we store the real id directly — no INT clamping, no collapsing
+    // big-id students into one row. The users.quizScores JSONB mirror (keyed by
+    // the same string) holds the per-quiz attempt count / last score.
     const uidStr = String(user_id || '').trim();
-    const uidNum = Number(user_id) > 0 ? Number(user_id) : 0;
     const qid = Number(quiz_id);
     if (!uidStr || !qid) {
         // No identity → can't persist per-user; report a transient count of 1
@@ -512,13 +655,29 @@ const submitQuiz = async ({ quiz_id, user_id, score, total, answers }) => {
     }
     await quizSubmissionRepo.create({
         quiz_id: qid,
-        user_id: uidNum,
+        // Store the real auth id (column is varchar) — no INT clamping.
+        user_id: uidStr,
         score: Number(score),
         total: Number(total),
         correct_answer: JSON.stringify(score),
         wrong_answer: JSON.stringify(Math.max(0, Number(total) - Number(score))),
         submits: JSON.stringify({ score: Number(score), total: Number(total), answers: answers || null }),
     });
+
+    // Completing a quiz = completing that lesson. Mark it done so it counts in
+    // progress + leaderboard automatically — no separate "mark as read" step.
+    // (quiz_id is the quiz lesson's id; look up its course to key the row.)
+    try {
+        const quizLesson = await Lesson.findByPk(qid, { attributes: ['course_id'], raw: true });
+        if (quizLesson?.course_id) {
+            await LessonCompletion.findOrCreate({
+                where: { user_id: uidStr, lesson_id: qid },
+                defaults: { user_id: uidStr, course_id: Number(quizLesson.course_id), lesson_id: qid },
+            });
+        }
+    } catch (e) {
+        console.warn('[submitQuiz] auto-complete failed:', e.message);
+    }
 
     // Mirror onto the student schema: users.quizScores is a JSON object
     // keyed by quiz_id. Each quiz's slot holds the latest score/total plus
@@ -571,8 +730,8 @@ const submitQuiz = async ({ quiz_id, user_id, score, total, answers }) => {
         // Best-effort: the submission row is the source of truth, the JSON
         // mirror is denormalized convenience. Don't fail the request.
         console.warn('[submitQuiz] failed to mirror users.quizScores:', e.message);
-        // Fall back to the clamped-int count if mirror failed entirely.
-        try { attempts_used = await quizSubmissionRepo.countByQuizAndUser(qid, uidNum); }
+        // Fall back to counting submission rows (now keyed by the real id).
+        try { attempts_used = await quizSubmissionRepo.countByQuizAndUser(qid, uidStr); }
         catch { /* keep attempts_used = 1 */ }
     }
 
@@ -655,4 +814,4 @@ const catalog = async ({ limit = 12, classFrom = null, classTo = null } = {}) =>
     });
 };
 
-module.exports = { list, catalog, detailsBySlug, detailsFirstActive, playerData, submitQuiz };
+module.exports = { list, catalog, detailsBySlug, detailsFirstActive, playerData, submitQuiz, myCourses };

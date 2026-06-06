@@ -11,7 +11,11 @@ import * as Sentry from '@sentry/node';
 const dsn = process.env.SENTRY_DSN;
 const enabled = Boolean(dsn);
 
-if (enabled) {
+// Idempotent: started via `--import ./instrument.mjs` (prod) Sentry is ALREADY
+// initialised (full tracing) → don't double-init. Started as plain `node
+// index.js` (local dev) instrument.mjs didn't run → init here as a fallback so
+// error capture still works (only auto-tracing is degraded).
+if (enabled && !Sentry.getClient()) {
   Sentry.init({
     dsn,
     environment: process.env.NODE_ENV || 'development',
@@ -21,7 +25,7 @@ if (enabled) {
     tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE || 0.1),
   });
   // eslint-disable-next-line no-console
-  console.log('[observability] Sentry initialised');
+  console.log('[observability] Sentry initialised (fallback)');
 }
 
 // Attach the Express error handler AFTER all routes are registered.

@@ -13,6 +13,10 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const id = localStorage.getItem("userId");
   if (id) config.headers.set("x-user-id", String(id));
+  // Send the auth token so the server can VERIFY identity (the program-request
+  // respond endpoint now requires it; reads use it to block spoofing).
+  const token = localStorage.getItem("accessToken");
+  if (token) config.headers.set("Authorization", `Bearer ${token}`);
   return config;
 });
 

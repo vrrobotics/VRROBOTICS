@@ -43,7 +43,8 @@ export default async function isLoggedIn(req, res, next) {
     req.user = {
       id: payload.sub,
       email: payload.email,
-      role: payload.user_metadata?.role || payload.app_metadata?.role || null,
+      // app_metadata only — user_metadata is user-editable and must not drive authz.
+      role: payload.app_metadata?.role || null,
       supabaseUid: payload.sub,
     };
     next();

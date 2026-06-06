@@ -76,8 +76,9 @@ export default function CoursePlayer() {
 
     const handleTimeUpdate = (t) => { playbackTimeRef.current = Number(t) || 0; };
 
-    // Auto-tick: every 5s, post the latest playback position. The server applies the
-    // 30%-of-duration rule and pushes the lesson into completed_lesson when reached.
+    // Auto-tick: every 20s, post the latest playback position. (Was 5s — at 10k
+    // concurrent students that's ~4× the DB write load for no real benefit; the
+    // server's 30%-of-duration completion rule is unaffected by coarser ticks.)
     useEffect(() => {
         if (!data?.lesson) return;
         const VIDEO_TYPES = ['video-url', 'system-video', 'vimeo-url', 'html5', 'google_drive'];
@@ -94,8 +95,8 @@ export default function CoursePlayer() {
             const wallElapsed = Math.floor((Date.now() - lessonOpenedAtRef.current) / 1000);
             const playbackElapsed = Math.floor(playbackTimeRef.current);
             const current = Math.max(playbackElapsed, wallElapsed);
-            // Round to nearest 5s tick (server bucket size) and skip duplicates.
-            const tick = Math.floor(current / 5) * 5;
+            // Round to nearest 20s tick (server bucket size) and skip duplicates.
+            const tick = Math.floor(current / 20) * 20;
             if (tick <= 0 || tick === lastReported) return;
             lastReported = tick;
 
@@ -108,7 +109,7 @@ export default function CoursePlayer() {
             } catch (e) {
                 console.warn('progress update failed:', e);
             }
-        }, 5000);
+        }, 20000);
 
         return () => { stopped = true; clearInterval(interval); };
     }, [data?.lesson?.id, slug]);
@@ -151,10 +152,14 @@ export default function CoursePlayer() {
     }
     if (!data) return null;
 
-    const { course, lesson, history, locked_lesson_ids: lockedIds = [], progress, completed_lesson_count } = data;
+    const { course, lesson, history, locked_lesson_ids: lockedIds = [], progress, completed_lesson_count, delegated } = data;
     const completedIds = history.completed_lesson || [];
     const isCurrentLocked = lesson && lockedIds.includes(lesson.id);
     const dripSettings = safeObj(course.drip_content_settings);
+    // A lesson is gated either by drip (enable_drip_content) or by teacher
+    // delegation (the teacher hasn't released this lesson yet). In delegated
+    // mode the backend has already stripped the video src, so show the lock UI.
+    const gatingOn = course.enable_drip_content === 1 || delegated === true;
 
     return (
         <div ref={shellRef} className="player-shell flex flex-col">
@@ -167,8 +172,10 @@ export default function CoursePlayer() {
                             <PlayerLesson
                                 lesson={lesson}
                                 course={course}
-                                locked={course.enable_drip_content === 1 && isCurrentLocked}
-                                lockedMessage={dripSettings.locked_lesson_message}
+                                locked={gatingOn && isCurrentLocked}
+                                lockedMessage={delegated
+                                    ? 'Your teacher hasn’t released this lesson yet.'
+                                    : dripSettings.locked_lesson_message}
                                 onLessonEnded={onMarkComplete}
                                 onTimeUpdate={handleTimeUpdate}
                             />

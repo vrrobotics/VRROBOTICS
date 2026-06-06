@@ -6,9 +6,10 @@ const { DataTypes } = require('sequelize');
 module.exports = (sequelize) => {
     const UserProgress = sequelize.define('UserProgress', {
         id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-        // BIGINT because auth-service issues numeric ids that exceed INT range
-        // (storing them as INT clamps to 2,147,483,647 and collapses every user into one).
-        user_id: { type: DataTypes.BIGINT, allowNull: false },
+        // VARCHAR in the live DB (auth userIds stored as strings). The model used
+        // to declare BIGINT, which made Sequelize emit "varchar = bigint" and
+        // silently fail every progress query. Strings preserve the full id too.
+        user_id: { type: DataTypes.STRING(64), allowNull: false },
         program_id: { type: DataTypes.INTEGER, allowNull: false },
         course_id: { type: DataTypes.INTEGER, allowNull: true },
         last_lesson_id: { type: DataTypes.INTEGER, allowNull: true },

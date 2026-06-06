@@ -6,7 +6,8 @@ const { DataTypes } = require('sequelize');
 module.exports = (sequelize) => {
     const LessonWatchProgress = sequelize.define('LessonWatchProgress', {
         id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-        user_id: { type: DataTypes.BIGINT, allowNull: false },
+        // VARCHAR in the live DB — see LessonCompletion note.
+        user_id: { type: DataTypes.STRING(64), allowNull: false },
         course_id: { type: DataTypes.INTEGER, allowNull: false },
         lesson_id: { type: DataTypes.INTEGER, allowNull: false },
         current_duration: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },

@@ -98,11 +98,11 @@ const assertCanParticipate = async (course, user) => {
         throw new HttpError(403, 'You are not assigned to this course');
     }
 
-    // Student: must be enrolled. UserProgress.user_id is BIGINT, course_id INT.
+    // Student: must be enrolled. user_id columns are VARCHAR — query as string.
     try {
         const enrolled = await UserProgress.findOne({
             where: {
-                user_id: Number(uid),
+                user_id: String(uid),
                 course_id: course.id,
                 enrolled: true,
             },

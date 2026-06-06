@@ -5,8 +5,8 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "node --import ./instrument.mjs index.js",
+    "dev": "nodemon --import ./instrument.mjs index.js"
   },
   "author": "",
   "license": "ISC",

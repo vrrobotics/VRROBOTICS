@@ -5,6 +5,9 @@ import axios from "axios";
 import { useAuth } from "@/hooks/useAuth";
 import { updateProfile } from "@/api/authApi";
 import { toast } from "react-toastify";
+// The teacher's assigned courses + lesson-release UI (same component the admin
+// shell uses; it auto-detects the teacher role → shows release, no create form).
+import TeachingAssignmentsIndex from "@/admin/pages/teaching/Index";
 import {
   Video,
   Calendar,
@@ -32,8 +35,11 @@ import {
  * Layout). New addition only — does not change any existing functionality.
  */
 
+// Only sections wired to real admin data. Dashboard(earnings), Referral, Payout,
+// Tasks were placeholders ("coming soon" / unbuilt earnings) → removed until
+// the earning rules are defined.
 const navItems = [
-  { name: "Dashboard", icon: LayoutDashboard },
+  { name: "My Courses", icon: MonitorPlay },
   { name: "Slots", icon: CalendarDays },
   { name: "Demos", icon: MessageSquare },
   { name: "Classes", icon: MonitorPlay },
@@ -42,9 +48,6 @@ const navItems = [
   { name: "Students", icon: Users },
   { name: "Resources", icon: Library },
   { name: "Profile", icon: Contact },
-  { name: "Referral", icon: Megaphone },
-  { name: "Payout", icon: IndianRupee },
-  { name: "Tasks", icon: ClipboardList },
 ];
 
 /**
@@ -78,6 +81,13 @@ const Stat = ({ value, label }: { value: string; label: string }) => (
 
 const ADMIN_BASE =
   (import.meta.env.VITE_ADMIN_API_URL as string) || "http://localhost:5000";
+
+// The /by-teacher endpoints are now gated (verified teacher self / admin) — send
+// the auth token so the teacher can read their OWN data.
+const teacherAuthHeaders = (): Record<string, string> => {
+  const t = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+  return t ? { Authorization: `Bearer ${t}` } : {};
+};
 
 interface TeacherSlot {
   id: number;
@@ -132,7 +142,7 @@ const SlotsView = ({ teacherId }: { teacherId?: string }) => {
     axios
       .get(`${ADMIN_BASE}/api/public/slots/by-teacher/${teacherId}`, {
         params: { t: Date.now() },
-        headers: { "Cache-Control": "no-cache" },
+        headers: { "Cache-Control": "no-cache", ...teacherAuthHeaders() },
         timeout: 30000,
       })
       .then(({ data }) => { if (!cancelled) setSlots(Array.isArray(data?.slots) ? data.slots : []); })
@@ -209,7 +219,7 @@ function useTeacherList<T>(teacherId: string | undefined, path: string, key: str
     setLoading(true);
     axios
       .get(`${ADMIN_BASE}/api/public/${path}/by-teacher/${teacherId}`, {
-        params: { t: Date.now() }, headers: { "Cache-Control": "no-cache" }, timeout: 30000,
+        params: { t: Date.now() }, headers: { "Cache-Control": "no-cache", ...teacherAuthHeaders() }, timeout: 30000,
       })
       .then(({ data }) => { if (!cancelled) setItems(Array.isArray(data?.[key]) ? data[key] : []); })
       .catch(() => { if (!cancelled) setItems([]); })
@@ -577,7 +587,7 @@ const FreeScheduleView = ({ teacherId }: { teacherId?: string }) => {
     if (!teacherId) { setItems([]); setLoading(false); return; }
     setLoading(true);
     axios
-      .get(`${ADMIN_BASE}/api/public/free-schedule/by-teacher/${teacherId}`, { params: { t: Date.now() }, headers: { "Cache-Control": "no-cache" }, timeout: 30000 })
+      .get(`${ADMIN_BASE}/api/public/free-schedule/by-teacher/${teacherId}`, { params: { t: Date.now() }, headers: { "Cache-Control": "no-cache", ...teacherAuthHeaders() }, timeout: 30000 })
       .then(({ data }) => setItems(Array.isArray(data?.schedule) ? data.schedule : []))
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
@@ -589,13 +599,13 @@ const FreeScheduleView = ({ teacherId }: { teacherId?: string }) => {
     if (!teacherId || !start || !end) return;
     setSaving(true);
     try {
-      await axios.post(`${ADMIN_BASE}/api/public/free-schedule`, { teacherId, day_of_week: day, start_time: start, end_time: end });
+      await axios.post(`${ADMIN_BASE}/api/public/free-schedule`, { teacherId, day_of_week: day, start_time: start, end_time: end }, { headers: teacherAuthHeaders() });
       setStart(""); setEnd(""); load();
     } catch { /* ignore */ } finally { setSaving(false); }
   };
 
   const remove = async (id: number) => {
-    try { await axios.delete(`${ADMIN_BASE}/api/public/free-schedule/${id}`, { params: { teacherId } }); load(); } catch { /* ignore */ }
+    try { await axios.delete(`${ADMIN_BASE}/api/public/free-schedule/${id}`, { params: { teacherId }, headers: teacherAuthHeaders() }); load(); } catch { /* ignore */ }
   };
 
   if (!teacherId) return <Panel title="Free Schedule" icon={CalendarDays}><Empty text="Sign in as a teacher to manage your free schedule." /></Panel>;
@@ -671,7 +681,7 @@ const StudentDetail = ({ teacherId, student }: { teacherId: string; student: { i
   const load = () => {
     setLoading(true);
     axios
-      .get(`${ADMIN_BASE}/api/public/student-records/by-teacher/${teacherId}`, { params: { studentId: student.id, t: Date.now() }, headers: { "Cache-Control": "no-cache" }, timeout: 30000 })
+      .get(`${ADMIN_BASE}/api/public/student-records/by-teacher/${teacherId}`, { params: { studentId: student.id, t: Date.now() }, headers: { "Cache-Control": "no-cache", ...teacherAuthHeaders() }, timeout: 30000 })
       .then(({ data }) => setRecords(Array.isArray(data?.records) ? data.records : []))
       .catch(() => setRecords([]))
       .finally(() => setLoading(false));
@@ -679,11 +689,11 @@ const StudentDetail = ({ teacherId, student }: { teacherId: string; student: { i
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [teacherId, student.id]);
 
   const post = async (kind: string, data: Record<string, unknown>) => {
-    try { await axios.post(`${ADMIN_BASE}/api/public/student-records`, { teacherId, studentId: student.id, kind, data }); load(); }
+    try { await axios.post(`${ADMIN_BASE}/api/public/student-records`, { teacherId, studentId: student.id, kind, data }, { headers: teacherAuthHeaders() }); load(); }
     catch { toast.error("Failed to save"); }
   };
   const del = async (id: number) => {
-    try { await axios.delete(`${ADMIN_BASE}/api/public/student-records/${id}`, { params: { teacherId } }); load(); }
+    try { await axios.delete(`${ADMIN_BASE}/api/public/student-records/${id}`, { params: { teacherId }, headers: teacherAuthHeaders() }); load(); }
     catch { toast.error("Failed to delete"); }
   };
 
@@ -793,6 +803,7 @@ interface RosterSched { id: number; students: { id: string; name: string }[] }
 const StudentsView = ({ teacherId }: { teacherId?: string }) => {
   const [classes, setClasses] = useState<RosterSched[]>([]);
   const [slots, setSlots] = useState<RosterSched[]>([]);
+  const [courseStudents, setCourseStudents] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
@@ -802,15 +813,18 @@ const StudentsView = ({ teacherId }: { teacherId?: string }) => {
     let cancelled = false;
     setLoading(true);
     Promise.all([
-      axios.get(`${ADMIN_BASE}/api/public/classes/by-teacher/${teacherId}`, { params: { t: Date.now() }, headers: { "Cache-Control": "no-cache" }, timeout: 30000 }),
-      axios.get(`${ADMIN_BASE}/api/public/slots/by-teacher/${teacherId}`, { params: { t: Date.now() }, headers: { "Cache-Control": "no-cache" }, timeout: 30000 }),
+      axios.get(`${ADMIN_BASE}/api/public/classes/by-teacher/${teacherId}`, { params: { t: Date.now() }, headers: { "Cache-Control": "no-cache", ...teacherAuthHeaders() }, timeout: 30000 }),
+      axios.get(`${ADMIN_BASE}/api/public/slots/by-teacher/${teacherId}`, { params: { t: Date.now() }, headers: { "Cache-Control": "no-cache", ...teacherAuthHeaders() }, timeout: 30000 }),
+      // Students from the teacher's COURSE assignments (delegation roster).
+      axios.get(`${ADMIN_BASE}/api/public/teaching/students-by-teacher/${teacherId}`, { params: { t: Date.now() }, headers: { "Cache-Control": "no-cache", ...teacherAuthHeaders() }, timeout: 30000 }),
     ])
-      .then(([c, s]) => {
+      .then(([c, s, ts]) => {
         if (cancelled) return;
         setClasses(Array.isArray(c.data?.classes) ? c.data.classes : []);
         setSlots(Array.isArray(s.data?.slots) ? s.data.slots : []);
+        setCourseStudents(Array.isArray(ts.data?.students) ? ts.data.students : []);
       })
-      .catch(() => { if (!cancelled) { setClasses([]); setSlots([]); } })
+      .catch(() => { if (!cancelled) { setClasses([]); setSlots([]); setCourseStudents([]); } })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [teacherId]);
@@ -826,6 +840,13 @@ const StudentsView = ({ teacherId }: { teacherId?: string }) => {
   };
   add(classes, "classes");
   add(slots, "slots");
+  // Merge course-assignment (delegation) students so they show even with no
+  // class/slot scheduled.
+  courseStudents.forEach((st) => {
+    const cur = map.get(st.id) || { id: st.id, name: st.name || "", classes: 0, slots: 0 };
+    if (st.name && !cur.name) cur.name = st.name;
+    map.set(st.id, cur);
+  });
   let students = Array.from(map.values()).sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
   if (q.trim()) students = students.filter((s) => (s.name || s.id).toLowerCase().includes(q.toLowerCase()));
   const sel = selected ? map.get(selected) : null;
@@ -842,7 +863,7 @@ const StudentsView = ({ teacherId }: { teacherId?: string }) => {
             <h3 className="font-semibold mb-3">Your Students</h3>
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search students" className="w-full rounded-lg border border-border px-3 py-2 text-sm mb-3" />
             {students.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No students assigned via your classes/slots yet.</p>
+              <p className="text-sm text-muted-foreground">No students assigned to you yet (via courses, classes, or slots).</p>
             ) : (
               <ul className="space-y-1 max-h-[440px] overflow-y-auto">
                 {students.map((s) => (
@@ -869,7 +890,7 @@ const StudentsView = ({ teacherId }: { teacherId?: string }) => {
 };
 
 const TeacherDashboard = () => {
-  const [active, setActive] = useState("Dashboard");
+  const [active, setActive] = useState("My Courses");
   const [data] = useState<DashboardData>(PLACEHOLDER_DATA);
   const { user } = useAuth();
 
@@ -1052,6 +1073,9 @@ const TeacherDashboard = () => {
           <SlotsView teacherId={user?.userId} />
         ) : active === "Demos" ? (
           <DemosView teacherId={user?.userId} />
+        ) : active === "My Courses" ? (
+          // admin-theme wrapper so the shared component's ol-* styles apply here
+          <div className="admin-theme"><TeachingAssignmentsIndex /></div>
         ) : active === "Classes" ? (
           <ClassesView teacherId={user?.userId} />
         ) : active === "Time table" ? (

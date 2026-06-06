@@ -341,7 +341,10 @@ const create = async (body, file) => {
         email: body.email,
         password: body.password,
         email_confirm: true,
-        user_metadata: { name: body.name, role: 'student' },
+        user_metadata: { name: body.name },
+        // Role in app_metadata (service-role-only) — never user_metadata, which
+        // the user can edit and would let them self-escalate.
+        app_metadata: { role: 'student' },
     });
     if (createErr) throw new HttpError(400, createErr.message);
     const supabaseUid = created.user.id;

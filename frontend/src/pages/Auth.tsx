@@ -22,9 +22,9 @@ const Auth = () => {
   const { loginUser, registerUser, loading } = useAuth();
 
   const initialTeacher = params.get("role") === "teacher";
-  const [mode, setMode] = useState<"login" | "signup">(
-    initialTeacher || params.get("mode") === "signup" ? "signup" : "login",
-  );
+  // Public self-signup is DISABLED — accounts are created by an admin. The page
+  // is login-only; "interest" goes through the public Register (lead) form.
+  const [mode, setMode] = useState<"login" | "signup">("login");
   const [role, setRole] = useState<"student" | "teacher">(
     initialTeacher ? "teacher" : "student",
   );
@@ -126,7 +126,7 @@ const Auth = () => {
 
           {/* Tabs */}
           <div className="grid grid-cols-2 mb-6 rounded-lg bg-muted p-1">
-            {(["login", "signup"] as const).map((m) => (
+            {(["login"] as const).map((m) => (
               <button
                 key={m}
                 onClick={() => { setMode(m); setError(null); }}
@@ -249,19 +249,7 @@ const Auth = () => {
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            {mode === "login" ? (
-              <>Don't have an account?{" "}
-                <button onClick={() => { setMode("signup"); setError(null); }} className="text-primary font-semibold">
-                  Sign Up
-                </button>
-              </>
-            ) : (
-              <>Already have an account?{" "}
-                <button onClick={() => { setMode("login"); setError(null); }} className="text-primary font-semibold">
-                  Login
-                </button>
-              </>
-            )}
+            New here? <Link to="/register" className="text-primary font-semibold">Register your interest</Link> — our team will set up your account.
           </p>
         </div>
       </div>

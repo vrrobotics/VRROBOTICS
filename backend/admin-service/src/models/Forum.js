@@ -24,8 +24,10 @@ module.exports = (sequelize) => {
     const Forum = sequelize.define('Forum', {
         id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
         course_id: { type: DataTypes.INTEGER, allowNull: true },
-        // 11-digit auth-service userId — same shape live_classes.user_id uses.
-        user_id: { type: DataTypes.BIGINT, allowNull: true },
+        // 11-digit auth-service userId. VARCHAR in the live DB — the model used
+        // to say BIGINT, which mismatches the column ("varchar = bigint") and
+        // can silently fail forum writes/reads. Store as string.
+        user_id: { type: DataTypes.STRING(64), allowNull: true },
         parent_id: { type: DataTypes.INTEGER, allowNull: true },
         title: { type: DataTypes.STRING(255), allowNull: true },
         description: { type: DataTypes.TEXT('long'), allowNull: true },

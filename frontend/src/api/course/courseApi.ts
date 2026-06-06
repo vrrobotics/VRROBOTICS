@@ -13,11 +13,33 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const id = localStorage.getItem("userId");
   if (id) config.headers.set("x-user-id", String(id));
+  // Send the auth token too so the server can VERIFY who the student is.
+  // Release-gating (teacher-delegated courses) trusts the verified token id,
+  // not the spoofable x-user-id header — without this, delegated lessons stay
+  // locked for the logged-in student.
+  const token = localStorage.getItem("accessToken");
+  if (token) config.headers.set("Authorization", `Bearer ${token}`);
   return config;
 });
 
 export const listCourses = (params?: Record<string, unknown>) =>
   api.get("/courses", { params }).then((r) => r.data);
+
+// Canonical "My Courses" (lms_admin): paid ∪ enrolled ∪ delegated, with progress.
+export const getMyCourses = () =>
+  api.get("/my-courses").then((r) => (r.data?.courses ?? []) as unknown[]);
+
+// Student leaderboard. Pass a courseId for the per-course board; omit for overall.
+export const getLeaderboard = (courseId?: number) =>
+  api
+    .get("/leaderboard", { params: courseId ? { course_id: courseId } : {} })
+    .then((r) => r.data as {
+      scope: string;
+      course_id: number | null;
+      total_ranked: number;
+      leaderboard: { user_id: string; name: string; completed: number; quiz_points: number; score: number; rank: number }[];
+      me: { user_id: string; name: string; completed: number; quiz_points: number; score: number; rank: number } | null;
+    });
 
 export const getCourseDetails = (slug: string) =>
   api.get(`/course/${slug}`).then((r) => r.data);

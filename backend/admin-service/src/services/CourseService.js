@@ -167,19 +167,21 @@ const toClassNum = (v) => {
 // admins / when no scoping applies. `teacher_ids` is a TEXT column (JSON
 // array, CSV, or single value) — delimiter-aware LIKE matchers avoid a short
 // id false-matching inside a longer one (123 inside 1234).
-const buildTeacherScope = (user) => {
+const buildTeacherScope = (user, extraCourseIds = []) => {
     if (user?.role !== 'teacher' || user.id == null) return null;
     const uid = String(user.id);
-    return {
-        [Op.or]: [
-            { user_id: uid },
-            { teacher_ids: { [Op.like]: `%"${uid}"%` } }, // JSON array element
-            { teacher_ids: uid },                          // exact whole value
-            { teacher_ids: { [Op.like]: `${uid},%` } },    // CSV: first
-            { teacher_ids: { [Op.like]: `%,${uid},%` } },  // CSV: middle
-            { teacher_ids: { [Op.like]: `%,${uid}` } },    // CSV: last
-        ],
-    };
+    const or = [
+        { user_id: uid },
+        { teacher_ids: { [Op.like]: `%"${uid}"%` } }, // JSON array element
+        { teacher_ids: uid },                          // exact whole value
+        { teacher_ids: { [Op.like]: `${uid},%` } },    // CSV: first
+        { teacher_ids: { [Op.like]: `%,${uid},%` } },  // CSV: middle
+        { teacher_ids: { [Op.like]: `%,${uid}` } },    // CSV: last
+    ];
+    // Courses delegated to this teacher via teaching_assignments (the new flow
+    // doesn't write the legacy teacher_ids column, so include them explicitly).
+    if (extraCourseIds.length) or.push({ id: { [Op.in]: extraCourseIds } });
+    return { [Op.or]: or };
 };
 
 // Merge a base `where` with the teacher scope so a count reflects only the
@@ -281,7 +283,23 @@ const dbList = async (query, user = null) => {
     // `teacherScope` is reused below so the stat-card counts (active,
     // pending, upcoming, …) reflect the SAME scoped set as the course list,
     // not global totals.
-    const teacherScope = buildTeacherScope(user);
+    // Pull the teacher's delegated course ids so Manage Courses also lists
+    // courses an admin assigned via teaching_assignments (not just legacy ones).
+    let delegatedCourseIds = [];
+    if (user?.role === 'teacher' && user.id != null) {
+        try {
+            const { TeachingAssignment } = require('../models');
+            const rows = await TeachingAssignment.findAll({
+                where: { teacher_id: String(user.id) },
+                attributes: ['course_id'],
+                raw: true,
+            });
+            delegatedCourseIds = [...new Set(rows.map((r) => Number(r.course_id)).filter(Boolean))];
+        } catch (e) {
+            console.warn('[courses] delegated-course lookup failed:', e.message);
+        }
+    }
+    const teacherScope = buildTeacherScope(user, delegatedCourseIds);
     if (teacherScope) {
         where[Op.and] = [
             ...(Array.isArray(where[Op.and]) ? where[Op.and] : []),

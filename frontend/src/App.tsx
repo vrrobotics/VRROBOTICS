@@ -61,6 +61,8 @@ import AdminDemosIndex from "./admin/pages/demos/Index";
 import AdminClassesIndex from "./admin/pages/classes/Index";
 import AdminTimetableIndex from "./admin/pages/timetable/Index";
 import AdminBatchesIndex from "./admin/pages/batch/Index";
+import AdminTeachingIndex from "./admin/pages/teaching/Index";
+import AdminLeadsIndex from "./admin/pages/leads/Index";
 import AdminProjectsIndex from "./admin/pages/projects/Index";
 import AdminTestimonialsIndex from "./admin/pages/testimonials/Index";
 import AdminResourcesIndex from "./admin/pages/resources/Index";
@@ -179,6 +181,8 @@ const App = () => (
               <Route path="classes" element={<AdminClassesIndex />} />
               <Route path="timetable" element={<AdminTimetableIndex />} />
               <Route path="batches" element={<AdminBatchesIndex />} />
+              <Route path="teaching" element={<AdminTeachingIndex />} />
+              <Route path="leads" element={<AdminLeadsIndex />} />
               <Route path="projects" element={<AdminProjectsIndex />} />
               <Route path="testimonials" element={<AdminTestimonialsIndex />} />
               <Route path="resources" element={<AdminResourcesIndex />} />

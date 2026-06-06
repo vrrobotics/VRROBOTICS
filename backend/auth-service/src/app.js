@@ -124,8 +124,29 @@ import { attachErrorHandler } from './observability.js';
 
 const app = express();
 
+// Behind Railway's proxy the client IP is in X-Forwarded-For. Without this,
+// express-rate-limit keys every request to the proxy IP, defeating throttling.
+app.set('trust proxy', 1);
+
+// CORS allowlist. `origin: true` reflected ANY site and combined with
+// credentials:true let any website make authenticated requests on a user's
+// behalf (CSRF-ish). In prod, set CORS_ORIGINS to a comma-separated list of
+// your frontend origins. Localhost is always allowed for dev.
+// Accept either env name: CORS_ORIGINS (canonical) or ALLOWED_ORIGINS (what the
+// shipped .env historically used). Reading both avoids a silent prod CORS lockout
+// where browser logins fail but curl/Postman (no Origin) still work.
+const corsAllow = (process.env.CORS_ORIGINS || process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const corsOrigin = (origin, cb) => {
+  if (!origin) return cb(null, true); // same-origin / curl / mobile
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return cb(null, true);
+  if (corsAllow.includes(origin)) return cb(null, true);
+  return cb(new Error('Not allowed by CORS'));
+};
 app.use(cors({
-  origin: true,
+  origin: corsOrigin,
   credentials: true,
 }));
 

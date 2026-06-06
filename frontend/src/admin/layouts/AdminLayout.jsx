@@ -87,39 +87,20 @@ const MENU = [
             { label: 'Coupons', to: '/admin/coupons' },
         ],
     },
+    // Marketing — one home for everything that drives the public front page
+    // (Books, Projects, Gallery, Testimonials). Previously these were four
+    // separate top-level groups, which made the sidebar long; grouping them
+    // keeps navigation short. Routes are unchanged, so all deep links + the
+    // per-page "Add" buttons keep working.
     {
-        key: 'gallery',
-        label: 'Gallery',
-        icon: ICONS.course,
+        key: 'marketing',
+        label: 'Marketing',
+        icon: ICONS.program,
         children: [
-            // "Add Gallery" sidebar link removed — adding is done via the
-            // "Add Gallery" button on the Manage Gallery page (the ?action=add
-            // deep-link logic is kept intact for that button / any direct link).
-            { label: 'Manage Gallery', to: '/admin/gallery' },
-        ],
-    },
-    {
-        key: 'books',
-        label: 'Books',
-        icon: ICONS.course,
-        children: [
-            { label: 'Manage Books', to: '/admin/books' },
-        ],
-    },
-    {
-        key: 'projects',
-        label: 'Projects',
-        icon: ICONS.course,
-        children: [
-            { label: 'Manage Projects', to: '/admin/projects' },
-        ],
-    },
-    {
-        key: 'testimonials',
-        label: 'Testimonials',
-        icon: ICONS.users,
-        children: [
-            { label: 'Manage Testimonials', to: '/admin/testimonials' },
+            { label: 'Books', to: '/admin/books' },
+            { label: 'Projects', to: '/admin/projects' },
+            { label: 'Gallery', to: '/admin/gallery' },
+            { label: 'Testimonials', to: '/admin/testimonials' },
         ],
     },
     {
@@ -246,6 +227,27 @@ const MENU = [
             { label: 'Add Batch', to: '/admin/batches?tab=add' },
         ],
     },
+    // Teacher-delegation: admin assigns a course + roster to a teacher; the
+    // teacher then releases lessons day by day. Visible to root admin here and
+    // surfaced to teachers via the teacher cohort filter below.
+    {
+        key: 'teaching',
+        label: 'Teacher Assignments',
+        icon: ICONS.users,
+        children: [
+            { label: 'Add Assignment', to: '/admin/teaching?tab=add' },
+            { label: 'Manage Assignments', to: '/admin/teaching' },
+        ],
+    },
+    // Leads — new portal signups awaiting follow-up / conversion to students.
+    {
+        key: 'leads',
+        label: 'Leads',
+        icon: ICONS.users,
+        children: [
+            { label: 'Manage Leads', to: '/admin/leads' },
+        ],
+    },
     {
         key: 'systemSettings',
         label: 'System Settings',
@@ -355,15 +357,24 @@ export default function AdminLayout() {
     //   - Root admin: full menu.
     let visibleMenu;
     if (isTeacher) {
-        // Only the Course group, and within it only "Manage Courses" —
-        // teachers manage the courses they're assigned to but can't
-        // create new courses or touch coupons.
-        visibleMenu = MENU
+        // Course group ("Manage Courses" only) + Teacher Assignments ("My
+        // Classes") where the teacher releases lessons to their students.
+        const courseGroup = MENU
             .filter((item) => item.key === 'course' && !item.collegeOnly)
             .map((item) => ({
                 ...item,
                 children: (item.children || []).filter((c) => c.to === '/admin/courses'),
             }));
+        const teachingGroup = MENU
+            .filter((item) => item.key === 'teaching')
+            // Teachers release lessons; they don't CREATE assignments → drop the
+            // "Add Assignment" child, keep only the manage view.
+            .map((item) => ({
+                ...item,
+                label: 'My Classes',
+                children: (item.children || []).filter((c) => c.to === '/admin/teaching'),
+            }));
+        visibleMenu = [...courseGroup, ...teachingGroup];
     } else if (isCollegeAdmin) {
         visibleMenu = MENU.filter((item) => item.collegeOnly === true);
     } else {
@@ -378,6 +389,8 @@ export default function AdminLayout() {
         p === '/admin/' ||
         p === '/admin/courses' ||
         p.startsWith('/admin/courses?') ||
+        p === '/admin/teaching' ||
+        p.startsWith('/admin/teaching?') ||
         /^\/admin\/course\/edit\/\d+/.test(p);
 
     useEffect(() => {
