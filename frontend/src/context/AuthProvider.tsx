@@ -242,6 +242,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const loginRes = await login(credentials);
 
+      // Clear any stale admin token from a previous admin session in this
+      // browser. The shared admin api client uses `admin_token || accessToken`,
+      // so a leftover admin_token would be sent on teacher pages (e.g. My
+      // Courses) instead of this teacher's accessToken and rejected as
+      // "Invalid token".
+      localStorage.removeItem("admin_token");
+
       // Persist the access token so axiosInstance's request interceptor can
       // attach it as a Bearer header on subsequent calls. Without this, only
       // the httpOnly cookie carries auth — which works for auth-service but
@@ -295,6 +302,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem("userId");
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
+      localStorage.removeItem("admin_token");
       setLoading(false);
     }
   };
