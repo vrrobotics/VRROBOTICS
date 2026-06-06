@@ -256,6 +256,7 @@ const MENU = [
         icon: ICONS.settings,
         section: 'settings',
         children: [
+            { label: 'Email (SMTP)', to: '/admin/settings' },
             { label: 'Manage Language', to: '/admin/settings/languages' },
             { label: 'Live Class Settings', to: '/admin/settings/live-class' },
         ],

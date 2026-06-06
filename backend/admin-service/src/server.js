@@ -797,6 +797,26 @@ app.use('/api/public', forumRoutes.public);
 // teacher request isn't short-circuited by an earlier adminOnly mount.
 app.use('/api/admin', adminOrTeacher, teachingRoutes);
 
+// Admin-editable email/SMTP settings (e.g. Brevo) — configurable from the
+// dashboard, stored in app_settings, DB overrides .env. Password never returned.
+const settingsSvc = require('./services/SettingsService');
+const mailerSvc = require('./helpers/mailer');
+app.get('/api/admin/settings/email', adminOnly, async (req, res, next) => {
+    try { res.json(await settingsSvc.getEmailSettingsMasked()); } catch (e) { next(e); }
+});
+app.put('/api/admin/settings/email', adminOnly, async (req, res, next) => {
+    try { res.json(await settingsSvc.saveEmailSettings(req.body || {})); } catch (e) { next(e); }
+});
+app.post('/api/admin/settings/email/test', adminOnly, async (req, res) => {
+    try {
+        const to = String(req.body?.to || req.user?.email || '').trim();
+        if (!to) return res.status(422).json({ error: 'Provide a recipient email address.' });
+        const r = await mailerSvc.send({ to, subject: 'VR Robotics — SMTP test ✅', html: '<p>Your email settings are working. 🎉</p>' });
+        if (r.skipped) return res.status(400).json({ error: 'SMTP not configured — set host, user and password first.' });
+        res.json({ success: true, message: `Test email sent to ${to}.`, messageId: r.messageId });
+    } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
 // Protected admin endpoints — adminOnly enforces JWT + role
 app.use('/api/admin', adminOnly, leadRoutes);
 app.use('/api/admin', adminOnly, adminRoutes);

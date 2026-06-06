@@ -1,42 +1,44 @@
 const nodemailer = require('nodemailer');
-const env = require('../config/env');
+const { getEmailConfig } = require('../services/SettingsService');
 
-// Lazy singleton transport — building one per send is wasteful when the
-// worker can fire many in a row. createTransport is sync; the verify happens
-// on the first sendMail.
+// Transport is rebuilt whenever the effective SMTP config changes (admin edits
+// it from the dashboard), keyed on host|port|user|pass. Config comes from
+// SettingsService (DB-first, .env fallback).
 let transport = null;
-const getTransport = () => {
-    if (transport) return transport;
-    if (!env.mail.host) return null;
-    transport = nodemailer.createTransport({
-        host: env.mail.host,
-        port: env.mail.port,
-        // Gmail/SES/Outlook all want STARTTLS on 587 — leave `secure` false.
-        // Port 465 callers would need `secure: true` set explicitly; we don't
-        // surface that since the codebase defaults to 587.
-        auth: { user: env.mail.user, pass: env.mail.pass },
-    });
-    return transport;
+let transportKey = '';
+const keyOf = (c) => `${c.host}|${c.port}|${c.user}|${c.pass}`;
+
+const getTransport = async () => {
+    const cfg = await getEmailConfig();
+    if (!cfg.host) return { t: null, cfg };
+    const key = keyOf(cfg);
+    if (!transport || key !== transportKey) {
+        transport = nodemailer.createTransport({
+            host: cfg.host,
+            port: cfg.port,
+            // 465 = implicit TLS; 587/others = STARTTLS. Brevo/Gmail/SES use 587.
+            secure: Number(cfg.port) === 465,
+            auth: cfg.user ? { user: cfg.user, pass: cfg.pass } : undefined,
+        });
+        transportKey = key;
+    }
+    return { t: transport, cfg };
 };
 
 // Throws on transport / SMTP errors so the queue worker can record them.
-// `if (!host) return` is preserved (older callers like live-class.notifier
-// rely on email being optional in dev) — they get a no-op as before, while
-// the email_jobs worker explicitly probes env.mail.host before claiming jobs.
+// Returns { skipped: true } when SMTP isn't configured (no host) so optional
+// callers (live-class notifier) stay no-ops in dev.
 const send = async ({ to, subject, html, from }) => {
-    const t = getTransport();
+    const { t, cfg } = await getTransport();
     if (!t) return { skipped: true };
-    const info = await t.sendMail({
-        from: from || env.mail.from,
-        to,
-        subject,
-        html,
-    });
+    const info = await t.sendMail({ from: from || cfg.from, to, subject, html });
     return { messageId: info.messageId, response: info.response };
 };
 
-// Exposed so the worker can decide whether to drain the queue at all (no
-// point claiming jobs if SMTP isn't configured — they'd just fail-loop).
-const isConfigured = () => Boolean(env.mail.host);
+// Async now (config may live in the DB). Callers await before draining/sending.
+const isConfigured = async () => {
+    const cfg = await getEmailConfig();
+    return Boolean(cfg.host);
+};
 
 module.exports = { send, isConfigured };

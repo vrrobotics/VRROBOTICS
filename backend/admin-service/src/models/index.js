@@ -45,8 +45,10 @@ const LessonRelease = require('./LessonRelease')(sequelize);
 const Lead = require('./Lead')(sequelize);
 // Payments — Razorpay course purchases (paywall source of truth).
 const Payment = require('./Payment')(sequelize);
+// Admin-editable key/value app settings (SMTP/email config from dashboard).
+const AppSetting = require('./AppSetting')(sequelize);
 
-const models = { Category, Course, SeoField, User, Lesson, Section, Question, QuizSubmission, Setting, LiveClass, Coupon, Certificate, PreAssessmentResult, UserProgress, LessonCompletion, LessonWatchProgress, Language, Forum, ForumReport, Program, Batch, BatchMember, EmailJob, Gallery, Book, Slot, Demo, ClassSession, TimetableEntry, Project, Testimonial, Resource, ResourceCategory, TeacherFreeSchedule, StudentRecord, StudentLearning, TeachingAssignment, AssignmentMember, LessonRelease, Lead, Payment };
+const models = { Category, Course, SeoField, User, Lesson, Section, Question, QuizSubmission, Setting, LiveClass, Coupon, Certificate, PreAssessmentResult, UserProgress, LessonCompletion, LessonWatchProgress, Language, Forum, ForumReport, Program, Batch, BatchMember, EmailJob, Gallery, Book, Slot, Demo, ClassSession, TimetableEntry, Project, Testimonial, Resource, ResourceCategory, TeacherFreeSchedule, StudentRecord, StudentLearning, TeachingAssignment, AssignmentMember, LessonRelease, Lead, Payment, AppSetting };
 Object.values(models).forEach((m) => m.associate && m.associate(models));
 
 module.exports = { sequelize, ...models };

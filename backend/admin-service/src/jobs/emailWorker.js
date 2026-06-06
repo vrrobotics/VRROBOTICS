@@ -109,7 +109,7 @@ async function processOne(job) {
 
 async function tick() {
     if (running) return; // Skip overlapping ticks if the previous batch is slow.
-    if (!mailer.isConfigured()) return;
+    if (!(await mailer.isConfigured())) return;
     running = true;
     try {
         const jobs = await claimBatch();
