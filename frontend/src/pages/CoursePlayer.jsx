@@ -176,7 +176,8 @@ export default function CoursePlayer() {
             <Navbar />
 
             <section className="flex-1 py-5">
-                <div className="player-container grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <div className="player-container">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
                     <div className="lg:col-span-2">
                         <div className="relative">
                             <PlayerLesson
@@ -238,16 +239,6 @@ export default function CoursePlayer() {
                             </div>
                         )}
 
-                        {lesson && !isCurrentLocked && (
-                            <MyLearnings courseId={course.id} lessonId={lesson.id} />
-                        )}
-
-                        <PlayerTabs
-                            course={course}
-                            lesson={lesson}
-                            progress={progress}
-                            completedCount={completed_lesson_count}
-                        />
                     </div>
 
                     <div className="lg:col-span-1">
@@ -260,6 +251,21 @@ export default function CoursePlayer() {
                             completedCount={completed_lesson_count}
                         />
                     </div>
+                  </div>
+
+                  {lesson && !isCurrentLocked && (
+                    <div className="mt-5">
+                      <MyLearnings courseId={course.id} lessonId={lesson.id} />
+                    </div>
+                  )}
+                  <div className="mt-5">
+                    <PlayerTabs
+                      course={course}
+                      lesson={lesson}
+                      progress={progress}
+                      completedCount={completed_lesson_count}
+                    />
+                  </div>
                 </div>
             </section>
         </div>
