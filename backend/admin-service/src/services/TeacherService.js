@@ -11,6 +11,9 @@ const authDb = require('../config/authDatabase');
 const { HttpError } = require('../middlewares/error');
 const { upload, removeFile, niceFileName } = require('../helpers/fileUploader');
 const supabaseAdmin = require('../lib/supabaseAdmin');
+const env = require('../config/env');
+const { enqueue } = require('../jobs/emailQueue');
+const { studentWelcome } = require('../helpers/emailTemplates');
 
 const ROLE = 'teacher';
 
@@ -174,6 +177,14 @@ const create = async (body, file = null) => {
         await supabaseAdmin.auth.admin.deleteUser(supabaseUid).catch(() => {});
         throw e;
     }
+
+    // Welcome email with login details (best-effort; worker retries SMTP).
+    try {
+        const { subject, html } = studentWelcome({
+            studentName: body.name, email: body.email, password: body.password, loginUrl: env.mail?.lmsLoginUrl,
+        });
+        await enqueue({ to: body.email, subject, html });
+    } catch (e) { console.warn('[teachers] welcome email enqueue failed:', e.message); }
 
     return { message: 'Teacher added successfully', teacher: (await get(userId)).teacher };
 };

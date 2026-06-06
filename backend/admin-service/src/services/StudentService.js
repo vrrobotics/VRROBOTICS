@@ -5,6 +5,9 @@ const assessmentDb = require('../config/assessmentDatabase');
 const { upload, removeFile, niceFileName } = require('../helpers/fileUploader');
 const { HttpError } = require('../middlewares/error');
 const supabaseAdmin = require('../lib/supabaseAdmin');
+const env = require('../config/env');
+const { enqueue } = require('../jobs/emailQueue');
+const { studentWelcome } = require('../helpers/emailTemplates');
 
 // Students sign up through auth-service, which writes to lucy_devdb.users
 // (string userId PK, roleId -> roles table). The admin "Manage Students"
@@ -385,6 +388,15 @@ const create = async (body, file) => {
         await supabaseAdmin.auth.admin.deleteUser(supabaseUid).catch(() => {});
         throw e;
     }
+
+    // Welcome email with login details (best-effort; the worker retries SMTP,
+    // and a mail failure must NOT fail the create the admin just saw succeed).
+    try {
+        const { subject, html } = studentWelcome({
+            studentName: body.name, email: body.email, password: body.password, loginUrl: env.mail?.lmsLoginUrl,
+        });
+        await enqueue({ to: body.email, subject, html });
+    } catch (e) { console.warn('[students] welcome email enqueue failed:', e.message); }
 
     const createdProfile = await get(userId);
     return { message: 'Student added successfully', student: createdProfile.student };
