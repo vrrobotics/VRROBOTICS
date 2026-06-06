@@ -270,15 +270,16 @@ function PricingCard({ course, onPreview, onEnroll, enrolling, payError }) {
         : 'Lifetime access';
     const expiryIcon = months > 0 ? 'fa-hourglass-half' : 'fa-infinity';
 
-    const includes = [
-        ...(isFree
-            ? [{ icon: 'fa-tag', label: 'Free enrolment' }]
-            : [{ icon: 'fa-tag', label: `Paid course · ${formatPrice(effectivePrice)}` }]),
-        { icon: 'fa-play-circle', label: `${course.lesson_count} on-demand lessons` },
-        { icon: 'fa-layer-group', label: `${course.section_count} sections` },
-        { icon: 'fa-clock', label: `${fmtDuration(course.total_duration_secs)} total length` },
-        { icon: expiryIcon, label: expiryLabel },
-        ...(course.has_certificate ? [{ icon: 'fa-certificate', label: 'Certificate of completion' }] : []),
+    // Clean stat rows (label ↔ value) for the sidebar card — RoboPrenr style.
+    void expiryIcon;
+    const stats = [
+        { icon: 'fa-clock', label: 'Duration', value: expiryLabel },
+        { icon: 'fa-hourglass-half', label: 'Total length', value: fmtDuration(course.total_duration_secs) },
+        { icon: 'fa-play-circle', label: 'Lessons', value: String(course.lesson_count || 0) },
+        { icon: 'fa-layer-group', label: 'Sections', value: String(course.section_count || 0) },
+        { icon: 'fa-signal', label: 'Level', value: course.level ? String(course.level) : '—' },
+        { icon: 'fa-tag', label: 'Price', value: isFree ? 'Free' : formatPrice(effectivePrice) },
+        ...(course.has_certificate ? [{ icon: 'fa-certificate', label: 'Certificate', value: 'Yes' }] : []),
     ];
     return (
         <div className="lg:col-span-1">
@@ -340,7 +341,7 @@ function PricingCard({ course, onPreview, onEnroll, enrolling, payError }) {
                         type="button"
                         onClick={onEnroll}
                         disabled={enrolling}
-                        className="w-full bg-skin hover:bg-skin/90 text-white font-semibold py-3 rounded-lg shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className={`w-full ${isFree || course.purchased ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-skin hover:bg-skin/90'} text-white font-semibold py-3 rounded-lg shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
                     >
                         {enrolling ? (
                             <>
@@ -365,15 +366,15 @@ function PricingCard({ course, onPreview, onEnroll, enrolling, payError }) {
                         <p className="mt-2 text-[11px] text-muted text-center">🔒 Secure payment via Razorpay</p>
                     )}
 
-                    <div className="mt-6 pt-5 border-t border-border">
-                        <p className="text-[11px] uppercase tracking-wider text-muted font-semibold mb-3">
-                            This course includes
-                        </p>
-                        <ul className="space-y-2.5 text-[13px] text-dark">
-                            {includes.map((item) => (
-                                <li key={item.label} className="flex items-center gap-3">
-                                    <i className={`fa ${item.icon} text-skin w-4 text-center`} />
-                                    <span>{item.label}</span>
+                    <div className="mt-6 pt-2">
+                        <ul className="m-0 p-0 list-none text-[14px] text-dark">
+                            {stats.map((item) => (
+                                <li key={item.label} className="flex items-center justify-between py-2.5 border-b border-border/60 last:border-0">
+                                    <span className="flex items-center gap-2.5 text-muted">
+                                        <i className={`fa ${item.icon} text-skin w-4 text-center`} />
+                                        {item.label}
+                                    </span>
+                                    <span className="font-semibold text-dark capitalize">{item.value}</span>
                                 </li>
                             ))}
                         </ul>

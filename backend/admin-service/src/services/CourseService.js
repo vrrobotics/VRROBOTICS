@@ -552,6 +552,8 @@ const update = async ({ id, body, files = {} }) => {
         // category_id intentionally not written on update either (see note in
         // `create`). College grouping comes from clg_ids below.
         data.level = b.level;
+        // Course category/track (general | engineering | freshers).
+        if (b.course_type !== undefined) data.course_type = b.course_type || 'general';
         data.language = String(b.language || '').toLowerCase();
         // Class-access range — only touch when the Basic-tab form sent the
         // fields, so other partial saves don't wipe an existing range.

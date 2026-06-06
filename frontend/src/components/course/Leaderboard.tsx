@@ -11,13 +11,21 @@ const medal = (rank: number) => (rank === 1 ? "🥇" : rank === 2 ? "🥈" : ran
 export default function Leaderboard() {
   const myId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
   const [courses, setCourses] = useState<MyCourse[]>([]);
+  const [coursesLoaded, setCoursesLoaded] = useState(false);
   const [courseId, setCourseId] = useState<number | "">(""); // "" = overall
   const [data, setData] = useState<Awaited<ReturnType<typeof getLeaderboard>> | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getMyCourses().then((rows) => setCourses((rows as MyCourse[]) || [])).catch(() => setCourses([]));
+    getMyCourses()
+      .then((rows) => setCourses((rows as MyCourse[]) || []))
+      .catch(() => setCourses([]))
+      .finally(() => setCoursesLoaded(true));
   }, []);
+
+  // A student who isn't enrolled in any course has no place on the leaderboard
+  // yet — showing the global board (with other students) is confusing. Gate it.
+  const noCourses = coursesLoaded && courses.length === 0;
 
   useEffect(() => {
     setLoading(true);
@@ -35,18 +43,22 @@ export default function Leaderboard() {
     <section>
       <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
         <h3 className="text-lg font-semibold text-gray-900 m-0">Leaderboard</h3>
-        <select
-          className="border border-gray-200 rounded-lg text-sm px-3 py-1.5 bg-white"
-          value={courseId}
-          onChange={(e) => setCourseId(e.target.value === "" ? "" : Number(e.target.value))}
-        >
-          <option value="">Overall</option>
-          {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-        </select>
+        {!noCourses && (
+          <select
+            className="border border-gray-200 rounded-lg text-sm px-3 py-1.5 bg-white"
+            value={courseId}
+            onChange={(e) => setCourseId(e.target.value === "" ? "" : Number(e.target.value))}
+          >
+            <option value="">Overall</option>
+            {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+          </select>
+        )}
       </div>
 
-      {loading ? (
+      {!coursesLoaded || loading ? (
         <p className="text-sm text-gray-500 py-6">Loading…</p>
+      ) : noCourses ? (
+        <p className="text-sm text-gray-500 py-6">Enroll in a course to join the leaderboard and track your ranking.</p>
       ) : rows.length === 0 ? (
         <p className="text-sm text-gray-500 py-6">No rankings yet — complete lessons and quizzes to climb the board.</p>
       ) : (

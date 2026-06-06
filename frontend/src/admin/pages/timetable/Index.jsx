@@ -10,6 +10,18 @@ import {
 import { listCourses } from '../../api/course';
 import { listTeachers } from '../../api/teacher';
 import { DAYS } from '../../components/scheduling';
+import { listAssignments } from '../../api/teaching';
+
+// "HH:MM" (24h) -> "h:MM AM/PM" for display.
+const to12h = (hhmm) => {
+    if (!hhmm) return '—';
+    const [hRaw, mRaw] = String(hhmm).split(':');
+    const h = Number(hRaw);
+    if (Number.isNaN(h)) return hhmm;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${String(mRaw ?? '00').padStart(2, '0')} ${ampm}`;
+};
 
 /**
  * Manage Time table — admin CRUD for weekly-recurring entries (day + start/end
@@ -77,7 +89,7 @@ export default function TimetableIndex() {
                             <tbody>{rows.map((e) => (
                                 <tr key={e.id} className="border-b border-ebordermuted">
                                     <td className="py-3 pr-3 font-semibold text-dark">{DAYS[e.day_of_week] || '—'}</td>
-                                    <td className="py-3 pr-3 whitespace-nowrap">{e.start_time || '—'} – {e.end_time || '—'}</td>
+                                    <td className="py-3 pr-3 whitespace-nowrap">{to12h(e.start_time)} – {to12h(e.end_time)}</td>
                                     <td className="py-3 pr-3">{courseName(e.course_id)}</td>
                                     <td className="py-3 pr-3">{teacherName(e.teacher_id)}</td>
                                     <td className="py-3 pr-3"><span className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${e.status ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{e.status ? 'Active' : 'Hidden'}</span></td>
@@ -106,6 +118,49 @@ function EntryForm({ initial, onSubmit, submitLabel, courses, teachers }) {
     });
     const [submitting, setSubmitting] = useState(false);
     const set = (k, v) => setForm((s) => ({ ...s, [k]: v }));
+
+    // Teachers assigned (via Teacher Assignments) to the selected course. null
+    // until a course is chosen; [] means none assigned. Changing the course
+    // clears the picked teacher so you can only pick an assigned one.
+    const [courseTeachers, setCourseTeachers] = useState(null);
+    const [ctLoading, setCtLoading] = useState(false);
+    const onCourseChange = (v) => setForm((s) => ({ ...s, course_id: v, teacher_id: '' }));
+
+    useEffect(() => {
+        let alive = true;
+        if (!form.course_id) { setCourseTeachers(null); return undefined; }
+        setCtLoading(true);
+        listAssignments(form.course_id)
+            .then((r) => {
+                if (!alive) return;
+                const seen = new Map();
+                (r?.assignments || []).forEach((a) => {
+                    // a.teacher may be a string name OR an object {id,name,email,phone}.
+                    const t = a.teacher;
+                    const id = String(a.teacher_id ?? (t && t.id) ?? '');
+                    const label = (t && typeof t === 'object' ? (t.name || t.email) : t) || `Teacher ${id}`;
+                    if (id && !seen.has(id)) seen.set(id, { value: id, label: String(label) });
+                });
+                setCourseTeachers([...seen.values()]);
+            })
+            .catch(() => { if (alive) setCourseTeachers([]); })
+            .finally(() => { if (alive) setCtLoading(false); });
+        return () => { alive = false; };
+    }, [form.course_id]);
+
+    // Options for the teacher dropdown: course-assigned teachers when a course
+    // is selected (keep the already-saved teacher visible on edit), else all.
+    const teacherOptions = useMemo(() => {
+        if (form.course_id && courseTeachers !== null) {
+            const opts = [...courseTeachers];
+            if (form.teacher_id && !opts.some((o) => o.value === String(form.teacher_id))) {
+                const fromAll = teachers.find((t) => t.value === String(form.teacher_id));
+                if (fromAll) opts.push(fromAll);
+            }
+            return opts;
+        }
+        return teachers;
+    }, [form.course_id, form.teacher_id, courseTeachers, teachers]);
     const submit = async (e) => {
         e.preventDefault(); setSubmitting(true);
         try {
@@ -123,8 +178,25 @@ function EntryForm({ initial, onSubmit, submitLabel, courses, teachers }) {
         <form onSubmit={submit}>
             <div className="mb-3"><label className="ol-form-label">Day of week</label><select className="ol-form-control" value={form.day_of_week} onChange={(e) => set('day_of_week', e.target.value)}>{DAYS.map((d, i) => <option key={d} value={i}>{d}</option>)}</select></div>
             <div className="mb-3 grid grid-cols-2 gap-3"><div><label className="ol-form-label">Start time</label><input type="time" className="ol-form-control" value={form.start_time} onChange={(e) => set('start_time', e.target.value)} /></div><div><label className="ol-form-label">End time</label><input type="time" className="ol-form-control" value={form.end_time} onChange={(e) => set('end_time', e.target.value)} /></div></div>
-            <div className="mb-3"><label className="ol-form-label">Course</label><select className="ol-form-control" value={form.course_id} onChange={(e) => set('course_id', e.target.value)}><option value="">— Select a course —</option>{courses.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select></div>
-            <div className="mb-3"><label className="ol-form-label">Teacher</label><select className="ol-form-control" value={form.teacher_id} onChange={(e) => set('teacher_id', e.target.value)}><option value="">— Select a teacher —</option>{teachers.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</select></div>
+            <div className="mb-3"><label className="ol-form-label">Course</label><select className="ol-form-control" value={form.course_id} onChange={(e) => onCourseChange(e.target.value)}><option value="">— Select a course —</option>{courses.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select></div>
+            <div className="mb-3">
+                <label className="ol-form-label">Teacher</label>
+                <select className="ol-form-control" value={form.teacher_id} onChange={(e) => set('teacher_id', e.target.value)} disabled={!form.course_id || ctLoading}>
+                    <option value="">
+                        {!form.course_id
+                            ? '— Select a course first —'
+                            : ctLoading
+                                ? 'Loading teachers…'
+                                : teacherOptions.length === 0
+                                    ? 'No teachers assigned to this course'
+                                    : '— Select a teacher —'}
+                    </option>
+                    {teacherOptions.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+                {form.course_id && !ctLoading && teacherOptions.length === 0 && (
+                    <p className="text-[12px] text-gray mt-1">Assign a teacher to this course in <strong>Teacher Assignments</strong> first.</p>
+                )}
+            </div>
             <div className="mb-3"><label className="ol-form-label">Status</label><select className="ol-form-control" value={form.status} onChange={(e) => set('status', e.target.value)}><option value="1">Active</option><option value="0">Hidden</option></select></div>
             <div className="flex justify-end"><button type="submit" className="ol-btn-primary" disabled={submitting}>{submitting ? 'Saving…' : submitLabel}</button></div>
         </form>

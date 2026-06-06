@@ -357,6 +357,47 @@ app.post('/api/public/learnings', ...attachVerifiedId, async (req, res, next) =>
 const leadCtrl = require('./controllers/LeadController');
 app.post('/api/public/leads', writeLimiter, leadCtrl.capture);
 
+// Public self sign-up (marketing lead-gen). Creates a STUDENT account so the
+// person can log in and land on an empty dashboard, AND records a lead so the
+// team can follow up. Student-only + rate-limited; the role is written to
+// app_metadata (service-role-only) by StudentService.create, so this path can
+// never be used to self-provision a teacher/admin.
+const signupStudentSvc = require('./services/StudentService');
+const signupLeadSvc = require('./services/LeadService');
+app.post('/api/public/signup', writeLimiter, async (req, res, next) => {
+    try {
+        const { name, email, password, phone } = req.body || {};
+        const result = await signupStudentSvc.create({ name, email, password, phone });
+        // Best-effort follow-up lead — never fail the signup if this errors
+        // (e.g. an open lead already exists for the same email).
+        try { await signupLeadSvc.capture({ name, email, phone, source: 'self-signup' }); } catch (_) { /* non-fatal */ }
+        res.status(201).json({ message: 'Account created', ...result });
+    } catch (e) { next(e); }
+});
+
+// Student self-service profile photo upload. Verified-student only (requireStudent
+// ties the write to the JWT identity — no spoofing another student's avatar).
+// Stores the image in R2 and saves the relative path on the student's profile row.
+const profileMulter = require('./middlewares/multer');
+const { upload: r2UploadHelper, niceFileName: niceName } = require('./helpers/fileUploader');
+app.post('/api/public/profile/photo', ...requireStudent, profileMulter.single('photo'), async (req, res, next) => {
+    try {
+        const uid = req.verifiedUserId;
+        if (!uid) return res.status(401).json({ error: 'Sign in required' });
+        if (!req.file) return res.status(422).json({ error: 'No photo uploaded' });
+        const ext = (req.file.originalname || '').split('.').pop() || 'jpg';
+        const destPath = `uploads/users/student/${niceName('student-' + uid, ext)}`;
+        await r2UploadHelper(req.file, destPath, 400, 400);
+        const authDbConn = require('./config/authDatabase');
+        const { QueryTypes: QT } = require('sequelize');
+        await authDbConn.query(
+            'UPDATE users SET "studentPhoto" = :p, "updatedAt" = NOW() WHERE "userId" = :uid',
+            { replacements: { p: destPath, uid: String(uid) }, type: QT.UPDATE },
+        );
+        res.json({ photo: destPath });
+    } catch (e) { next(e); }
+});
+
 // Razorpay payments. order/verify require a verified student (requireStudent);
 // the webhook is authenticated by its HMAC signature over the raw body.
 const paymentCtrl = require('./controllers/PaymentController');

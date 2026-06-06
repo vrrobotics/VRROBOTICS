@@ -124,21 +124,8 @@ const Auth = () => {
             <span className="text-gradient">VR</span> Robotics Academy
           </div>
 
-          {/* Tabs */}
-          <div className="grid grid-cols-2 mb-6 rounded-lg bg-muted p-1">
-            {(["login"] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => { setMode(m); setError(null); }}
-                className={`py-2 rounded-md text-sm font-semibold transition-colors ${
-                  mode === m ? "bg-white shadow text-primary" : "text-muted-foreground"
-                }`}
-              >
-                {m === "login" ? "Login" : "Sign Up"}
-              </button>
-            ))}
-          </div>
-
+          {/* Single-mode login — public sign-up is disabled (new users use the
+              "Register your interest" lead form below), so no tab switcher. */}
           <h1 className="text-2xl font-bold mb-1">
             {mode === "login" ? "Welcome back" : "Create your account"}
           </h1>

@@ -19,6 +19,7 @@ import { listCurriculum } from '../../api/curriculum';
 import { listBatchesByColleges } from '../../api/batch';
 import { listStudents } from '../../api/student';
 import { getStoredUser } from '../../api/auth';
+import Modal from '../../components/Modal';
 import { getToken } from '../../api/client';
 
 // Decode JWT payload without a lib (same approach AdminLayout uses) so we can
@@ -113,6 +114,7 @@ function RosterCard({ assignment, canEdit }) {
     const [students, setStudents] = useState([]);
     const [batchSel, setBatchSel] = useState('');
     const [studentSel, setStudentSel] = useState('');
+    const [showStudents, setShowStudents] = useState(false);
 
     const load = () => getRoster(assignment.id).then(setData).catch(() => setData({ students: [], members: [] }));
     useEffect(() => { load(); /* eslint-disable-next-line */ }, [assignment.id]);
@@ -146,6 +148,26 @@ function RosterCard({ assignment, canEdit }) {
         catch (e) { toast.error(e?.response?.data?.error || 'Failed'); }
     };
 
+    // Remove a single student from the roster (DB). Works for individually-added
+    // students; a student who came in via a batch can't be removed one-by-one —
+    // the batch must be removed instead (we detect and tell the admin).
+    const removeStudent = async (s) => {
+        const addedIndividually = (data?.members || []).some(
+            (m) => m.member_type === 'student' && String(m.member_ref) === String(s.id),
+        );
+        if (!addedIndividually) {
+            toast.info('This student was added via a batch — remove the batch to remove them.');
+            return;
+        }
+        try {
+            await removeMember(assignment.id, { member_type: 'student', member_ref: String(s.id) });
+            toast.success('Student removed');
+            load();
+        } catch (e) {
+            toast.error(e?.response?.data?.error || 'Failed to remove student');
+        }
+    };
+
     const members = data?.members || [];
     const batchLabel = (ref) => batches.find((b) => String(b.id) === String(ref))?.name || `Batch #${ref}`;
 
@@ -173,27 +195,76 @@ function RosterCard({ assignment, canEdit }) {
                     </div>
                 )}
 
-                {/* Audience chips (how they were added) */}
-                {members.length > 0 && (
+                {/* Batch chips only — individual students are listed (with ID +
+                    Remove) in the View Students modal, so we no longer show
+                    redundant per-student id chips here. Batches still need their
+                    own chip since the modal can't remove a whole batch. */}
+                {members.some((m) => m.member_type === 'batch') && (
                     <div className="flex flex-wrap gap-2 mb-3">
-                        {members.map((m) => (
+                        {members.filter((m) => m.member_type === 'batch').map((m) => (
                             <span key={`${m.member_type}-${m.member_ref}`} className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-bodybg text-[12px] text-dark border border-ebordermuted">
-                                {m.member_type === 'batch' ? `📦 ${batchLabel(m.member_ref)}` : `👤 ${m.member_ref}`}
+                                {`📦 ${batchLabel(m.member_ref)}`}
                                 {canEdit && <button type="button" onClick={() => remove(m)} className="text-gray hover:text-red-600">✕</button>}
                             </span>
                         ))}
                     </div>
                 )}
 
-                {/* Resolved students */}
-                {(data?.students || []).length === 0 ? (
-                    <p className="text-[13px] text-gray">No students yet. Add a batch or individual students above.</p>
-                ) : (
-                    <ul className="list-none p-0 m-0 grid grid-cols-1 sm:grid-cols-2 gap-1">
-                        {data.students.map((s) => (
-                            <li key={s.id} className="text-[13px] text-dark px-2 py-1 rounded bg-bodybg">{s.name || s.id} {s.email && <span className="text-gray">· {s.email}</span>}</li>
-                        ))}
-                    </ul>
+                {/* Resolved students — opened in a modal via View Students */}
+                <button
+                    type="button"
+                    onClick={() => setShowStudents(true)}
+                    className="text-[13px] text-skin font-semibold hover:underline"
+                >
+                    View Students ({(data?.students || []).length})
+                </button>
+
+                {showStudents && (
+                    <Modal title="Students in this roster" onClose={() => setShowStudents(false)}>
+                        {(data?.students || []).length === 0 ? (
+                            <p className="text-[13px] text-gray py-6 text-center">
+                                No students yet. Add a batch or individual students above.
+                            </p>
+                        ) : (
+                            <div className="max-h-[60vh] overflow-y-auto">
+                                <p className="text-[12px] text-gray mb-2">
+                                    {data.students.length} student{data.students.length === 1 ? '' : 's'} in this roster.
+                                </p>
+                                <table className="e-table w-full">
+                                    <thead>
+                                        <tr>
+                                            <th className="w-[50px]">#</th>
+                                            <th>Student ID</th>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            {canEdit && <th className="w-[90px]">Action</th>}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {data.students.map((s, i) => (
+                                            <tr key={s.id}>
+                                                <td>{i + 1}</td>
+                                                <td className="text-[12px] text-gray font-mono">{s.id}</td>
+                                                <td className="text-dark">{s.name || '—'}</td>
+                                                <td className="text-gray text-[13px]">{s.email || '—'}</td>
+                                                {canEdit && (
+                                                    <td>
+                                                        <button
+                                                            type="button"
+                                                            className="text-[12px] text-danger font-semibold hover:underline"
+                                                            onClick={() => removeStudent(s)}
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    </td>
+                                                )}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </Modal>
                 )}
             </div>
         </div>
@@ -217,11 +288,17 @@ function ReleaseCard({ assignment, onChanged }) {
         /* eslint-disable-next-line */
     }, [assignment.id, assignment.course_id]);
 
-    // Active (not-revoked) released lesson ids.
+    // Active (not-revoked) released lesson ids + a lesson_id -> release record map
+    // so each lesson row can show its own Revoke button inline.
     const releasedIds = useMemo(
         () => new Set(releases.filter((r) => !r.revoked_at).map((r) => Number(r.lesson_id))),
         [releases],
     );
+    const releaseByLesson = useMemo(() => {
+        const map = {};
+        releases.filter((r) => !r.revoked_at).forEach((r) => { map[Number(r.lesson_id)] = r; });
+        return map;
+    }, [releases]);
 
     const toggle = (id) => setSel((prev) => {
         const n = new Set(prev);
@@ -273,10 +350,21 @@ function ReleaseCard({ assignment, onChanged }) {
                                         const isReleased = releasedIds.has(Number(l.id));
                                         return (
                                             <li key={l.id} className="flex items-center gap-2 text-[13px] px-2 py-1 rounded bg-bodybg">
-                                                <input type="checkbox" checked={sel.has(l.id)} onChange={() => toggle(l.id)} />
+                                                <input type="checkbox" checked={sel.has(l.id)} onChange={() => toggle(l.id)} disabled={isReleased} title={isReleased ? 'Already released — use Revoke' : ''} />
                                                 <span className="text-dark">{l.title}</span>
                                                 <span className="text-[11px] text-gray">· {l.lesson_type}</span>
-                                                {isReleased && <span className="ml-auto text-[11px] text-skin font-semibold">● released</span>}
+                                                {isReleased && (
+                                                    <span className="ml-auto flex items-center gap-3">
+                                                        <span className="text-[11px] text-skin font-semibold">● released</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => { const rel = releaseByLesson[Number(l.id)]; if (rel) doRevoke(rel); }}
+                                                            className="text-[11px] text-red-600 font-semibold hover:underline"
+                                                        >
+                                                            Revoke
+                                                        </button>
+                                                    </span>
+                                                )}
                                             </li>
                                         );
                                     })}
@@ -286,21 +374,6 @@ function ReleaseCard({ assignment, onChanged }) {
                     </div>
                 )}
 
-                {/* Currently released — with revoke */}
-                {releases.filter((r) => !r.revoked_at).length > 0 && (
-                    <div className="mt-4 border-t border-ebordermuted pt-3">
-                        <p className="text-[12px] font-semibold text-gray mb-2">Currently released</p>
-                        <ul className="list-none p-0 m-0 flex flex-col gap-1">
-                            {releases.filter((r) => !r.revoked_at).map((r) => (
-                                <li key={r.id} className="flex items-center gap-2 text-[13px] px-2 py-1">
-                                    <span className="text-dark">Lesson #{r.lesson_id}</span>
-                                    <span className="text-[11px] text-gray">{new Date(r.released_at).toLocaleString()}</span>
-                                    <button type="button" onClick={() => doRevoke(r)} className="ml-auto text-[12px] text-red-600 hover:underline">Revoke</button>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
             </div>
         </div>
     );

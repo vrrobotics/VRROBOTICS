@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { updateProfile, updateEducation, updateOrgClgBranch } from "@/api/authApi";
+import { uploadStudentPhoto, ADMIN_BASE } from "@/api/leadApi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { format, parse, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
   User,
+  Camera,
   Mail,
   Phone,
   Calendar,
@@ -216,6 +218,33 @@ const ProfilePage = () => {
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
+  // --- Profile photo upload ---
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [photo, setPhoto] = useState<string>("");
+  const [photoUploading, setPhotoUploading] = useState(false);
+  useEffect(() => {
+    if (user) setPhoto((user as { studentPhoto?: string }).studentPhoto || "");
+  }, [user]);
+  const photoUrl = photo ? `${ADMIN_BASE}/${photo}` : "";
+  const handlePhotoPick = () => fileInputRef.current?.click();
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoUploading(true);
+    setSaveMessage("");
+    try {
+      const res = await uploadStudentPhoto(file);
+      setPhoto(res.photo);
+      setSaveMessage("Profile photo updated successfully!");
+      await checkAuth();
+    } catch {
+      setSaveMessage("Failed to upload photo. Please try a smaller image (JP/PNG).");
+    } finally {
+      setPhotoUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   useEffect(() => {
     if (user && !hasLoadedData) {
       setFormData({
@@ -256,18 +285,11 @@ const ProfilePage = () => {
       });
 
 
-      // 2. Update education information
-      await updateEducation({
-        yearOfEducation: parseInt(formData.yearOfStudy) || 0,
-        yearOfStudy: parseInt(formData.yearOfStudy) || 0,
-        programInterested: formData.programInterested
-      });
-
-      // 3. Update organization/college/branch information
+      // 2. Update school/college (free-text). Simplified profile drops the
+      // academic fields (branch / year / program) for the lead-gen use case.
       await updateOrgClgBranch({
-        orgId: "ORG456", // Make dynamic if needed
+        orgId: "ORG456",
         collegeId: formData.college,
-        branchId: formData.branch
       });
 
       setSaveMessage("Profile updated successfully!");
@@ -358,12 +380,46 @@ const ProfilePage = () => {
         )}
 
         <div className="flex flex-col items-center mb-6">
-          <div className="w-24 h-24 rounded-full bg-[#FF6A00] flex items-center justify-center text-white">
-            <User className="h-10 w-10" />
+          <div className="relative">
+            {photoUrl ? (
+              <img
+                src={photoUrl}
+                alt="Profile"
+                className="w-24 h-24 rounded-full object-cover border-2 border-[#FF6A00]"
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-[#FF6A00] flex items-center justify-center text-white">
+                <User className="h-10 w-10" />
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={handlePhotoPick}
+              disabled={photoUploading}
+              title="Change photo"
+              className="absolute bottom-0 right-0 bg-white border border-gray-200 rounded-full p-1.5 shadow hover:bg-gray-50"
+            >
+              {photoUploading
+                ? <Loader2 className="h-4 w-4 animate-spin text-[#FF6A00]" />
+                : <Camera className="h-4 w-4 text-[#FF6A00]" />}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoChange}
+            />
           </div>
-          <h3 className="mt-4 text-xl font-semibold text-gray-800">
-            {user.name}
-          </h3>
+          <h3 className="mt-4 text-xl font-semibold text-gray-800">{user.name}</h3>
+          <button
+            type="button"
+            onClick={handlePhotoPick}
+            disabled={photoUploading}
+            className="mt-1 text-sm text-[#FF6A00] font-medium hover:underline disabled:opacity-60"
+          >
+            {photoUploading ? "Uploading…" : "Upload / change photo"}
+          </button>
         </div>
 
         <div className="flex justify-between">
@@ -465,35 +521,6 @@ const ProfilePage = () => {
           <Card>
             <CardContent className="p-4 space-y-2">
               <Label className="flex items-center gap-2 text-gray-700">
-                <BookOpen className="h-4 w-4 text-[#FF6A00]" /> Branch / Stream
-              </Label>
-              <Input
-                value={formData.branch}
-                onChange={e => handleInputChange('branch', e.target.value)}
-                disabled={!isEditing}
-                placeholder="Enter Branch / Stream"
-                className="w-full border rounded px-2 py-2"
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 space-y-2">
-              <Label className="flex items-center gap-2 text-gray-700">
-                <GraduationCap className="h-4 w-4 text-[#FF6A00]" /> Year of Study
-              </Label>
-              <Input
-                value={formData.yearOfStudy}
-                onChange={(e) => handleInputChange('yearOfStudy', e.target.value)}
-                disabled={!isEditing}
-                placeholder="Final Year"
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 space-y-2">
-              <Label className="flex items-center gap-2 text-gray-700">
                 <Building2 className="h-4 w-4 text-[#FF6A00]" /> School / College
               </Label>
               {/* Free-text field — the predefined college dropdown was removed.
@@ -504,20 +531,6 @@ const ProfilePage = () => {
                 onChange={(e) => handleInputChange('college', e.target.value)}
                 disabled={!isEditing}
                 placeholder="Your school / college name (optional)"
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 space-y-2">
-              <Label className="flex items-center gap-2 text-gray-700">
-                <User className="h-4 w-4 text-[#FF6A00]" /> Program Interested
-              </Label>
-              <Input
-                value={formData.programInterested}
-                onChange={(e) => handleInputChange('programInterested', e.target.value)}
-                disabled={!isEditing}
-                placeholder="Elite AI Residency"
               />
             </CardContent>
           </Card>

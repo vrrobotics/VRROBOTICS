@@ -250,13 +250,7 @@ export default function StudentIndex() {
                                             <th scope="col">Phone</th>
                                             <th scope="col">School</th>
                                             <th scope="col">Enrolled Courses</th>
-                                            <th scope="col">Program Interested</th>
                                             <th scope="col">Batch</th>
-                                            <th scope="col">Pre-Assessment</th>
-                                            <th scope="col">Post-Assessment</th>
-                                            <th scope="col">Certificate Status</th>
-                                            <th scope="col">Program Request</th>
-                                            <th scope="col">Request Status</th>
                                             <th scope="col">Options</th>
                                         </tr>
                                     </thead>
@@ -284,68 +278,12 @@ export default function StudentIndex() {
                                                 <td className="min-w-[180px]">
                                                     <EnrolledCoursesCell courses={s.enrolled_courses} />
                                                 </td>
-                                                <td className="min-w-[160px]">
-                                                    {s.program_interested ? (
-                                                        <span className="text-[13px]">{s.program_interested}</span>
-                                                    ) : (
-                                                        <span className="text-[12px] text-gray">Not selected</span>
-                                                    )}
-                                                </td>
                                                 <td>
                                                     {s.batch ? (
                                                         <span className="text-[13px]">{s.batch}</span>
                                                     ) : (
                                                         <span className="text-[12px] text-gray">—</span>
                                                     )}
-                                                </td>
-                                                <td className="min-w-[160px]">
-                                                    {s.pre_assessment ? (
-                                                        <div>
-                                                            <span
-                                                                className={`text-[13px] font-semibold ${
-                                                                    s.pre_assessment.passed
-                                                                        ? 'text-green-600'
-                                                                        : 'text-red-600'
-                                                                }`}
-                                                            >
-                                                                Score: {s.pre_assessment.score}
-                                                            </span>
-                                                            <p className="text-[11px] text-gray m-0 mt-1">
-                                                                Time taken: {fmtDuration(s.pre_assessment.duration_seconds)}
-                                                            </p>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-[12px] text-gray">Not taken</span>
-                                                    )}
-                                                </td>
-                                                <td className="min-w-[160px]">
-                                                    {s.post_assessment ? (
-                                                        <div>
-                                                            <span
-                                                                className={`text-[13px] font-semibold ${
-                                                                    s.post_assessment.passed
-                                                                        ? 'text-green-600'
-                                                                        : 'text-red-600'
-                                                                }`}
-                                                            >
-                                                                Score: {s.post_assessment.score}
-                                                            </span>
-                                                            <p className="text-[11px] text-gray m-0 mt-1">
-                                                                Time taken: {fmtDuration(s.post_assessment.duration_seconds)}
-                                                            </p>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-[12px] text-gray">Not taken</span>
-                                                    )}
-                                                </td>
-                                                <td className="min-w-[140px]">
-                                                    <CertificateStatusBadge cert={s.certificate} />
-                                                </td>
-                                                <td className="min-w-[260px]">
-                                                    <ProgramRequestCell student={s} />
-                                                </td>
-                                                <td>
-                                                    <RequestStatusBadge status={s.program_request_status} />
                                                 </td>
                                                 <td>
                                                     <StudentOptions

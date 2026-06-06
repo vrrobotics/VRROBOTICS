@@ -108,14 +108,21 @@ const applyCollegePrefix = (rawName, prefix) => {
 // Returns the subset of ids that are valid.
 const filterValidStudents = async ({ clgId, userIds }) => {
     if (userIds.length === 0) return [];
+    // Accept this college's students AND unassigned (no-school) students — must
+    // match what eligibleStudents() offers, otherwise a no-school student the
+    // admin picked would be silently dropped on save. With no college, accept
+    // any student so a batch can mix students freely.
+    const scope = clgId
+        ? `AND (u."collegeId" = :clgId OR u."collegeId" IS NULL)`
+        : '';
     const rows = await authDb.query(
         `SELECT u."userId"
            FROM users u
            JOIN roles r ON r."roleId" = u."roleId"
           WHERE r.role = 'student'
-            AND u."collegeId" = :clgId
+            ${scope}
             AND u."userId" IN (:userIds)`,
-        { replacements: { clgId, userIds }, type: QueryTypes.SELECT }
+        { replacements: { clgId: clgId || null, userIds }, type: QueryTypes.SELECT }
     );
     return rows.map((r) => String(r.userId));
 };
@@ -343,13 +350,19 @@ const removeMember = async ({ clgId, id, userId }) => {
 // Students of this school that can be added to batches. Powers the picker
 // in the Add Batch form and the "add students" modal of Manage Batches.
 const eligibleStudents = async ({ clgId }) => {
+    // Show this college's students PLUS unassigned (no-school) students — many
+    // students now self-sign-up with no college (B2C), and they were invisible
+    // here before. When no college is given, return every student.
+    const where = clgId
+        ? `r.role = 'student' AND (u."collegeId" = :clgId OR u."collegeId" IS NULL)`
+        : `r.role = 'student'`;
     const rows = await authDb.query(
         `SELECT u."userId" AS id, u.name, u.email, u.phone, u."graduationYear"
            FROM users u
            JOIN roles r ON r."roleId" = u."roleId"
-          WHERE r.role = 'student' AND u."collegeId" = :clgId
+          WHERE ${where}
           ORDER BY u.name ASC`,
-        { replacements: { clgId }, type: QueryTypes.SELECT }
+        { replacements: { clgId: clgId || null }, type: QueryTypes.SELECT }
     );
     return { students: rows };
 };

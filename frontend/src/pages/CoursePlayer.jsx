@@ -76,27 +76,37 @@ export default function CoursePlayer() {
 
     const handleTimeUpdate = (t) => { playbackTimeRef.current = Number(t) || 0; };
 
-    // Auto-tick: every 20s, post the latest playback position. (Was 5s — at 10k
-    // concurrent students that's ~4× the DB write load for no real benefit; the
-    // server's 30%-of-duration completion rule is unaffected by coarser ticks.)
+    // Auto-tick: every 5s, post the latest watched position in 5s buckets. Fine
+    // enough that an admin-configured "minimum duration" (e.g. 10–15s) auto-
+    // completes promptly. (5s × N students is the write cost; acceptable, and the
+    // server only persists when the high-water mark actually advances.)
     useEffect(() => {
         if (!data?.lesson) return;
-        const VIDEO_TYPES = ['video-url', 'system-video', 'vimeo-url', 'html5', 'google_drive'];
         const lesson = data.lesson;
-        if (!VIDEO_TYPES.includes(lesson.lesson_type)) return;
+        // Run for every lesson type EXCEPT quizzes (those complete on submission).
+        // Videos count playback time; readable lessons (pdf/text/document) count
+        // time-on-lesson — so the drip "minimum duration" applies to all of them
+        // and a PDF-first course no longer gets stuck.
+        if (lesson.lesson_type === 'quiz') return;
+        // A locked lesson (drip not yet reached, or teacher hasn't released it)
+        // must NOT auto-complete just by sitting on the page.
+        const lockedNow = (data.locked_lesson_ids || []).includes(lesson.id);
+        if (lockedNow) return;
 
         playbackTimeRef.current = 0;
         lessonOpenedAtRef.current = Date.now();
         let lastReported = -1;
         let stopped = false;
 
+        const TICK_MS = 5000;
+        const BUCKET = 5;
         const interval = setInterval(async () => {
             if (stopped) return;
             const wallElapsed = Math.floor((Date.now() - lessonOpenedAtRef.current) / 1000);
             const playbackElapsed = Math.floor(playbackTimeRef.current);
             const current = Math.max(playbackElapsed, wallElapsed);
-            // Round to nearest 20s tick (server bucket size) and skip duplicates.
-            const tick = Math.floor(current / 20) * 20;
+            // Round down to a 5s bucket and skip duplicates.
+            const tick = Math.floor(current / BUCKET) * BUCKET;
             if (tick <= 0 || tick === lastReported) return;
             lastReported = tick;
 
@@ -109,7 +119,7 @@ export default function CoursePlayer() {
             } catch (e) {
                 console.warn('progress update failed:', e);
             }
-        }, 20000);
+        }, TICK_MS);
 
         return () => { stopped = true; clearInterval(interval); };
     }, [data?.lesson?.id, slug]);

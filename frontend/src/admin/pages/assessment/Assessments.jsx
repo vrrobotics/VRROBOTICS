@@ -10,6 +10,7 @@ import {
     deleteAssessment,
 } from '../../api/assessment';
 import { listCourses } from '../../api/course';
+import { listCourseStudents } from '../../api/slot';
 import { useCollege } from '@/hooks/useCollege';
 
 export default function Assessments() {
@@ -20,6 +21,7 @@ export default function Assessments() {
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState(null);
     const [confirmDelete, setConfirmDelete] = useState(null);
+    const [viewing, setViewing] = useState(null);
 
     // Resolve clgId -> clgName + course id -> title so the table renders
     // human-readable chips instead of raw ids. Both hydrate once on mount;
@@ -167,7 +169,7 @@ export default function Assessments() {
                                     <th className="w-[100px]">Timer</th>
                                     <th className="w-[90px]">Score</th>
                                     <th className="w-[120px]">Status</th>
-                                    <th className="w-[160px]">Options</th>
+                                    <th className="w-[240px]">Options</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -224,6 +226,13 @@ export default function Assessments() {
                                         <td>
                                             <button
                                                 type="button"
+                                                className="text-[12px] text-blue-600 font-semibold mr-3"
+                                                onClick={() => setViewing(a)}
+                                            >
+                                                View Students
+                                            </button>
+                                            <button
+                                                type="button"
                                                 className="text-[12px] text-skin font-semibold mr-3"
                                                 onClick={() => setEditing(a)}
                                             >
@@ -277,7 +286,85 @@ export default function Assessments() {
                     onConfirm={() => handleDelete(confirmDelete)}
                 />
             )}
+
+            {viewing && (
+                <StudentsModal assessment={viewing} onClose={() => setViewing(null)} />
+            )}
         </div>
+    );
+}
+
+// Modal listing the students assigned to an assessment = the union of students
+// enrolled in the assessment's assigned course(s). Fetched per-course via the
+// admin course-students endpoint and de-duplicated by id.
+function StudentsModal({ assessment, onClose }) {
+    const [students, setStudents] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [err, setErr] = useState(null);
+
+    const courseIds = useMemo(
+        () => (Array.isArray(assessment.courseIds) ? assessment.courseIds.filter((v) => v !== null && v !== undefined && v !== '') : []),
+        [assessment],
+    );
+
+    useEffect(() => {
+        let alive = true;
+        if (courseIds.length === 0) { setStudents([]); setLoading(false); return; }
+        setLoading(true);
+        setErr(null);
+        Promise.all(courseIds.map((cid) => listCourseStudents(cid).then((r) => r?.students || []).catch(() => [])))
+            .then((lists) => {
+                if (!alive) return;
+                const byId = new Map();
+                lists.flat().forEach((s) => { if (s && s.id != null) byId.set(String(s.id), s); });
+                setStudents([...byId.values()]);
+            })
+            .catch(() => { if (alive) setErr('Failed to load students'); })
+            .finally(() => { if (alive) setLoading(false); });
+        return () => { alive = false; };
+    }, [courseIds]);
+
+    return (
+        <Modal title={`Students — ${assessment.assessmentId}`} onClose={onClose}>
+            {loading ? (
+                <p className="text-[13px] text-gray py-6 text-center">Loading students…</p>
+            ) : err ? (
+                <p className="text-[13px] text-danger py-6 text-center">{err}</p>
+            ) : courseIds.length === 0 ? (
+                <p className="text-[13px] text-gray py-6 text-center">
+                    This assessment isn’t assigned to any course, so there are no enrolled students yet.
+                    Assign courses via <strong>Edit</strong>.
+                </p>
+            ) : students.length === 0 ? (
+                <p className="text-[13px] text-gray py-6 text-center">
+                    No students are enrolled in the assigned course(s) yet.
+                </p>
+            ) : (
+                <div className="max-h-[60vh] overflow-y-auto">
+                    <p className="text-[12px] text-gray mb-2">
+                        {students.length} student{students.length === 1 ? '' : 's'} enrolled in the assigned course(s).
+                    </p>
+                    <table className="e-table w-full">
+                        <thead>
+                            <tr>
+                                <th className="w-[50px]">#</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {students.map((s, i) => (
+                                <tr key={s.id}>
+                                    <td>{i + 1}</td>
+                                    <td className="text-dark">{s.name || '—'}</td>
+                                    <td className="text-gray text-[13px]">{s.email || '—'}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </Modal>
     );
 }
 

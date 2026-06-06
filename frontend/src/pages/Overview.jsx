@@ -110,8 +110,6 @@ const [loadingProfile, setLoadingProfile] = useState(true);
   // keyed on the logged-in student's userId), not from the public courses list.
   const quickStats = [
     { label: "Active Programs", value: stats.active_programs, icon: BookOpen, color: "bg-blue-500" },
-    { label: "Completed Programs", value: stats.completed_programs, icon: FileText, color: "bg-green-500" },
-    { label: "Certificates", value: stats.certificates, icon: Award, color: "bg-orange-500" },
   ];
 
   // Find pre and post assessment scores for the current user
@@ -153,172 +151,39 @@ const [loadingProfile, setLoadingProfile] = useState(true);
         ))}
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Active Programs */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="rounded-2xl shadow-lg border-0 min-h">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[#FF6A00]">
-                <BookOpen className="h-5 w-5 text-[#FF6A00]" />
-                Active Programs
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {activePrograms.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Activity className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>No active programs. Enroll to start learning!</p>
-                  </div>
-                ) : (
-                  activePrograms.map((program, index) => (
-                    <div key={program.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className="w-2 h-2 bg-[#FF6A00] rounded-full"></div>
-                      <div className="flex-1">
-                        <p className="text-lg font-medium">{program.title}</p>
-                        <p className="text-sm text-gray-500">{program.short_description}</p>
-                      </div>
-                      <p className="text-sm font-medium rounded-full px-3 py-1 border border-black/20 bg-[#FF6A00] text-white">
-                        Enrolled: {program.total_enrollment}
-                      </p>
-                      <ChevronRight className="h-4 w-4 text-black-400" />
-                    </div>
-                  ))
-                )}
+      {/* Active Programs */}
+      <Card className="rounded-2xl shadow-lg border-0 min-h">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-[#FF6A00]">
+            <BookOpen className="h-5 w-5 text-[#FF6A00]" />
+            Active Programs
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {activePrograms.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Activity className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No active programs. Enroll to start learning!</p>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Completed Programs */}
-          <Card className="rounded-2xl shadow-lg border-0 min-h">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-700">
-                <FileText className="h-5 w-5 text-green-700" />
-                Completed Programs
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {completedPrograms.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Activity className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>No completed programs yet.</p>
+            ) : (
+              activePrograms.map((program) => (
+                <div key={program.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="w-2 h-2 bg-[#FF6A00] rounded-full"></div>
+                  <div className="flex-1">
+                    <p className="text-lg font-medium">{program.title}</p>
+                    <p className="text-sm text-gray-500">{program.short_description}</p>
                   </div>
-                ) : (
-                  completedPrograms.map((program, index) => (
-                    <div key={program.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className="w-2 h-2 bg-green-700 rounded-full"></div>
-                      <div className="flex-1">
-                        <p className="text-lg font-medium">{program.title}</p>
-                        <p className="text-sm text-gray-500">{program.short_description}</p>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-black-400" />
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Certificates */}
-          <Card className="rounded-2xl shadow-lg border-0 min-h">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-orange-700">
-                <Award className="h-5 w-5 text-orange-700" />
-                Certificates
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {certificates.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Activity className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>No certificates yet.</p>
-                  </div>
-                ) : (
-                  certificates.map((program, index) => (
-                    <div key={program.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className="w-2 h-2 bg-orange-700 rounded-full"></div>
-                      <div className="flex-1">
-                        <p className="text-lg font-medium">{program.title}</p>
-                        <p className="text-sm text-gray-500">{program.short_description}</p>
-                      </div>
-                      <Button size="sm" className="bg-orange-700 text-white hover:bg-orange-800">
-                        Download Certificate
-                      </Button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar Content */}
-        <div className="space-y-6">
-          {/* Pre-Assesment Score */}
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 rounded-2xl shadow-lg">
-  <CardHeader>
-    <CardTitle className="flex items-center gap-2 text-green-700 text-base">
-      <Award className="h-4 w-4" />
-      Pre-Assessment Score
-    </CardTitle>
-  </CardHeader>
-  <CardContent>
-    <div className="text-center">
-      {loadingProfile ? (
-        <div className="flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      ) : profile?.preScore !== null && profile?.preScore !== undefined ? (
-        <>
-          <div className="flex items-center justify-center mt-2">
-            <span className="text-sm text-gray-600">
-              Score : {profile.preScore}
-            </span>
+                  <p className="text-sm font-medium rounded-full px-3 py-1 border border-black/20 bg-[#FF6A00] text-white">
+                    Enrolled: {program.total_enrollment}
+                  </p>
+                  <ChevronRight className="h-4 w-4 text-black-400" />
+                </div>
+              ))
+            )}
           </div>
-        </>
-      ) : (
-        <div className="text-gray-500">No Pre-Assessment score</div>
-      )}
-    </div>
-  </CardContent>
-</Card>
-
-
-          {/* Post-Assesment Score */}
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 rounded-2xl shadow-lg">
-  <CardHeader>
-    <CardTitle className="flex items-center gap-2 text-green-700 text-base">
-      <Award className="h-4 w-4" />
-      Post-Assessment Score
-    </CardTitle>
-  </CardHeader>
-  <CardContent>
-    <div className="text-center">
-      {loadingProfile ? (
-        <div className="flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      ) : profile?.postScore !== undefined && profile?.postScore !== null ? (
-        <>
-
-          <div className="flex items-center justify-center mt-2">
-            <span className="text-sm text-gray-600">
-              Score : {profile.postScore}
-            </span>
-          </div>
-        </>
-      ) : (
-        <div className="text-gray-500">No Post-Assessment score</div>
-      )}
-    </div>
-  </CardContent>
-</Card>
-
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

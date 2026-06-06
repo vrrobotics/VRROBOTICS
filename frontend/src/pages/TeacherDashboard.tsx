@@ -99,12 +99,16 @@ interface TeacherSlot {
   students: { id: string; name: string }[];
 }
 
+// All times shown to teachers are in India Standard Time (Asia/Kolkata),
+// 12-hour, regardless of the viewer's device timezone.
+const IST = "Asia/Kolkata";
+
 const fmtSlot = (raw: string | null) => {
   if (!raw) return "—";
   const d = new Date(raw);
   if (Number.isNaN(d.getTime())) return raw;
-  return d.toLocaleString(undefined, {
-    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+  return d.toLocaleString("en-IN", {
+    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: true, timeZone: IST,
   });
 };
 
@@ -113,17 +117,28 @@ const fmtDate = (raw: string | null) => {
   if (!raw) return "—";
   const d = new Date(raw);
   if (Number.isNaN(d.getTime())) return raw;
-  return d.toLocaleDateString(undefined, { day: "2-digit", month: "2-digit", year: "numeric" });
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: IST });
 };
 const fmtDay = (raw: string | null) => {
   if (!raw) return "—";
   const d = new Date(raw);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString(undefined, { weekday: "short" });
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-IN", { weekday: "short", timeZone: IST });
 };
 const fmtTime = (raw: string | null) => {
   if (!raw) return "—";
   const d = new Date(raw);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: IST });
+};
+// "HH:MM" clock strings (timetable / free slots) -> "h:MM AM/PM". These are
+// already wall-clock (no timezone), so just reformat to 12-hour.
+const hhmmTo12 = (raw: string | null) => {
+  if (!raw) return "—";
+  const [hRaw, mRaw] = String(raw).split(":");
+  const h = Number(hRaw);
+  if (Number.isNaN(h)) return raw;
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(mRaw ?? "00").padStart(2, "0")} ${ampm}`;
 };
 
 /**
@@ -241,7 +256,7 @@ const Empty = ({ text }: { text: string }) => <p className="text-muted-foregroun
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const DemosView = ({ teacherId }: { teacherId?: string }) => {
-  const { items, loading } = useTeacherList<{ id: number; title: string; course_title: string | null; start_at: string | null; end_at: string | null }>(teacherId, "demos", "demos");
+  const { items, loading } = useTeacherList<{ id: number; title: string; course_title: string | null; start_at: string | null; end_at: string | null; meeting_link: string | null }>(teacherId, "demos", "demos");
   return (
     <Panel title="My Demos" icon={MessageSquare}>
       {loading ? <Empty text="Loading demos…" /> : items.length === 0 ? <Empty text="No demos assigned to you yet." /> : (
@@ -254,6 +269,7 @@ const DemosView = ({ teacherId }: { teacherId?: string }) => {
                 <th className="py-2 pr-4">Day</th>
                 <th className="py-2 pr-4">Time</th>
                 <th className="py-2 pr-4">Course</th>
+                <th className="py-2 pr-4">Meeting</th>
               </tr>
             </thead>
             <tbody>
@@ -264,6 +280,11 @@ const DemosView = ({ teacherId }: { teacherId?: string }) => {
                   <td className="py-3 pr-4">{fmtDay(d.start_at)}</td>
                   <td className="py-3 pr-4 whitespace-nowrap">{fmtTime(d.start_at)} – {fmtTime(d.end_at)}</td>
                   <td className="py-3 pr-4">{d.course_title || "—"}</td>
+                  <td className="py-3 pr-4">
+                    {d.meeting_link
+                      ? <a href={d.meeting_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary font-semibold hover:underline"><Video className="w-4 h-4" /> Join</a>
+                      : <span className="text-muted-foreground">—</span>}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -275,7 +296,7 @@ const DemosView = ({ teacherId }: { teacherId?: string }) => {
 };
 
 const ClassesView = ({ teacherId }: { teacherId?: string }) => {
-  const { items, loading } = useTeacherList<{ id: number; name: string; course_title: string | null; start_at: string | null; end_at: string | null; meeting_link: string | null; students: { id: string; name: string }[] }>(teacherId, "classes", "classes");
+  const { items, loading } = useTeacherList<{ id: number; name: string; course_title: string | null; start_at: string | null; end_at: string | null; meeting_link: string | null; course_student_count?: number }>(teacherId, "classes", "classes");
   return (
     <Panel title="My Classes" icon={MonitorPlay}>
       {loading ? <Empty text="Loading classes…" /> : items.length === 0 ? <Empty text="No classes assigned to you yet." /> : (
@@ -285,7 +306,7 @@ const ClassesView = ({ teacherId }: { teacherId?: string }) => {
               <div className="font-semibold text-lg">{c.name}</div>
               {c.course_title && <div className="text-sm text-muted-foreground">{c.course_title}</div>}
               <div className="text-sm"><span className="font-medium">{fmtSlot(c.start_at)}</span><span className="text-muted-foreground"> → {fmtSlot(c.end_at)}</span></div>
-              <div className="text-xs text-muted-foreground">{c.students.length} student{c.students.length === 1 ? "" : "s"}{c.students.length > 0 && `: ${c.students.slice(0, 3).map((x) => x.name).join(", ")}${c.students.length > 3 ? "…" : ""}`}</div>
+              <div className="text-xs text-muted-foreground">{c.course_student_count ?? 0} student{(c.course_student_count ?? 0) === 1 ? "" : "s"} assigned to this course</div>
               {c.meeting_link
                 ? <a href={c.meeting_link} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-hero text-white text-sm font-semibold px-3 py-2"><Video className="w-4 h-4" /> Join class</a>
                 : <span className="text-xs text-muted-foreground mt-1">No meeting link</span>}
@@ -309,7 +330,7 @@ const TimetableView = ({ teacherId }: { teacherId?: string }) => {
               {items.map((e) => (
                 <tr key={e.id} className="border-b">
                   <td className="py-3 pr-4 font-semibold">{DAYS[e.day_of_week] || "—"}</td>
-                  <td className="py-3 pr-4 whitespace-nowrap">{e.start_time || "—"} – {e.end_time || "—"}</td>
+                  <td className="py-3 pr-4 whitespace-nowrap">{hhmmTo12(e.start_time)} – {hhmmTo12(e.end_time)}</td>
                   <td className="py-3 pr-4">{e.course_title || "—"}</td>
                 </tr>
               ))}
@@ -643,7 +664,7 @@ const FreeScheduleView = ({ teacherId }: { teacherId?: string }) => {
                   <div className="flex flex-wrap gap-2">
                     {daySlots.map((s) => (
                       <span key={s.id} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm">
-                        {s.start_time} – {s.end_time}
+                        {hhmmTo12(s.start_time)} – {hhmmTo12(s.end_time)}
                         <button type="button" onClick={() => remove(s.id)} className="text-muted-foreground hover:text-red-600 font-bold leading-none" aria-label="Remove">×</button>
                       </span>
                     ))}

@@ -32,6 +32,8 @@ export default function BasicTab({ course, onSave, formId }) {
         description: course.description || '',
         // category_id removed — see CollegeMultiSelect below.
         level: course.level || 'beginner',
+        // Course category/track: general | engineering | freshers.
+        course_type: course.course_type || 'general',
         language: course.language || 'english',
         // Class-access range (Class 1–12). '' = open to all classes.
         class_from: course.class_from == null ? '' : String(course.class_from),
@@ -246,6 +248,21 @@ export default function BasicTab({ course, onSave, formId }) {
                 </select>
                 <div className="text-[12px] text-gray mt-1">
                     Pick the class group this course is for. "All classes" makes it open to everyone.
+                </div>
+            </Row>
+
+            <Row label="Category">
+                <select
+                    className="ol-form-control w-full"
+                    value={f.course_type}
+                    onChange={(e) => set('course_type', e.target.value)}
+                >
+                    <option value="general">General</option>
+                    <option value="engineering">For Engineering</option>
+                    <option value="freshers">For Freshers</option>
+                </select>
+                <div className="text-[12px] text-gray mt-1">
+                    Tags the course so it shows under the matching menu (For Engineering / For Freshers).
                 </div>
             </Row>
 

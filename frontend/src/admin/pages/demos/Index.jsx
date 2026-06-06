@@ -45,7 +45,7 @@ export default function DemosIndex() {
         // eslint-disable-next-line
     }, []);
 
-    const courseName = useMemo(() => { const m = new Map(courses.map((c) => [c.value, c.label])); return (id) => (id == null ? '—' : (m.get(String(id)) || `Course #${id}`)); }, [courses]);
+    const courseName = useMemo(() => { const m = new Map(courses.map((c) => [c.value, c.label])); return (id) => { if (id == null || id === '') return '—'; return m.get(String(id)) || String(id); }; }, [courses]);
     const teacherNames = useMemo(() => { const m = new Map(teachers.map((o) => [o.value, o.label])); return (ids) => (Array.isArray(ids) ? ids : []).map((id) => m.get(String(id)) || String(id)); }, [teachers]);
 
     const onSearch = (e) => { e.preventDefault(); const term = (new FormData(e.target).get('search') || '').toString().trim(); const next = { ...query }; if (term) next.search = term; else delete next.search; delete next.page; setParams(next); };
@@ -104,6 +104,7 @@ function DemoForm({ initial, onSubmit, submitLabel, courses, teachers }) {
         start_at: toLocalInput(initial?.start_at),
         end_at: toLocalInput(initial?.end_at),
         teacher_ids: (initial?.teacher_ids || []).map(String),
+        meeting_link: initial?.meeting_link || '',
         status: initial?.status === undefined ? '1' : String(initial.status),
     });
     const [submitting, setSubmitting] = useState(false);
@@ -117,6 +118,7 @@ function DemoForm({ initial, onSubmit, submitLabel, courses, teachers }) {
                 start_at: form.start_at ? new Date(form.start_at).toISOString() : null,
                 end_at: form.end_at ? new Date(form.end_at).toISOString() : null,
                 teacher_ids: form.teacher_ids,
+                meeting_link: form.meeting_link || null,
                 status: form.status,
             });
         } finally { setSubmitting(false); }
@@ -124,9 +126,10 @@ function DemoForm({ initial, onSubmit, submitLabel, courses, teachers }) {
     return (
         <form onSubmit={submit}>
             <div className="mb-3"><label className="ol-form-label">Title<span className="text-danger ms-1">*</span></label><input className="ol-form-control" required value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="e.g. Free Arduino Demo" /></div>
-            <div className="mb-3"><label className="ol-form-label">Course</label><select className="ol-form-control" value={form.course_id} onChange={(e) => set('course_id', e.target.value)}><option value="">— Select a course —</option>{courses.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select></div>
+            <div className="mb-3"><label className="ol-form-label">Course</label><input className="ol-form-control" value={form.course_id} onChange={(e) => set('course_id', e.target.value)} placeholder="e.g. Robotics 101" /></div>
             <div className="mb-3 grid grid-cols-2 gap-3"><div><label className="ol-form-label">Start</label><input type="datetime-local" className="ol-form-control" value={form.start_at} onChange={(e) => set('start_at', e.target.value)} /></div><div><label className="ol-form-label">End</label><input type="datetime-local" className="ol-form-control" value={form.end_at} onChange={(e) => set('end_at', e.target.value)} /></div></div>
             <div className="mb-3"><MultiSelect label="Teachers" options={teachers} selected={form.teacher_ids} onChange={(v) => set('teacher_ids', v)} emptyHint="No teachers found." /></div>
+            <div className="mb-3"><label className="ol-form-label">Meeting link</label><input className="ol-form-control" value={form.meeting_link} onChange={(e) => set('meeting_link', e.target.value)} placeholder="https://meet.google.com/…" /></div>
             <div className="mb-3"><label className="ol-form-label">Status</label><select className="ol-form-control" value={form.status} onChange={(e) => set('status', e.target.value)}><option value="1">Active</option><option value="0">Hidden</option></select></div>
             <div className="flex justify-end"><button type="submit" className="ol-btn-primary" disabled={submitting}>{submitting ? 'Saving…' : submitLabel}</button></div>
         </form>

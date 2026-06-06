@@ -3,6 +3,7 @@ import { Outlet, NavLink, useLocation, Link, useNavigate } from 'react-router-do
 import Navbar from '@/components/layout/Navbar';
 import { logout as adminLogout, getStoredUser } from '@/admin/api/auth';
 import { getToken as getAdminToken } from '@/admin/api/client';
+import { leadStats } from '@/admin/api/leads';
 
 // Decode a JWT payload (base64url) without a library. Returns null on any
 // malformed token. The admin-service signs is_root_admin / role / college_id
@@ -73,6 +74,7 @@ const MENU = [
     { key: 'm_payout', label: 'Payout', icon: ICONS.certificate, to: '/admin/college?tab=mentor-payout', collegeOnly: true },
     { key: 'm_tasks', label: 'Tasks', icon: ICONS.assessment, to: '/admin/college?tab=mentor-tasks', collegeOnly: true },
     { key: 'dashboard', label: 'Dashboard', icon: ICONS.dashboard, to: '/admin/dashboard' },
+    { key: 'calendar', label: 'Calendar', icon: ICONS.category, to: '/admin/calendar' },
     // Category sidebar entry removed — course grouping is now driven by the
     // `clg_ids` JSON column written from the course form (CollegeMultiSelect).
     // The /admin/categories route still exists in App.tsx for direct access,
@@ -328,6 +330,27 @@ export default function AdminLayout() {
     // returns a fresh object every call — referencing it inline on every
     // render caused downstream effects to see "new" deps and re-fire.
     const adminUser = useMemo(() => getStoredUser(), []);
+
+    // Live "new leads" counter for the sidebar badge so the admin notices
+    // portal sign-ups awaiting follow-up. Polls every 60s; errors (e.g. a
+    // college admin without lead access) are ignored.
+    const [newLeads, setNewLeads] = useState(0);
+    useEffect(() => {
+        let alive = true;
+        const fetchCount = () => leadStats()
+            .then((s) => { if (alive) setNewLeads(Number(s?.new) || 0); })
+            .catch(() => {});
+        fetchCount();
+        const id = setInterval(fetchCount, 60000);
+        // Instant update when the Leads page changes a lead (contacted/convert/
+        // reject/delete) — no need to wait for the next poll.
+        const onLeadsChanged = (e) => {
+            if (e?.detail && typeof e.detail.newCount === 'number') setNewLeads(e.detail.newCount);
+            else fetchCount();
+        };
+        window.addEventListener('leads:changed', onLeadsChanged);
+        return () => { alive = false; clearInterval(id); window.removeEventListener('leads:changed', onLeadsChanged); };
+    }, []);
     // The admin JWT is the authoritative source for is_root_admin / role /
     // college_id — it's freshly signed at login, whereas the cached admin_user
     // can be stale or (in older sessions) missing is_root_admin entirely. Read
@@ -569,6 +592,14 @@ export default function AdminLayout() {
                                             >
                                                 <span className={active ? 'text-skin' : 'text-gray'}>{item.icon}</span>
                                                 <span>{item.label}</span>
+                                                {item.key === 'leads' && newLeads > 0 && (
+                                                    <span
+                                                        className="ml-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-bold leading-none"
+                                                        title={`${newLeads} new lead${newLeads === 1 ? '' : 's'} awaiting follow-up`}
+                                                    >
+                                                        {newLeads > 99 ? '99+' : newLeads}
+                                                    </span>
+                                                )}
                                                 <span className={`ml-auto transition-transform ${isOpen ? 'rotate-180' : ''}`}>
                                                     {ICONS.chevron}
                                                 </span>

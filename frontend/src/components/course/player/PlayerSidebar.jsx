@@ -33,13 +33,14 @@ export default function PlayerSidebar({ course, currentLessonId, completedIds, l
 
     return (
         <aside className="bg-white border border-gray-200 rounded-xl overflow-hidden text-gray-900 shadow-[0_4px_40px_rgba(0,0,0,0.08)]">
-            <div className="p-4 border-b border-gray-200">
-                <h2 className="text-[15px] font-semibold mb-2 text-gray-900">Course curriculum</h2>
-                <p className="text-[12px] text-gray-600 text-center">
-                    {progress}% Completed ({completedCount}/{course.lesson_count})
-                </p>
-                <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-skin transition-all" style={{ width: `${progress}%` }} />
+            <div className="p-4 border-b border-gray-200 bg-gradient-to-br from-lightgreen/40 to-white">
+                <h2 className="text-[16px] font-bold mb-2 text-gray-900">📚 Course curriculum</h2>
+                <div className="flex items-center justify-between text-[12px] text-gray-600 mb-1.5">
+                    <span className="font-semibold text-skin">{progress}% complete</span>
+                    <span>{completedCount}/{course.lesson_count} lessons</span>
+                </div>
+                <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-emerald-400 to-skin rounded-full transition-all" style={{ width: `${progress}%` }} />
                 </div>
             </div>
 

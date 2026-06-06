@@ -42,6 +42,8 @@ export default function CourseCreate() {
         status: 'active',
         // category_id removed — courses are mapped to colleges via clg_ids.
         level: '',
+        // Course category/track: general | engineering | freshers.
+        course_type: 'general',
         language: '',
         // Class-access range (Class 1–12). Empty = open to all classes.
         class_from: '',
@@ -120,7 +122,6 @@ export default function CourseCreate() {
             if (k === 'teacher_id') return;
             fd.append(k, v);
         });
-        fd.append('course_type', 'general');
         if (form.teacher_id) fd.append('teachers[]', form.teacher_id);
         selectedClgIds.forEach((id) => fd.append('clgIds[]', id));
         selectedBatchIds.forEach((id) => fd.append('batchIds[]', id));
@@ -262,6 +263,23 @@ export default function CourseCreate() {
                             </div>
 
                             <div className="mb-3">
+                                <label className="ol-form-label" htmlFor="course_type">Category</label>
+                                <select
+                                    id="course_type"
+                                    className="ol-form-control"
+                                    value={form.course_type}
+                                    onChange={(e) => set('course_type', e.target.value)}
+                                >
+                                    <option value="general">General</option>
+                                    <option value="engineering">For Engineering</option>
+                                    <option value="freshers">For Freshers</option>
+                                </select>
+                                <small className="text-muted">
+                                    Tags the course so it shows under the matching menu (For Engineering / For Freshers).
+                                </small>
+                            </div>
+
+                            <div className="mb-3">
                                 <label className="ol-form-label" htmlFor="language">
                                     Made in<span className="text-danger ml-1">*</span>
                                 </label>
@@ -343,6 +361,7 @@ export default function CourseCreate() {
                                 {/* Optional: only for school/batch-delegated courses.
                                     A B2C paid course needs no school. */}
                                 <CollegeMultiSelect
+                                    label="Schools (optional)"
                                     value={selectedClgIds}
                                     onChange={setSelectedClgIds}
                                 />

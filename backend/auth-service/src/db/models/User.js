@@ -20,10 +20,16 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING, 
     allowNull: false 
   },
-  phone: { 
-    type: DataTypes.STRING 
+  phone: {
+    type: DataTypes.STRING
   },
-  dob: { 
+  // Profile avatar — relative R2 path (uploads/users/student/...), set via the
+  // student self-service photo upload. Returned by /auth/profile.
+  studentPhoto: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  dob: {
     type: DataTypes.DATEONLY 
   },
   gender: { 

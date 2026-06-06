@@ -55,6 +55,7 @@ const create = async ({ body }) => {
         start_at: parseDate(body.start_at),
         end_at: parseDate(body.end_at),
         teacher_ids: toIdArray(body.teacher_ids),
+        meeting_link: body.meeting_link ? String(body.meeting_link).trim() : null,
         status: body.status === '0' || body.status === 0 ? 0 : 1,
     });
     return { success: 'Demo created successfully.', item };
@@ -69,6 +70,7 @@ const update = async ({ id, body }) => {
         start_at: body.start_at !== undefined ? parseDate(body.start_at) : item.start_at,
         end_at: body.end_at !== undefined ? parseDate(body.end_at) : item.end_at,
         teacher_ids: body.teacher_ids !== undefined ? toIdArray(body.teacher_ids) : item.teacher_ids,
+        meeting_link: body.meeting_link !== undefined ? (body.meeting_link ? String(body.meeting_link).trim() : null) : item.meeting_link,
         status: body.status !== undefined ? (body.status === '0' || body.status === 0 ? 0 : 1) : item.status,
     });
     return { success: 'Demo updated successfully.', item };
@@ -98,7 +100,7 @@ const listForTeacher = async (teacherId) => {
         const demos = rows.map((r) => ({
             id: r.id, title: r.title, course_id: r.course_id,
             course_title: r.course_id ? (titles[String(r.course_id)] || `Course #${r.course_id}`) : null,
-            start_at: r.start_at, end_at: r.end_at,
+            start_at: r.start_at, end_at: r.end_at, meeting_link: r.meeting_link || null,
         }));
         return { demos };
     } catch (err) {

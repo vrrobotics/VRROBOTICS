@@ -24,7 +24,12 @@ export default function LeadsIndex() {
         try {
             const [l, s] = await Promise.all([listLeads({ status }), leadStats()]);
             setLeads(l.leads || []);
-            setStats(s || stats);
+            const fresh = s || stats;
+            setStats(fresh);
+            // Broadcast the live "new" count so the sidebar badge updates
+            // immediately (instead of waiting for its 60s poll) after the admin
+            // marks a lead contacted / converts / rejects it.
+            window.dispatchEvent(new CustomEvent('leads:changed', { detail: { newCount: Number(fresh.new) || 0 } }));
         } catch (e) {
             toast.error(e?.response?.data?.error || 'Failed to load leads');
         } finally {

@@ -94,7 +94,7 @@ const Navbar = () => {
     { name: "Summer Camp 2026", href: "/summer-camp", icon: GraduationCap, highlight: true },
     { name: "Home", href: "/", icon: Home },
     { name: "Courses", href: "/vr-courses", icon: BookOpen, dropdown: true },
-    { name: "Books", href: "/books", icon: Book },
+    { name: "Books", href: "/books", icon: Book, dropdown: true },
     { name: "Gallery", href: "/gallery", icon: ImageIcon },
     { name: "Locations", href: "/locations", icon: MapPin },
     { name: "Contact Us", href: "/contact", icon: Mail },
@@ -105,15 +105,26 @@ const Navbar = () => {
   // Each Courses option opens the existing auth UI (login / signup) before
   // letting the visitor reach course content.
   const courseItems = [
-    { name: "Class 8 – 12", href: "/courses/browse?class=8-12" },
-    { name: "Class 12 – 18", href: "/courses/browse?class=12-18" },
+    { name: "For Age 8–12", href: "/courses/browse?class=8-12" },
+    { name: "For Age 12–18", href: "/courses/browse?class=12-18" },
+    { name: "For Engineering", href: "/courses/browse?track=engineering" },
+    { name: "For Freshers", href: "/courses/browse?track=freshers" },
     { name: "All Courses", href: "/courses/browse" },
     { name: "Teachers", href: "/auth?role=teacher" },
+  ];
+
+  // Sub-items under the "Books" dropdown.
+  const bookItems = [
+    { name: "All Books", href: "/books" },
+    { name: "Robotics", href: "/books?category=robotics" },
+    { name: "AI & Coding", href: "/books?category=ai-coding" },
+    { name: "Electronics", href: "/books?category=electronics" },
   ];
 
   // Map each dropdown nav item to its sub-items.
   const dropdownItems: Record<string, { name: string; href: string }[]> = {
     Courses: courseItems,
+    Books: bookItems,
   };
 
   // On admin pages the layout uses a fixed-width sidebar (w-[260px]).
@@ -160,6 +171,7 @@ const Navbar = () => {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
+                      onMouseEnter={() => setOpenDropdown(item.name)}
                       className={`flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                         isActive(item.href)
                           ? "text-primary bg-primary/10"
