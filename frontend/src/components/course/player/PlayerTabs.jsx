@@ -56,20 +56,20 @@ function SummaryPane({ lesson, course, progress, completedCount }) {
                 <p className="text-gray-500">No summary available for this lesson.</p>
             )}
             <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <Stat label="Sections" value={course.section_count} color="from-blue-50 to-blue-100 text-blue-700" />
-                <Stat label="Lessons" value={course.lesson_count} color="from-purple-50 to-purple-100 text-purple-700" />
-                <Stat label="Completed" value={`${completedCount}/${course.lesson_count}`} color="from-emerald-50 to-emerald-100 text-emerald-700" />
-                <Stat label="Progress" value={`${progress}%`} color="from-orange-50 to-orange-100 text-orange-700" />
+                <Stat label="Sections" value={course.section_count} />
+                <Stat label="Lessons" value={course.lesson_count} />
+                <Stat label="Completed" value={`${completedCount}/${course.lesson_count}`} />
+                <Stat label="Progress" value={`${progress}%`} />
             </div>
         </div>
     );
 }
 
-function Stat({ label, value, color = 'from-gray-50 to-gray-100 text-gray-900' }) {
+function Stat({ label, value }) {
     return (
-        <div className={`bg-gradient-to-br ${color} rounded-xl p-4 text-center`}>
-            <p className="text-[11px] uppercase tracking-wide opacity-80 font-semibold">{label}</p>
-            <p className="text-[22px] font-bold mt-1">{value}</p>
+        <div className="bg-gray-100 rounded-lg p-3">
+            <p className="text-[11px] text-gray-500 uppercase tracking-wide">{label}</p>
+            <p className="text-[18px] font-semibold text-gray-900 mt-1">{value}</p>
         </div>
     );
 }

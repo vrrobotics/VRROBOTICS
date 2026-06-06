@@ -176,8 +176,7 @@ export default function CoursePlayer() {
             <Navbar />
 
             <section className="flex-1 py-5">
-                <div className="player-container">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+                <div className="player-container grid grid-cols-1 lg:grid-cols-3 gap-5">
                     <div className="lg:col-span-2">
                         <div className="relative">
                             <PlayerLesson
@@ -209,32 +208,22 @@ export default function CoursePlayer() {
                         {lesson && !isCurrentLocked && (
                             <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
                                 <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border text-[14px] font-semibold text-dark hover:bg-bodybg transition-colors"
-                                        onClick={() => goRelative(-1)}
-                                    >
-                                        <i className="fa fa-arrow-left" /> Previous
+                                    <button type="button" className="ol-btn-outline" onClick={() => goRelative(-1)}>
+                                        <i className="fa fa-arrow-left mr-2" /> Previous
                                     </button>
-                                    <button
-                                        type="button"
-                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border text-[14px] font-semibold text-dark hover:bg-bodybg transition-colors"
-                                        onClick={() => goRelative(1)}
-                                    >
-                                        Next <i className="fa fa-arrow-right" />
+                                    <button type="button" className="ol-btn-outline" onClick={() => goRelative(1)}>
+                                        Next <i className="fa fa-arrow-right ml-2" />
                                     </button>
                                 </div>
                                 <button
                                     type="button"
-                                    className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-white text-[14px] font-bold shadow-sm transition-all disabled:opacity-70 ${
-                                        completedIds.includes(lesson.id) ? 'bg-emerald-500' : 'bg-skin hover:bg-skin/90'
-                                    }`}
+                                    className="ol-btn-primary"
                                     onClick={onMarkComplete}
                                     disabled={marking || completedIds.includes(lesson.id)}
                                 >
                                     {completedIds.includes(lesson.id)
-                                        ? <><i className="fa fa-circle-check" /> Completed 🎉</>
-                                        : marking ? 'Saving…' : <><i className="fa fa-check" /> Mark as complete</>}
+                                        ? <><i className="fa fa-check mr-2" />Completed</>
+                                        : marking ? 'Saving…' : 'Mark as complete'}
                                 </button>
                             </div>
                         )}
@@ -242,9 +231,16 @@ export default function CoursePlayer() {
                         {lesson && !isCurrentLocked && (
                             <MyLearnings courseId={course.id} lessonId={lesson.id} />
                         )}
+
+                        <PlayerTabs
+                            course={course}
+                            lesson={lesson}
+                            progress={progress}
+                            completedCount={completed_lesson_count}
+                        />
                     </div>
 
-                    <div className="lg:col-span-1 space-y-5">
+                    <div className="lg:col-span-1">
                         <PlayerSidebar
                             course={course}
                             currentLessonId={lesson?.id}
@@ -253,14 +249,7 @@ export default function CoursePlayer() {
                             progress={progress}
                             completedCount={completed_lesson_count}
                         />
-                        <PlayerTabs
-                            course={course}
-                            lesson={lesson}
-                            progress={progress}
-                            completedCount={completed_lesson_count}
-                        />
                     </div>
-                  </div>
                 </div>
             </section>
         </div>
