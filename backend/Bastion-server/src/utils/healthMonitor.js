@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { targetFor } from './serviceMap.js';
 
 export default class HealthMonitor {
   constructor(serviceMap) {
@@ -10,7 +11,7 @@ export default class HealthMonitor {
     const service = this.serviceMap[name];
     if (!service) return null;
     try {
-      const res = await axios.get(`http://${service.host}:${service.port}/health`, { timeout: 2000 });
+      const res = await axios.get(`${targetFor(service)}/health`, { timeout: 2000 });
       const status = { healthy: true, lastChecked: new Date(), details: res.data };
       this.statusMap[name] = status;
       return status;

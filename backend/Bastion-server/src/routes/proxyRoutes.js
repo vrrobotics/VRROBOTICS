@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import httpProxy from 'express-http-proxy';
-import serviceMap from '../utils/serviceMap.js';
+import serviceMap, { targetFor } from '../utils/serviceMap.js';
 import HealthMonitor from '../utils/healthMonitor.js';
 import { isAllowedOrigin } from '../utils/cors.js';
 
@@ -22,10 +22,8 @@ healthMonitor.startMonitoring(7200000);
 })();
 
 Object.entries(serviceMap).forEach(([name, service]) => {
-  // development.....
-  const target = `http://${service.host}:${service.port}`;
-  // production......
-  // const target = `https://${service.host}:${service.port}`;
+  // Full URL via <SVC>_SERVICE_URL (prod) or http://host:port (local dev).
+  const target = targetFor(service);
   const proxy = httpProxy(target, {
     preserveHostHdr: true,
     // Default proxy body limit is 1mb — too small for legitimate file uploads
