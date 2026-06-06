@@ -239,9 +239,12 @@ export default function CoursePlayer() {
                             </div>
                         )}
 
+                        {lesson && !isCurrentLocked && (
+                            <MyLearnings courseId={course.id} lessonId={lesson.id} />
+                        )}
                     </div>
 
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-1 space-y-5">
                         <PlayerSidebar
                             course={course}
                             currentLessonId={lesson?.id}
@@ -250,21 +253,13 @@ export default function CoursePlayer() {
                             progress={progress}
                             completedCount={completed_lesson_count}
                         />
+                        <PlayerTabs
+                            course={course}
+                            lesson={lesson}
+                            progress={progress}
+                            completedCount={completed_lesson_count}
+                        />
                     </div>
-                  </div>
-
-                  {lesson && !isCurrentLocked && (
-                    <div className="mt-5">
-                      <MyLearnings courseId={course.id} lessonId={lesson.id} />
-                    </div>
-                  )}
-                  <div className="mt-5">
-                    <PlayerTabs
-                      course={course}
-                      lesson={lesson}
-                      progress={progress}
-                      completedCount={completed_lesson_count}
-                    />
                   </div>
                 </div>
             </section>
