@@ -148,16 +148,9 @@ const MENU = [
             { label: 'Manage Time table', to: '/admin/timetable' },
         ],
     },
-    {
-        key: 'assessment',
-        label: 'Assessments',
-        icon: ICONS.assessment,
-        children: [
-            { label: 'Manage Assessments', to: '/admin/assessments' },
-            { label: 'Question Sets', to: '/admin/assessments?tab=question-sets' },
-            { label: 'Questions', to: '/admin/assessments?tab=questions' },
-        ],
-    },
+    // Assessments menu hidden from the sidebar by request. The feature itself
+    // (routes /admin/assessments, pages, and the assessment-service) is left
+    // intact and reachable by URL — only the nav entry is removed.
     {
         key: 'program',
         label: 'Programs',
