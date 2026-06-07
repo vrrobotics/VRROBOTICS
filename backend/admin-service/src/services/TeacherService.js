@@ -13,7 +13,7 @@ const { upload, removeFile, niceFileName } = require('../helpers/fileUploader');
 const supabaseAdmin = require('../lib/supabaseAdmin');
 const env = require('../config/env');
 const { enqueue } = require('../jobs/emailQueue');
-const { studentWelcome } = require('../helpers/emailTemplates');
+const { studentWelcome, passwordReset } = require('../helpers/emailTemplates');
 
 const ROLE = 'teacher';
 
@@ -256,6 +256,13 @@ const update = async (id, body, file = null) => {
             });
             if (error) throw new HttpError(400, `Failed to update password: ${error.message}`);
         }
+        // Email the teacher their new login details (best-effort; worker retries SMTP).
+        try {
+            const { subject, html } = passwordReset({
+                name: body.name, email: body.email, password: body.password, loginUrl: env.mail?.lmsLoginUrl,
+            });
+            await enqueue({ to: body.email, subject, html });
+        } catch (e) { console.warn('[teachers] password-reset email enqueue failed:', e.message); }
     }
 
     return (await get(id)).teacher;

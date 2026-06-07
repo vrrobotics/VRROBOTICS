@@ -110,7 +110,6 @@ const Navbar = () => {
     { name: "For Engineering", href: "/courses/browse?track=engineering" },
     { name: "For Freshers", href: "/courses/browse?track=freshers" },
     { name: "All Courses", href: "/courses/browse" },
-    { name: "Teachers", href: "/auth?role=teacher" },
   ];
 
   // Sub-items under the "Books" dropdown.

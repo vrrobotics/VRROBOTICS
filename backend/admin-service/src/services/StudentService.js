@@ -7,7 +7,7 @@ const { HttpError } = require('../middlewares/error');
 const supabaseAdmin = require('../lib/supabaseAdmin');
 const env = require('../config/env');
 const { enqueue } = require('../jobs/emailQueue');
-const { studentWelcome } = require('../helpers/emailTemplates');
+const { studentWelcome, passwordReset } = require('../helpers/emailTemplates');
 
 // Students sign up through auth-service, which writes to lucy_devdb.users
 // (string userId PK, roleId -> roles table). The admin "Manage Students"
@@ -462,6 +462,13 @@ const update = async (id, body, file = null) => {
             );
             if (updErr) throw new HttpError(400, `Password update failed: ${updErr.message}`);
         }
+        // Email the student their new login details (best-effort; worker retries SMTP).
+        try {
+            const { subject, html } = passwordReset({
+                name: body.name, email: body.email, password: body.password, loginUrl: env.mail?.lmsLoginUrl,
+            });
+            await enqueue({ to: body.email, subject, html });
+        } catch (e) { console.warn('[students] password-reset email enqueue failed:', e.message); }
     }
 
     if (file) {

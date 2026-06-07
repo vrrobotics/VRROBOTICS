@@ -281,10 +281,38 @@ const studentWelcome = ({ studentName, email, password, loginUrl }) => {
     return { subject, html: baseFrame({ heading, bodyHtml }) };
 };
 
+// Sent when the root admin resets a user's password from the dashboard (e.g.
+// the user forgot it). Delivers the NEW password + a sign-in link, and nudges
+// the user to change it again afterwards. Works for students and teachers.
+const passwordReset = ({ name, email, password, loginUrl }) => {
+    const heading = 'Your Password Has Been Reset';
+    const subject = 'Your LMS password was reset — here are your new login details';
+    const safeName = escape(name || 'there');
+    const safeEmail = escape(email || '');
+    const safePassword = escape(password || '');
+    const safeUrl = escape(loginUrl || '');
+    const bodyHtml = `
+        <p style="margin:0 0 16px 0;">Dear ${safeName},</p>
+        <p style="margin:0 0 16px 0;">Your password has been reset by the administrator. Use the new details below to sign in.</p>
+        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px 0;font-size:15px;">
+            <tr><td style="padding:4px 12px 4px 0;color:#7a8189;">Email</td><td style="font-weight:600;">${safeEmail}</td></tr>
+            <tr><td style="padding:4px 12px 4px 0;color:#7a8189;">New password</td><td style="font-weight:600;">${safePassword}</td></tr>
+        </table>
+        <p style="margin:0 0 24px 0;">
+            <a href="${safeUrl}" style="display:inline-block;background:#177385;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:600;">Sign in to LMS</a>
+        </p>
+        <p style="margin:0 0 4px 0;color:#7a8189;font-size:13px;">For your security, please change this password after you sign in. If you didn't request this, contact your administrator.</p>
+        <p style="margin:0 0 24px 0;font-size:13px;word-break:break-all;"><a href="${safeUrl}" style="color:#177385;">${safeUrl}</a></p>
+        <p style="margin:0;">Best Regards,<br/>YagnaTech Team</p>
+    `;
+    return { subject, html: baseFrame({ heading, bodyHtml }) };
+};
+
 module.exports = {
     batchAddedToStudent,
     preAssessmentRegistered,
     courseAssignedToStudent,
     certificateIssued,
     studentWelcome,
+    passwordReset,
 };
