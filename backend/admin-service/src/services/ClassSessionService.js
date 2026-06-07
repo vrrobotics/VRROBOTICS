@@ -106,22 +106,34 @@ const listForTeacher = async (teacherId) => {
 
         // Students "assigned to that course" = the teacher's Teacher-Assignment
         // roster for each course (expands batches + individuals). Keyed by course.
-        const courseIds = [...new Set(rows.map((r) => r.course_id).filter((x) => x != null))];
+        // This is a best-effort enrichment — isolate it so a failure here (e.g. a
+        // free-text course_id that can't cast to the integer FK column) can NEVER
+        // drop the actual class list. Only numeric course_ids can match an
+        // assignment, so filter to those before querying.
         const countByCourse = {};
-        if (courseIds.length) {
-            const assigns = await TeachingAssignment.findAll({
-                where: { teacher_id: String(teacherId), course_id: courseIds },
-                raw: true,
-            });
-            for (const a of assigns) {
-                try { countByCourse[String(a.course_id)] = (await resolveRosterUserIds(a.id)).size; }
-                catch { /* leave unset → 0 */ }
+        try {
+            const numericCourseIds = [...new Set(
+                rows.map((r) => r.course_id).filter((x) => x != null && /^\d+$/.test(String(x)))
+            )];
+            if (numericCourseIds.length) {
+                const assigns = await TeachingAssignment.findAll({
+                    where: { teacher_id: String(teacherId), course_id: numericCourseIds },
+                    raw: true,
+                });
+                for (const a of assigns) {
+                    try { countByCourse[String(a.course_id)] = (await resolveRosterUserIds(a.id)).size; }
+                    catch { /* leave unset → 0 */ }
+                }
             }
+        } catch (e) {
+            console.warn('[classes] roster count enrichment failed (non-fatal):', e.message);
         }
 
         const classes = rows.map((r) => ({
             id: r.id, name: r.name, course_id: r.course_id,
-            course_title: r.course_id ? (titles[String(r.course_id)] || `Course #${r.course_id}`) : null,
+            course_title: r.course_id
+                ? (titles[String(r.course_id)] || (/^\d+$/.test(String(r.course_id)) ? `Course #${r.course_id}` : String(r.course_id)))
+                : null,
             start_at: r.start_at, end_at: r.end_at, meeting_link: r.meeting_link,
             course_student_count: r.course_id != null ? (countByCourse[String(r.course_id)] || 0) : 0,
             students: [],

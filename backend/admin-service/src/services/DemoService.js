@@ -99,7 +99,9 @@ const listForTeacher = async (teacherId) => {
         const titles = await resolveCourseTitles(rows.map((r) => r.course_id));
         const demos = rows.map((r) => ({
             id: r.id, title: r.title, course_id: r.course_id,
-            course_title: r.course_id ? (titles[String(r.course_id)] || `Course #${r.course_id}`) : null,
+            course_title: r.course_id
+                ? (titles[String(r.course_id)] || (/^\d+$/.test(String(r.course_id)) ? `Course #${r.course_id}` : String(r.course_id)))
+                : null,
             start_at: r.start_at, end_at: r.end_at, meeting_link: r.meeting_link || null,
         }));
         return { demos };

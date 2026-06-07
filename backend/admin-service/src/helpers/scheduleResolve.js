@@ -6,7 +6,13 @@ const authDb = require('../config/authDatabase');
 // classes, timetable). Resolve lms_admin course titles and auth-DB user names.
 
 async function resolveCourseTitles(courseIds) {
-    const ids = [...new Set((courseIds || []).filter(Boolean).map(Number))];
+    // Course.id is an integer PK — only numeric course_ids can match a row.
+    // Free-text course_ids (used by demos/classes) are skipped here and fall
+    // back to their raw value in the caller. Casting them with Number() yields
+    // NaN and produces a `column "nan" does not exist` SQL error.
+    const ids = [...new Set(
+        (courseIds || []).filter((x) => x != null && /^\d+$/.test(String(x))).map(Number)
+    )];
     if (!ids.length) return {};
     try {
         const cs = await Course.findAll({ where: { id: ids }, attributes: ['id', 'title'], raw: true });
