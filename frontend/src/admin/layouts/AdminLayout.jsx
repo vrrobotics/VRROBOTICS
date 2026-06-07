@@ -116,14 +116,9 @@ const MENU = [
             { label: 'Add Category', to: '/admin/resource-categories?action=add' },
         ],
     },
-    {
-        key: 'slots',
-        label: 'Slots',
-        icon: ICONS.assessment,
-        children: [
-            { label: 'Manage Slots', to: '/admin/slots' },
-        ],
-    },
+    // Slots menu hidden from the sidebar by request. The feature itself
+    // (route /admin/slots, page, and backend) is left intact and reachable
+    // by URL — only the nav entry is removed.
     {
         key: 'demos',
         label: 'Demos',
